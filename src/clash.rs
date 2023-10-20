@@ -1,12 +1,11 @@
 use serde::{Serialize, Deserialize};
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Clash {
     id: u32,
     nickname: String,
-    #[serde(rename = "publicHandle")]
     public_handle: String,
-    #[serde(rename = "lastVersion")]
     last_version: ClashVersion,
     #[serde(rename = "upVotes")]
     upvotes: u32,
@@ -15,14 +14,16 @@ pub struct Clash {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct ClashVersion {
     version: u32,
     data: ClashData,
-    #[serde(rename = "statementHTML", default)]
+    #[serde(default)] // statementHtml may not always exist
     statement_html: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct ClashData {
     title: String,
     fastest: bool,
@@ -32,22 +33,17 @@ struct ClashData {
     #[serde(rename = "testCases")]
     testcases: Vec<ClashTestCase>,
     constraints: String,
-    #[serde(rename = "stubGenerator")]
     stub_generator: String,
-    #[serde(rename = "inputDescription")]
     input_description: String,
-    #[serde(rename = "outputDescription")]
     output_description: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct ClashTestCase {
     title: String,
-    #[serde(rename = "testIn")]
     test_in: String,
-    #[serde(rename = "testOut")]
     test_out: String,
-    #[serde(rename = "isValidator")]
     is_validator: bool,
 }
 
