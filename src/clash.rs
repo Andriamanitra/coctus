@@ -6,7 +6,6 @@ use formatter::Formatter;
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Clash {
     id: u32,
-    nickname: String,
     #[serde(rename = "publicHandle")]
     public_handle: String,
     #[serde(rename = "lastVersion")]
