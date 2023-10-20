@@ -34,7 +34,7 @@ struct ClashData {
     statement: String,
     #[serde(rename = "testCases")]
     testcases: Vec<ClashTestCase>,
-    constraints: String,
+    constraints: Option<String>,
     #[serde(rename = "stubGenerator")]
     stub_generator: String,
     #[serde(rename = "inputDescription")]
@@ -78,16 +78,20 @@ impl Clash {
             let section_color = "\x1b[33m".to_string(); // Yellow
     
             writeln!(&mut buf, "{}\n", formatter.format(&cdata.statement)).unwrap();
-            writeln!(&mut buf, "{}Constraints:\x1b[39;49m", section_color).unwrap();
-            writeln!(&mut buf, "{}\n", formatter.format(&cdata.constraints)).unwrap();
+            if let Some(constraints) = &cdata.constraints {
+                writeln!(&mut buf, "{}Constraints:\x1b[39;49m", section_color).unwrap();
+                writeln!(&mut buf, "{}\n", formatter.format(&constraints)).unwrap();
+            }
             writeln!(&mut buf, "{}Input:\x1b[39;49m", section_color).unwrap();
             writeln!(&mut buf, "{}\n", formatter.format(&cdata.input_description)).unwrap();
             writeln!(&mut buf, "{}Output:\x1b[39;49m", section_color).unwrap();
             writeln!(&mut buf, "{}\n", formatter.format(&cdata.output_description)).unwrap();
         } else {
             writeln!(&mut buf, "{}\n", cdata.statement).unwrap();
-            writeln!(&mut buf, "Constraints:").unwrap();
-            writeln!(&mut buf, "{}\n", cdata.constraints).unwrap();
+            if let Some(constraints) = &cdata.constraints {
+                writeln!(&mut buf, "Constraints:").unwrap();
+                writeln!(&mut buf, "{}\n", constraints).unwrap();
+            }
             writeln!(&mut buf, "Input:").unwrap();
             writeln!(&mut buf, "{}\n", cdata.input_description).unwrap();
             writeln!(&mut buf, "Output:").unwrap();
