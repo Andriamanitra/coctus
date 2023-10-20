@@ -41,17 +41,20 @@ struct ClashData {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct ClashTestCase {
-    title: String,
+pub struct ClashTestCase {
+    pub title: String,
     #[serde(rename = "testIn")]
-    test_in: String,
+    pub test_in: String,
     #[serde(rename = "testOut")]
-    test_out: String,
+    pub test_out: String,
     #[serde(rename = "isValidator")]
-    is_validator: bool,
+    pub is_validator: bool,
 }
 
 impl Clash {
+    pub fn testcases(&self) -> &Vec<ClashTestCase> {
+        &self.last_version.data.testcases
+    }
     pub fn pretty_print(&self) {
         let cdata = &self.last_version.data;
         println!("\x1b[34;47m=== {} ===\x1b[39;49m\n", cdata.title);

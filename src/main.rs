@@ -4,9 +4,42 @@ use directories::ProjectDirs;
 use rand::seq::IteratorRandom;
 use std::path::PathBuf;
 use serde_json;
-mod clash;
 
 use clash::Clash;
+
+pub enum TestRunResult {
+    Success,
+    WrongOutput {
+        stdout: String,
+        stderr: String
+    },
+    RuntimeError {
+        stderr: String
+    }
+}
+
+pub fn run_test(run: &mut std::process::Command, testcase: &clash::ClashTestCase) -> Result<TestRunResult> {
+    let mut run = run
+        .stdin(std::process::Stdio::piped())
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped())
+        .spawn()?;
+
+    let mut stdin = run.stdin.as_mut().unwrap();
+    std::io::Write::write(&mut stdin, testcase.test_in.as_bytes())?;
+
+    let output = run.wait_with_output()?;
+    let stdout = String::from_utf8(output.stdout)?;
+    let stdout = stdout.trim_end().to_string();
+    let stderr = String::from_utf8(output.stderr)?;
+    if stdout == testcase.test_out {
+        Ok(TestRunResult::Success)
+    } else if output.status.success() {
+        Ok(TestRunResult::WrongOutput{stdout, stderr})
+    } else {
+        Ok(TestRunResult::RuntimeError{stderr})
+    }
+}
 
 fn cli() -> Command {
     Command::new("clash")
@@ -20,6 +53,15 @@ fn cli() -> Command {
             Command::new("next")
                 .about("Select next clash")
                 .arg(arg!([PUBLIC_HANDLE] "hexadecimal handle of the clash")),
+        )
+        .subcommand(
+            Command::new("run")
+                .about("Test a solution against current clash")
+                .arg(arg!(--"build-command" <COMMAND> "command that compiles the solution"))
+                .arg(arg!(--"command" <COMMAND> "command that executes the solution"))
+                .arg(arg!(--"auto-advance" ... "automatically move on to next clash if all test cases pass"))
+                .arg(arg!(--"ignore-failures" ... "run all tests despite failures"))
+                .arg(arg!([PUBLIC_HANDLE] "hexadecimal handle of the clash"))
         )
         .subcommand(Command::new("status").about("Show status information"))
 }
@@ -64,8 +106,15 @@ impl App {
 
     fn random_handle(&self) -> Result<PublicHandle> {
         let mut rng = rand::thread_rng();
-        if let Ok(entry) = self.clashes()?.choose(&mut rng).expect("No clashes to choose from!") {
-            let filename = entry.file_name().into_string().expect("unable to convert OsString to String (?!?)");
+        if let Ok(entry) = self
+            .clashes()?
+            .choose(&mut rng)
+            .expect("No clashes to choose from!")
+        {
+            let filename = entry
+                .file_name()
+                .into_string()
+                .expect("unable to convert OsString to String (?!?)");
             Ok(PublicHandle(match filename.strip_suffix(".json") {
                 Some(handle) => handle.to_string(),
                 None => filename,
@@ -73,6 +122,15 @@ impl App {
         } else {
             Err(anyhow!("Unable to randomize next clash"))
         }
+    }
+
+    fn read_clash(&self, handle: &PublicHandle) -> Result<Clash> {
+        let clash_file = self.clash_dir.join(format!("{}.json", handle));
+        let contents = std::fs::read_to_string(&clash_file)
+            .with_context(|| format!("Unable to find clash with handle {}", handle))?;
+        let clash: Clash = serde_json::from_str(&contents)
+            .with_context(|| format!("Unable to deserialize clash from {:?}", &clash_file))?;
+        Ok(clash)
     }
 
     fn show(&self, args: &ArgMatches) -> Result<()> {
@@ -106,6 +164,85 @@ impl App {
         println!("Number of clashes: {}", self.clashes()?.count());
         Ok(())
     }
+
+    fn run(&self, args: &ArgMatches) -> Result<()> {
+        let handle = self
+            .handle_from_args(args)
+            .or_else(|_| self.current_handle())?;
+
+        // Run build
+        if let Some(build_cmd) = args.get_one::<String>("build-command") {
+            match shlex::split(build_cmd) {
+                Some(shlexed_build_cmd) if shlexed_build_cmd.len() > 0 => {
+                    let exe = &shlexed_build_cmd[0];
+                    let exe_args = &shlexed_build_cmd[1..];
+                    let build = std::process::Command::new(exe).args(exe_args).output().with_context(|| format!("Unable to run build-command '{}'", exe))?;
+                    if !build.status.success() {
+                        if build.stderr.len() > 0 {
+                            println!("Build command STDERR:\n{}", String::from_utf8(build.stderr)?);
+                        }
+                        if build.stdout.len() > 0 {
+                            println!("Build command STDOUT:\n{}", String::from_utf8(build.stdout)?);
+                        }
+                        return Err(anyhow!("Build failed"));
+                    }
+                }
+                _ => return Err(anyhow!("Invalid --build-command")),
+            };
+        }
+
+        // Run tests
+        if let Some(run_cmd) = args.get_one::<String>("command") {
+            match shlex::split(run_cmd) {
+                Some(shlexed_run_cmd) if shlexed_run_cmd.len() > 0 => {
+                    let exe = &shlexed_run_cmd[0];
+                    let exe_args = &shlexed_run_cmd[1..];
+                    let mut run = std::process::Command::new(exe);
+                    let run = run.args(exe_args);
+                    let clash = self.read_clash(&handle)?;
+                    let ignore_failures = args.get_count("ignore-failures") != 0;
+                    let mut num_passed = 0;
+                    let total = clash.testcases().len();
+                    for testcase in clash.testcases() {
+                        match run_test(run, testcase)? {
+                            TestRunResult::Success => { num_passed += 1; },
+                            TestRunResult::WrongOutput{stderr, stdout} => {
+                                if stderr.len() > 0 {
+                                    println!("stderr   : {}", stderr);
+                                }
+                                println!("{}", testcase.title);
+                                println!("==== EXPECTED ==\n{}", testcase.test_out);
+                                println!("===== ACTUAL ===\n{}", stdout);
+                                if !ignore_failures {
+                                    break;
+                                }
+                            },
+                            TestRunResult::RuntimeError{stderr} => {
+                                println!("{}", stderr);
+                                if !ignore_failures {
+                                    break;
+                                }
+                            },
+                        }
+                    }
+                    if num_passed == total {
+                        println!("{}/{} tests passed!", num_passed, total);
+                        // Move on to next clash if --auto-advance is set
+                        if args.get_count("auto-advance") != 0 {
+                            let next_handle = self.random_handle()?;
+                            std::fs::write(&self.current_clash_file, next_handle.to_string())?;
+                            println!("Moving on to next clash...");
+                        }
+                    } else {
+                        println!("{}/{} tests passed", num_passed, total);
+                    }
+                }
+                _ => return Err(anyhow!("Invalid --command")),
+            }
+        }
+
+        Ok(())
+    }
 }
 
 fn main() -> Result<()> {
@@ -118,6 +255,7 @@ fn main() -> Result<()> {
         Some(("show", args)) => app.show(args),
         Some(("next", args)) => app.next(args),
         Some(("status", args)) => app.status(args),
+        Some(("run", args)) => app.run(args),
         _ => Ok(()),
     }
 }
