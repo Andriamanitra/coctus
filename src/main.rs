@@ -81,8 +81,9 @@ impl App {
         let contents = std::fs::read_to_string(clash_file)
         .with_context(|| format!("Unable to find clash with handle {}", handle))?;
         let clash: Clash = serde_json::from_str(&contents)?;
+        // DEBUG
         // dbg!(contents);
-        // println!("{}", serde_json::to_string(&clash)?);
+        println!("{}", serde_json::to_string_pretty(&clash).unwrap());
         clash.pretty_print();
         Ok(())
     }
@@ -109,6 +110,7 @@ impl App {
 }
 
 fn main() -> Result<()> {
+    // We look for the locally stored clashes here:
     let project_dirs =
         ProjectDirs::from("com", "Clash CLI", "clash").expect("Unable to find project directory");
 
