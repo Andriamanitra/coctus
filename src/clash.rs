@@ -18,7 +18,7 @@ pub struct Clash {
 struct ClashVersion {
     version: u32,
     data: ClashData,
-    #[serde(rename = "statementHTML")]
+    #[serde(rename = "statementHTML", default)]
     statement_html: String,
 }
 
