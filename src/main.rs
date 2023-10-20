@@ -77,13 +77,14 @@ impl App {
 
     fn show(&self, args: &ArgMatches) -> Result<()> {
         let handle = self.handle_from_args(args).or_else(|_| self.current_handle())?;
+        println!("https://www.codingame.com/contribute/view/{}", handle);
         let clash_file = self.clash_dir.join(format!("{}.json", handle));
         let contents = std::fs::read_to_string(clash_file)
         .with_context(|| format!("Unable to find clash with handle {}", handle))?;
         let clash: Clash = serde_json::from_str(&contents)?;
         // DEBUG
         // dbg!(contents);
-        println!("{}", serde_json::to_string_pretty(&clash).unwrap());
+        // println!("{}", serde_json::to_string_pretty(&clash).unwrap());
         clash.pretty_print();
         Ok(())
     }
