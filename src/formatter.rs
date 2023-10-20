@@ -19,9 +19,9 @@ impl Formatter {
 
     pub fn new() -> Self {
         Formatter {
-            re_variable: Regex::new(r"\[\[([^\]]+)\]\]").unwrap(),
-            re_constant: Regex::new(r"\{\{([^\}]+)\}\}").unwrap(),
-            re_bold: Regex::new(r"<<([^>]+)>>").unwrap(),
+            re_variable: Regex::new(r"\[\[(.+?)\]\]").unwrap(),
+            re_constant: Regex::new(r"\{\{(.+?)\}\}").unwrap(),
+            re_bold: Regex::new(r"<<(.+?)>>").unwrap(),
             // Also capture the previous '\n' if any (`Monospace` rule)
             re_monospace: Regex::new(r"\n?`([^`]+)`").unwrap(),
 
