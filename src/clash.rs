@@ -1,4 +1,4 @@
-use serde::{Serialize, Deserialize};
+use serde::{Serialize, Deserialize, Deserializer};
 
 mod formatter;
 use formatter::Formatter;
@@ -11,9 +11,9 @@ pub struct Clash {
     #[serde(rename = "lastVersion")]
     last_version: ClashVersion,
     #[serde(rename = "upVotes")]
-    upvotes: u32,
+    upvotes: i32,
     #[serde(rename = "downVotes")]
-    downvotes: u32,
+    downvotes: i32,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -21,21 +21,27 @@ struct ClashVersion {
     version: u32,
     data: ClashData,
     #[serde(rename = "statementHTML")]
-    statement_html: String,
+    statement_html: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 struct ClashData {
     title: String,
+
+    // apparently some of these fields are missing in very old clashes, default to false
+    #[serde(default)]
     fastest: bool,
+    #[serde(default)]
     reverse: bool,
+    #[serde(default)]
     shortest: bool,
+
     statement: String,
     #[serde(rename = "testCases")]
     testcases: Vec<ClashTestCase>,
     constraints: Option<String>,
     #[serde(rename = "stubGenerator")]
-    stub_generator: String,
+    stub_generator: Option<String>,
     #[serde(rename = "inputDescription")]
     input_description: String,
     #[serde(rename = "outputDescription")]
@@ -44,6 +50,7 @@ struct ClashData {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ClashTestCase {
+    #[serde(deserialize_with = "deserialize_testcase_title")]
     pub title: String,
     #[serde(rename = "testIn")]
     pub test_in: String,
@@ -51,6 +58,25 @@ pub struct ClashTestCase {
     pub test_out: String,
     #[serde(rename = "isValidator")]
     pub is_validator: bool,
+}
+
+// Workaround for some old clashes which have testcase title as
+// { "title": { "2": "The Actual Title" } } for whatever reason
+fn deserialize_testcase_title<'de, D: Deserializer<'de>>(de: D) -> Result<String, D::Error> {
+    #[derive(Deserialize)]
+    #[serde(untagged)]
+    enum TempTitle {
+        Normal(String),
+        Weird {
+            #[serde(rename = "2")]
+            title: String
+        },
+    }
+    let title = match TempTitle::deserialize(de)? {
+        TempTitle::Normal(title) => title,
+        TempTitle::Weird {title} => title
+    };
+    Ok(title)
 }
 
 impl Clash {
