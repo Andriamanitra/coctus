@@ -47,7 +47,8 @@ fn cli() -> Command {
         .subcommand(
             Command::new("show")
                 .about("Show clash")
-                .arg(arg!([PUBLIC_HANDLE] "hexadecimal handle of the clash")),
+                .arg(arg!([PUBLIC_HANDLE] "hexadecimal handle of the clash"))
+                .arg(arg!(--"raw" ... "do not parse the clash"))
         )
         .subcommand(
             Command::new("next")
@@ -135,10 +136,13 @@ impl App {
 
     fn show(&self, args: &ArgMatches) -> Result<()> {
         let handle = self.handle_from_args(args).or_else(|_| self.current_handle())?;
-        println!("https://www.codingame.com/contribute/view/{}", handle);
         let clash_file = self.clash_dir.join(format!("{}.json", handle));
         let contents = std::fs::read_to_string(clash_file)
-        .with_context(|| format!("Unable to find clash with handle {}", handle))?;
+            .with_context(|| format!("Unable to find clash with handle {}", handle))?;
+        if args.get_count("raw") > 0 {
+            println!("{}", &contents);
+            return Ok(())
+        }
         let clash: Clash = serde_json::from_str(&contents)?;
         // DEBUG
         // dbg!(contents);
