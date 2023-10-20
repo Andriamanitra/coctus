@@ -35,7 +35,7 @@ impl Formatter {
     pub fn format(&self, text: &str) -> String {
         // Trim consecutive spaces (imitates html behaviour)
         // But only if it's not in a Monospace block (between backticks ``)
-        let re_backtick = Regex::new(r"`([^`]+)`|([^`]+)").unwrap();
+        let re_backtick = Regex::new(r"(`[^`]+`)|([^`]+)").unwrap();
         let re_spaces = Regex::new(r" +").unwrap();
 
         let _trimmed_spaces = re_backtick.replace_all(text, |caps: &regex::Captures| {
