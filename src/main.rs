@@ -4,7 +4,6 @@ use directories::ProjectDirs;
 use rand::seq::IteratorRandom;
 use std::path::PathBuf;
 use serde_json;
-mod clash;
 
 use clash::Clash;
 
