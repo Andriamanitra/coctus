@@ -68,10 +68,24 @@ fn cli() -> Command {
                 .arg(arg!([PUBLIC_HANDLE] "hexadecimal handle of the clash"))
         )
         .subcommand(Command::new("status").about("Show status information"))
+        .subcommand(
+            Command::new("fetch")
+                .about("Fetch a clash from codingame.com and save it locally")
+                .arg(arg!([PUBLIC_HANDLE] ... "hexadecimal handle of the clash").required(true))
+        )
 }
 
 #[derive(Debug, Clone)]
 struct PublicHandle(String);
+impl PublicHandle {
+    fn new(s: &str) -> Result<PublicHandle> {
+        if s.chars().all(|ch| ch.is_ascii_hexdigit()) {
+            Ok(PublicHandle(String::from(s)))
+        } else {
+            Err(anyhow!("Invalid clash handle '{}' (valid handles only contain characters 0-9 and a-f)", s))
+        }
+    }
+}
 impl std::fmt::Display for PublicHandle {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "{}", self.0)
@@ -94,12 +108,12 @@ impl App {
     fn current_handle(&self) -> Result<PublicHandle> {
         let content = std::fs::read_to_string(&self.current_clash_file)
             .with_context(|| format!("Unable to read {:?}", &self.current_clash_file))?;
-        Ok(PublicHandle(content))
+        PublicHandle::new(&content)
     }
 
     fn handle_from_args(&self, args: &ArgMatches) -> Result<PublicHandle> {
         match args.get_one::<String>("PUBLIC_HANDLE") {
-            Some(s) => Ok(PublicHandle(s.to_owned())),
+            Some(s) => PublicHandle::new(s),
             None => Err(anyhow!("No clash handle given")),
         }
     }
@@ -119,10 +133,10 @@ impl App {
                 .file_name()
                 .into_string()
                 .expect("unable to convert OsString to String (?!?)");
-            Ok(PublicHandle(match filename.strip_suffix(".json") {
-                Some(handle) => handle.to_string(),
-                None => filename,
-            }))
+            PublicHandle::new(match filename.strip_suffix(".json") {
+                Some(handle) => handle,
+                None => &filename,
+            })
         } else {
             Err(anyhow!("Unable to randomize next clash"))
         }
@@ -257,6 +271,25 @@ impl App {
 
         Ok(())
     }
+    fn fetch(&self, args: &ArgMatches) -> Result<()> {
+        if let Some(handles) = args.get_many::<String>("PUBLIC_HANDLE") {
+            for handle in handles {
+                let handle = PublicHandle::new(handle)?;
+                let http = reqwest::blocking::Client::new();
+                let res = http.post("https://www.codingame.com/services/Contribution/findContribution")
+                    .body(format!(r#"["{}", true]"#, handle))
+                    .header(reqwest::header::CONTENT_TYPE, "application/json")
+                    .send()?;
+                let content = res.error_for_status()?.text()?;
+                let clash_file_path = self.clash_dir.join(format!("{}.json", handle));
+                std::fs::write(&clash_file_path, &content)?;
+                println!("Saved clash {} as {}", &handle, &clash_file_path.display());
+            }
+            Ok(())
+        } else {
+            Err(anyhow!("fetched no clashes"))
+        }
+    }
 }
 
 fn main() -> Result<()> {
@@ -271,6 +304,7 @@ fn main() -> Result<()> {
         Some(("next", args)) => app.next(args),
         Some(("status", args)) => app.status(args),
         Some(("run", args)) => app.run(args),
+        Some(("fetch", args)) => app.fetch(args),
         _ => Err(anyhow!("unimplemented subcommand"))
     }
 }
