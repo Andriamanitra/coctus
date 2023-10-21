@@ -167,10 +167,14 @@ impl App {
         println!("Current clash file: {}", self.current_clash_file.display());
         match self.current_handle() {
             Ok(handle) => println!("Current clash: {}", handle),
-            _ => println!("Current clash: -"),
+            Err(_) => println!("Current clash: -"),
         }
         println!("Clash dir: {}", self.clash_dir.display());
-        println!("Number of clashes: {}", self.clashes()?.count());
+        let num_clashes = match self.clashes() {
+            Ok(clashes) => clashes.count(),
+            Err(_) => 0,
+        };
+        println!("Number of clashes: {}", num_clashes);
         Ok(())
     }
 
