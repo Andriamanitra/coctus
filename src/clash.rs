@@ -1,4 +1,5 @@
 use serde::{Serialize, Deserialize, Deserializer};
+use regex::Regex;
 
 mod formatter;
 use formatter::Formatter;
@@ -129,8 +130,16 @@ impl Clash {
             let example_in: &String = &example.test_in;
             let example_out: &String = &example.test_out;
 
+            // For visibility: turn spaces into dim "•" and newlines into dim "¶"
+            let visual_example_in = Regex::new(r"\n")
+              .unwrap()
+              .replace_all(&example_in, "\x1b[2m¶\n\x1b[0m");
+            let visual_example_in = Regex::new(r" ")
+              .unwrap()
+              .replace_all(&visual_example_in, "\x1b[2m•\x1b[0m");
+
             writeln!(&mut buf, "\x1b[33mExample:\x1b[39;49m").unwrap();
-            writeln!(&mut buf, "{}\n", &example_in).unwrap();
+            writeln!(&mut buf, "{}\n", &visual_example_in).unwrap();
             writeln!(&mut buf, "\x1b[1;32m{}\x1b[39;49m", &example_out).unwrap();
         } else {
             // This should probably be a breaking error
