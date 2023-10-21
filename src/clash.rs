@@ -48,12 +48,30 @@ struct ClashData {
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct ClashTestCase {
+pub struct ClashTestCase {
     #[serde(deserialize_with = "deserialize_testcase_title")]
     title: String,
     test_in: String,
     test_out: String,
     is_validator: bool,
+
+// Workaround for some old clashes which have testcase title as
+// { "title": { "2": "The Actual Title" } } for whatever reason
+fn deserialize_testcase_title<'de, D: Deserializer<'de>>(de: D) -> Result<String, D::Error> {
+    #[derive(Deserialize)]
+    #[serde(untagged)]
+    enum TempTitle {
+        Normal(String),
+        Weird {
+            #[serde(rename = "2")]
+            title: String
+        },
+    }
+    let title = match TempTitle::deserialize(de)? {
+        TempTitle::Normal(title) => title,
+        TempTitle::Weird {title} => title
+    };
+    Ok(title)
 }
 
 // Workaround for some old clashes which have testcase title as
@@ -78,6 +96,8 @@ fn deserialize_testcase_title<'de, D: Deserializer<'de>>(de: D) -> Result<String
 impl Clash {
     pub fn testcases(&self) -> &Vec<ClashTestCase> {
         &self.last_version.data.testcases
+    }
+  
     }
     pub fn pretty_print(&self) {
         use std::io::Write;
