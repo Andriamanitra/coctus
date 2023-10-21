@@ -7,7 +7,7 @@ edition = "2021"
 path = "src/clash.rs"
 
 [dependencies]
-clap = { version = "4.4.6", features = ["derive"] }
+clap = { version = "4.4.6", features = ["derive", "cargo"] }
 directories = "5.0"
 anyhow = "1.0.75"
 rand = "0.8.5"

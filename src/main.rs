@@ -44,6 +44,7 @@ pub fn run_test(run: &mut std::process::Command, testcase: &clash::ClashTestCase
 fn cli() -> Command {
     Command::new("clash")
         .about("Clash CLI")
+        .version(clap::crate_version!())
         .subcommand_required(true)
         .arg_required_else_help(true)
         .subcommand(
