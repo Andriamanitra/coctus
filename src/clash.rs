@@ -1,5 +1,4 @@
-use serde::{Serialize, Deserialize};
-use regex::Regex;
+use serde::{Serialize, Deserialize, Deserializer};
 
 mod formatter;
 use formatter::Formatter;
@@ -7,15 +6,14 @@ use formatter::Formatter;
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Clash {
     id: u32,
-    nickname: String,
     #[serde(rename = "publicHandle")]
     public_handle: String,
     #[serde(rename = "lastVersion")]
     last_version: ClashVersion,
     #[serde(rename = "upVotes")]
-    upvotes: u32,
+    upvotes: i32,
     #[serde(rename = "downVotes")]
-    downvotes: u32,
+    downvotes: i32,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -23,21 +21,27 @@ struct ClashVersion {
     version: u32,
     data: ClashData,
     #[serde(rename = "statementHTML")]
-    statement_html: String,
+    statement_html: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 struct ClashData {
     title: String,
+
+    // apparently some of these fields are missing in very old clashes, default to false
+    #[serde(default)]
     fastest: bool,
+    #[serde(default)]
     reverse: bool,
+    #[serde(default)]
     shortest: bool,
+
     statement: String,
     #[serde(rename = "testCases")]
     testcases: Vec<ClashTestCase>,
-    constraints: String,
+    constraints: Option<String>,
     #[serde(rename = "stubGenerator")]
-    stub_generator: String,
+    stub_generator: Option<String>,
     #[serde(rename = "inputDescription")]
     input_description: String,
     #[serde(rename = "outputDescription")]
@@ -45,17 +49,40 @@ struct ClashData {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct ClashTestCase {
-    title: String,
+pub struct ClashTestCase {
+    #[serde(deserialize_with = "deserialize_testcase_title")]
+    pub title: String,
     #[serde(rename = "testIn")]
-    test_in: String,
+    pub test_in: String,
     #[serde(rename = "testOut")]
-    test_out: String,
+    pub test_out: String,
     #[serde(rename = "isValidator")]
-    is_validator: bool,
+    pub is_validator: bool,
+}
+
+// Workaround for some old clashes which have testcase title as
+// { "title": { "2": "The Actual Title" } } for whatever reason
+fn deserialize_testcase_title<'de, D: Deserializer<'de>>(de: D) -> Result<String, D::Error> {
+    #[derive(Deserialize)]
+    #[serde(untagged)]
+    enum TempTitle {
+        Normal(String),
+        Weird {
+            #[serde(rename = "2")]
+            title: String
+        },
+    }
+    let title = match TempTitle::deserialize(de)? {
+        TempTitle::Normal(title) => title,
+        TempTitle::Weird {title} => title
+    };
+    Ok(title)
 }
 
 impl Clash {
+    pub fn testcases(&self) -> &Vec<ClashTestCase> {
+        &self.last_version.data.testcases
+    }
     pub fn pretty_print(&self) {
         use std::io::Write;
 
@@ -76,16 +103,20 @@ impl Clash {
             let section_color = "\x1b[33m".to_string(); // Yellow
     
             writeln!(&mut buf, "{}\n", formatter.format(&cdata.statement)).unwrap();
-            writeln!(&mut buf, "{}Constraints:\x1b[39;49m", section_color).unwrap();
-            writeln!(&mut buf, "{}\n", formatter.format(&cdata.constraints)).unwrap();
+            if let Some(constraints) = &cdata.constraints {
+                writeln!(&mut buf, "{}Constraints:\x1b[39;49m", section_color).unwrap();
+                writeln!(&mut buf, "{}\n", formatter.format(&constraints)).unwrap();
+            }
             writeln!(&mut buf, "{}Input:\x1b[39;49m", section_color).unwrap();
             writeln!(&mut buf, "{}\n", formatter.format(&cdata.input_description)).unwrap();
             writeln!(&mut buf, "{}Output:\x1b[39;49m", section_color).unwrap();
             writeln!(&mut buf, "{}\n", formatter.format(&cdata.output_description)).unwrap();
         } else {
             writeln!(&mut buf, "{}\n", cdata.statement).unwrap();
-            writeln!(&mut buf, "Constraints:").unwrap();
-            writeln!(&mut buf, "{}\n", cdata.constraints).unwrap();
+            if let Some(constraints) = &cdata.constraints {
+                writeln!(&mut buf, "Constraints:").unwrap();
+                writeln!(&mut buf, "{}\n", constraints).unwrap();
+            }
             writeln!(&mut buf, "Input:").unwrap();
             writeln!(&mut buf, "{}\n", cdata.input_description).unwrap();
             writeln!(&mut buf, "Output:").unwrap();
@@ -98,16 +129,8 @@ impl Clash {
             let example_in: &String = &example.test_in;
             let example_out: &String = &example.test_out;
 
-            // For visibility: turn spaces into dim "•" and newlines into dim "¶"
-            let visual_example_in = Regex::new(r"\n")
-              .unwrap()
-              .replace_all(&example_in, "\x1b[2m¶\n\x1b[0m");
-            let visual_example_in = Regex::new(r" ")
-              .unwrap()
-              .replace_all(&visual_example_in, "\x1b[2m•\x1b[0m");
-    
             writeln!(&mut buf, "\x1b[33mExample:\x1b[39;49m").unwrap();
-            writeln!(&mut buf, "{}\n", &visual_example_in).unwrap();
+            writeln!(&mut buf, "{}\n", &example_in).unwrap();
             writeln!(&mut buf, "\x1b[1;32m{}\x1b[39;49m", &example_out).unwrap();
         } else {
             // This should probably be a breaking error
