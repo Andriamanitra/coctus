@@ -44,11 +44,13 @@ pub fn run_test(run: &mut std::process::Command, testcase: &clash::ClashTestCase
 fn cli() -> Command {
     Command::new("clash")
         .about("Clash CLI")
+        .subcommand_required(true)
+        .arg_required_else_help(true)
         .subcommand(
             Command::new("show")
                 .about("Show clash")
+                .arg(arg!(--"raw" "do not parse the clash"))
                 .arg(arg!([PUBLIC_HANDLE] "hexadecimal handle of the clash"))
-                .arg(arg!(--"raw" ... "do not parse the clash"))
         )
         .subcommand(
             Command::new("next")
@@ -59,9 +61,9 @@ fn cli() -> Command {
             Command::new("run")
                 .about("Test a solution against current clash")
                 .arg(arg!(--"build-command" <COMMAND> "command that compiles the solution"))
-                .arg(arg!(--"command" <COMMAND> "command that executes the solution"))
-                .arg(arg!(--"auto-advance" ... "automatically move on to next clash if all test cases pass"))
-                .arg(arg!(--"ignore-failures" ... "run all tests despite failures"))
+                .arg(arg!(--"command" <COMMAND> "command that executes the solution").required(true))
+                .arg(arg!(--"auto-advance" "automatically move on to next clash if all test cases pass"))
+                .arg(arg!(--"ignore-failures" "run all tests despite failures"))
                 .arg(arg!([PUBLIC_HANDLE] "hexadecimal handle of the clash"))
         )
         .subcommand(Command::new("status").about("Show status information"))
@@ -139,7 +141,7 @@ impl App {
         let clash_file = self.clash_dir.join(format!("{}.json", handle));
         let contents = std::fs::read_to_string(clash_file)
             .with_context(|| format!("Unable to find clash with handle {}", handle))?;
-        if args.get_count("raw") > 0 {
+        if args.get_flag("raw") {
             println!("{}", &contents);
             return Ok(())
         }
@@ -155,7 +157,8 @@ impl App {
         let next_handle = self
             .handle_from_args(args)
             .or_else(|_| self.random_handle())?;
-        println!("{:?}", next_handle);
+        println!("Changed clash to https://codingame.com/contribute/view/{}", next_handle);
+        println!(" Local file: {}/{}.json", &self.clash_dir.to_str().unwrap(), next_handle);
         std::fs::write(&self.current_clash_file, next_handle.to_string())?;
         Ok(())
     }
@@ -206,7 +209,7 @@ impl App {
                     let mut run = std::process::Command::new(exe);
                     let run = run.args(exe_args);
                     let clash = self.read_clash(&handle)?;
-                    let ignore_failures = args.get_count("ignore-failures") != 0;
+                    let ignore_failures = args.get_flag("ignore-failures");
                     let mut num_passed = 0;
                     let total = clash.testcases().len();
                     for testcase in clash.testcases() {
@@ -234,7 +237,7 @@ impl App {
                     if num_passed == total {
                         println!("{}/{} tests passed!", num_passed, total);
                         // Move on to next clash if --auto-advance is set
-                        if args.get_count("auto-advance") != 0 {
+                        if args.get_flag("auto-advance") {
                             let next_handle = self.random_handle()?;
                             std::fs::write(&self.current_clash_file, next_handle.to_string())?;
                             println!("Moving on to next clash...");
@@ -263,6 +266,6 @@ fn main() -> Result<()> {
         Some(("next", args)) => app.next(args),
         Some(("status", args)) => app.status(args),
         Some(("run", args)) => app.run(args),
-        _ => Ok(()),
+        _ => Err(anyhow!("unimplemented subcommand"))
     }
 }
