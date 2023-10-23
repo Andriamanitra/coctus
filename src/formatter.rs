@@ -3,8 +3,6 @@ use ansi_term::Style;
 use regex::Regex;
 
 pub struct Formatter {
-    use_colors: bool,
-
     re_variable: Regex,
     re_constant: Regex,
     re_bold: Regex,
@@ -14,8 +12,6 @@ pub struct Formatter {
 impl Default for Formatter {
     fn default() -> Self {
         Formatter {
-            use_colors: true,
-
             re_variable:  Regex::new(r"\[\[(.+?)\]\]").unwrap(),
             re_constant:  Regex::new(r"\{\{(.+?)\}\}").unwrap(),
             re_bold:      Regex::new(r"<<(.+?)>>").unwrap(),
@@ -30,11 +26,6 @@ impl Formatter {
     // For testing `Monospace`: 23214afcdb23616e230097d138bd872ea7c75
     // TODO: support nested formatting <<Next [[n]] lines:>>
     pub fn format(&self, text: &str, output_style: &OutputStyle) -> String {
-        // Don't need to do nothing if --no-color is on
-        if !self.use_colors {
-            return text.to_string();
-        }
-
         // Trim consecutive spaces (imitates html behaviour)
         // But only if it's not in a Monospace block (between backticks ``)
         let re_backtick = Regex::new(r"(`[^`]+`)|([^`]+)").unwrap();
