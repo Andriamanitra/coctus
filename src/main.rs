@@ -2,10 +2,14 @@ use anyhow::{anyhow, Context, Result};
 use clap::ArgMatches;
 use directories::ProjectDirs;
 use rand::seq::IteratorRandom;
-use serde_json;
 use std::path::PathBuf;
 
+pub mod clash;
+pub mod formatter;
+pub mod outputstyle;
+
 use clash::Clash;
+use outputstyle::OutputStyle;
 
 pub enum TestRunResult {
     Success,
@@ -16,6 +20,12 @@ pub enum TestRunResult {
     RuntimeError {
         stderr: String
     }
+}
+
+#[derive(Clone)]
+pub enum OutputStyleOption {
+    Default,
+    Plain
 }
 
 pub fn run_test(run: &mut std::process::Command, testcase: &clash::ClashTestCase) -> Result<TestRunResult> {
@@ -52,7 +62,14 @@ fn cli() -> clap::Command {
         .subcommand(
             Command::new("show")
                 .about("Show clash")
+                // TODO: change these flags to some kind of enum (eg. --style=plain)
                 .arg(arg!(--"raw" "do not parse the clash"))
+                .arg(arg!(--"no-color" "don't use ANSI colors in the output"))
+                .arg(
+                    arg!(--"show-whitespace" [BOOL] "render ¶ and • in place of newlines and spaces (default: true)")
+                        .value_parser(clap::builder::BoolishValueParser::new())
+                        .default_missing_value("true")
+                )
                 .arg(arg!([PUBLIC_HANDLE] "hexadecimal handle of the clash"))
         )
         .subcommand(
@@ -187,12 +204,23 @@ impl App {
             println!("{}", &contents);
             return Ok(())
         }
+        let mut styles = if args.get_flag("no-color") {
+            OutputStyle::plain()
+        } else {
+            OutputStyle::default()
+        };
+        if let Some(show_ws) = args.get_one::<bool>("show-whitespace") {
+            if *show_ws {
+                styles.input_whitespace = styles.input_whitespace.or(Some(styles.input));
+                styles.output_whitespace = styles.output_whitespace.or(Some(styles.output));
+            } else {
+                styles.input_whitespace = None;
+                styles.output_whitespace = None;
+            }
+        }
         let clash: Clash = serde_json::from_str(&contents)?;
-        // DEBUG
-        // dbg!(contents);
-        // println!("{}", serde_json::to_string_pretty(&clash).unwrap());
-        clash.pretty_print();
-        Ok(())
+
+        clash.pretty_print(styles)
     }
 
     fn next(&self, args: &ArgMatches) -> Result<()> {

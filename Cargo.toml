@@ -3,9 +3,6 @@ name = "clash"
 version = "0.1.0"
 edition = "2021"
 
-[lib]
-path = "src/clash.rs"
-
 [dependencies]
 clap = { version = "4.4.6", features = ["derive", "cargo"] }
 directories = "5.0"
@@ -17,3 +14,4 @@ shlex = "1.2.0"
 regex = "1"
 reqwest = { version = "0.11.22", features = ["blocking"] }
 clap_complete = "4.4.3"
+ansi_term = "0.12"
