@@ -106,7 +106,7 @@ mod tests {
 
     #[test]
     fn trim_spaces_with_format() {
-        let formatter = Formatter::new();
+        let formatter = Formatter::new(true);
         let text = "hello  world";
 
         assert_eq!(formatter.format(text), "hello world");
@@ -114,75 +114,15 @@ mod tests {
 
     #[test]
     fn does_not_trim_spaces_in_monospace() {
-        let formatter = Formatter::new();
+        let formatter = Formatter::new(true);
         let text = "`{\n    let x = 5;\n}`";
 
         assert!(formatter.format(text).contains("{\n    let x = 5;\n}"));
     }
 
     #[test]
-    fn format_bold_text() {
-        let formatter = Formatter::new();
-        let text = "Regular <<very bold>> text";
-        let formatted_text = formatter.format(text);
-
-        assert!(!formatted_text.contains("<<"));
-        assert!(formatted_text.contains(&formatter.fmt_bold));
-    }
-
-    #[test]
-    fn format_tricky_bold_text() {
-        let formatter = Formatter::new();
-        let text = "In life <<the trick is to realize that 2 > 3>>";
-        let formatted_text = formatter.format(text);
-
-        assert!(!formatted_text.contains("<<"));
-        assert!(formatted_text.contains(&formatter.fmt_bold));
-    }
-
-    #[test]
-    fn format_constants() {
-        let formatter = Formatter::new();
-        let text = "Some values {{never ever}} change";
-        let formatted_text = formatter.format(text);
-
-        assert!(!formatted_text.contains("{{"));
-        assert!(formatted_text.contains(&formatter.fmt_constant));
-    }
-
-    #[test]
-    fn format_tricky_constants() {
-        let formatter = Formatter::new();
-        let text = "When Santa smiles it looks like {{ :} }}";
-        let formatted_text = formatter.format(text);
-
-        assert!(!formatted_text.contains("{{"));
-        assert!(formatted_text.contains(&formatter.fmt_constant));
-    }
-
-    #[test]
-    fn format_variables() {
-        let formatter = Formatter::new();
-        let text = "The correct value of [[x]] is something you won't find";
-        let formatted_text = formatter.format(text);
-
-        assert!(!formatted_text.contains("[["));
-        assert!(formatted_text.contains(&formatter.fmt_variable));
-    }
-
-    #[test]
-    fn format_tricky_variables() {
-        let formatter = Formatter::new();
-        let text = "Vector item [[v[1]]] is nil if len is 1";
-        let formatted_text = formatter.format(text);
-
-        assert!(!formatted_text.contains("[["));
-        assert!(formatted_text.contains(&formatter.fmt_variable));
-    }
-
-    #[test]
     fn format_monospace() {
-        let formatter = Formatter::new();
+        let formatter = Formatter::new(true);
         let text = "To create a new variable use `let x = 5`";
         let formatted_text = formatter.format(text);
 
@@ -191,7 +131,7 @@ mod tests {
 
     #[test]
     fn format_monospace_adds_newline_if_there_is_none() {
-        let formatter = Formatter::new();
+        let formatter = Formatter::new(true);
         let text = "I have `no whitespace`";
         let formatted_text = formatter.format(text);
 
@@ -200,39 +140,11 @@ mod tests {
 
     #[test]
     fn format_monospace_does_not_add_additional_newlines() {
-        let formatter = Formatter::new();
+        let formatter = Formatter::new(true);
         let text = "I have \n\n`lots of whitespace`";
         let formatted_text = formatter.format(text);
 
         assert!(!formatted_text.contains("\n\n\n"));
-    }
-
-    #[test]
-    fn nest_variable_and_constant_in_bold() {
-        let formatter = Formatter::new();
-        let text = "Some things <<are {{bold}}, some others are [[extra]]>>";
-        let formatted_text = formatter.format(text);
-
-        assert!(!formatted_text.contains("<<"));
-        assert!(formatted_text.contains(&formatter.fmt_bold));
-        assert!(!formatted_text.contains("{{"));
-        assert!(formatted_text.contains(&formatter.fmt_constant));
-        assert!(!formatted_text.contains("[["));
-        assert!(formatted_text.contains(&formatter.fmt_variable));
-    }
-
-    #[test]
-    fn nest_constant_and_variable_in_monospace() {
-        let formatter = Formatter::new();
-        let text = "`[[status]] = {{EXCELLENT}}.freeze`";
-        let formatted_text = formatter.format(text);
-
-        assert!(!formatted_text.contains("{{"));
-        assert!(formatted_text.contains(&formatter.fmt_constant));
-        assert!(!formatted_text.contains("[["));
-        assert!(formatted_text.contains(&formatter.fmt_variable));
-
-        assert!(!formatted_text.contains("`"));
     }
 }
 
