@@ -1,9 +1,9 @@
 use anyhow::{anyhow, Context, Result};
-use clap::{arg, ArgMatches, Command};
+use clap::ArgMatches;
 use directories::ProjectDirs;
 use rand::seq::IteratorRandom;
-use std::path::PathBuf;
 use serde_json;
+use std::path::PathBuf;
 
 use clash::Clash;
 
@@ -41,7 +41,9 @@ pub fn run_test(run: &mut std::process::Command, testcase: &clash::ClashTestCase
     }
 }
 
-fn cli() -> Command {
+fn cli() -> clap::Command {
+    use clap::{arg, value_parser, Command};
+
     Command::new("clash")
         .about("Clash CLI")
         .version(clap::crate_version!())
@@ -71,7 +73,12 @@ fn cli() -> Command {
         .subcommand(
             Command::new("fetch")
                 .about("Fetch a clash from codingame.com and save it locally")
-                .arg(arg!([PUBLIC_HANDLE] ... "hexadecimal handle of the clash").required(true))
+                .arg(arg!(<PUBLIC_HANDLE> ... "hexadecimal handle of the clash"))
+        )
+        .subcommand(
+            Command::new("generate-shell-completion")
+                .about("Generate shell completion")
+                .arg(arg!(<SHELL>).value_parser(value_parser!(clap_complete::Shell)))
         )
 }
 
@@ -271,6 +278,7 @@ impl App {
 
         Ok(())
     }
+
     fn fetch(&self, args: &ArgMatches) -> Result<()> {
         if let Some(handles) = args.get_many::<String>("PUBLIC_HANDLE") {
             for handle in handles {
@@ -290,6 +298,18 @@ impl App {
             Err(anyhow!("fetched no clashes"))
         }
     }
+
+    fn generate_completions(&self, args: &ArgMatches) -> Result<()> {
+        let generator = args
+            .get_one::<clap_complete::Shell>("SHELL")
+            .copied()
+            .with_context(|| anyhow!("shell required"))?;
+        let mut cmd = cli();
+        let name = String::from(cmd.get_name());
+        eprintln!("Generating {generator} completions...");
+        clap_complete::generate(generator, &mut cmd, name, &mut std::io::stdout());
+        Ok(())
+    }
 }
 
 fn main() -> Result<()> {
@@ -305,6 +325,7 @@ fn main() -> Result<()> {
         Some(("status", args)) => app.status(args),
         Some(("run", args)) => app.run(args),
         Some(("fetch", args)) => app.fetch(args),
+        Some(("generate-shell-completion", args)) => app.generate_completions(args),
         _ => Err(anyhow!("unimplemented subcommand"))
     }
 }
