@@ -1,15 +1,19 @@
 use regex::Regex;
+use ansi_term::Style;
+use ansi_term::Colour;
 
 pub struct Formatter {
+    colour_mode: bool,
+
     re_variable: Regex,
     re_constant: Regex,
     re_bold: Regex,
     re_monospace: Regex,
 
-    fmt_variable: String, 
-    fmt_constant: String, 
-    fmt_bold: String, 
-    fmt_monospace: String, 
+    fmt_variable: Colour, 
+    fmt_constant: Colour, 
+    fmt_bold: Style, 
+    fmt_monospace: Style, 
 }
 
 impl Formatter {
@@ -17,27 +21,33 @@ impl Formatter {
     // For testing `Monospace`: 23214afcdb23616e230097d138bd872ea7c75
     // TODO: support nested formatting <<Next [[n]] lines:>>
 
-    pub fn new() -> Self {
+    pub fn new(colour_mode: bool) -> Self {
         Formatter {
-            re_variable: Regex::new(r"\[\[(.+?)\]\]").unwrap(),
-            re_constant: Regex::new(r"\{\{(.+?)\}\}").unwrap(),
-            re_bold: Regex::new(r"<<(.+?)>>").unwrap(),
+            colour_mode,
+
+            re_variable:  Regex::new(r"\[\[(.+?)\]\]").unwrap(),
+            re_constant:  Regex::new(r"\{\{(.+?)\}\}").unwrap(),
+            re_bold:      Regex::new(r"<<(.+?)>>").unwrap(),
             // Also capture the previous '\n' if any (`Monospace` rule)
             re_monospace: Regex::new(r"\n?`([^`]+)`").unwrap(),
 
-            fmt_variable:  "\x1b[33m".to_string(),    // Yellow
-            fmt_constant:  "\x1b[34m".to_string(),    // Blue
-            fmt_bold:      "\x1b[3;39m".to_string(),  // Italics
-            fmt_monospace: "\x1b[39;49m".to_string(), // Do nothing for the moment
+            fmt_variable:  Colour::Yellow,
+            fmt_constant:  Colour::Blue,
+            fmt_bold:      Style::new().italic(),
+            fmt_monospace: Style::default(), // Do nothing for the moment
         }
     }
 
     pub fn format(&self, text: &str) -> String {
+        // Don't need to do nothing if --no-color is on
+        if !self.colour_mode {
+            return text.to_string();
+        }
+
         // Trim consecutive spaces (imitates html behaviour)
         // But only if it's not in a Monospace block (between backticks ``)
         let re_backtick = Regex::new(r"(`[^`]+`)|([^`]+)").unwrap();
         let re_spaces = Regex::new(r" +").unwrap();
-
         let _trimmed_spaces = re_backtick.replace_all(text, |caps: &regex::Captures| {
             if let Some(backtick_text) = caps.get(1) {
                 backtick_text.as_str().to_string()
@@ -49,21 +59,44 @@ impl Formatter {
         }).as_bytes().to_vec();
         let trimmed_spaces = std::str::from_utf8(&_trimmed_spaces).unwrap();
 
+        // Replace codingame formatting with proper colours
         let formatted_var = self.re_variable.replace_all(trimmed_spaces, |caps: &regex::Captures| {
-            format!("{}{}\x1b[39;49m", &self.fmt_variable, &caps[1])
+            self.fmt_variable.paint(&caps[1]).to_string()
         });
         let formatted_con = self.re_constant.replace_all(&formatted_var, |caps: &regex::Captures| {
-            format!("{}{}\x1b[39;49m", &self.fmt_constant, &caps[1])
+            self.fmt_constant.paint(&caps[1]).to_string()
         });
         let formatted_bold = self.re_bold.replace_all(&formatted_con, |caps: &regex::Captures| {
-            format!("{}{}\x1b[0;0m", &self.fmt_bold, &caps[1])
+            self.fmt_bold.paint(&caps[1]).to_string()
         });
-
         let formatted_mono = self.re_monospace.replace_all(&formatted_bold, |caps: &regex::Captures| {
             // Extra newline at the start for monospace
-            format!("\n{}{}\x1b[39;49m", &self.fmt_monospace, &caps[1])
+            format!("\n{}", &self.fmt_monospace.paint(&caps[1]).to_string())
         });
+
         return formatted_mono.to_string();
+    }
+
+    // For visibility: turn spaces into dim "•" and newlines into dim "¶"
+    pub fn add_visibility(&self, text: &String, style: Style) -> String {
+        // Don't need to do nothing if --no-color is on
+        if !self.colour_mode {
+            return text.to_string();
+        }
+        
+        let text = Regex::new(r"[^ \n]+")
+            .unwrap()
+            .replace_all(&text, |caps: &regex::Captures| {
+                style.paint(&caps[0]).to_string()
+            });
+        let clear_text = Regex::new(r"\n")
+            .unwrap()
+            .replace_all(&text, Style::new().dimmed().paint("¶\n").to_string());
+        let clear_text = Regex::new(r" ")
+            .unwrap()
+            .replace_all(&clear_text, Style::new().dimmed().paint("•").to_string());
+
+        return clear_text.to_string();
     }
 }
 
