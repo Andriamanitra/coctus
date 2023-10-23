@@ -68,7 +68,7 @@ impl Formatter {
     }
 
     // For visibility: turn spaces into "•" and newlines into "¶"
-    pub fn show_whitespace(&self, text: &String, style: &Style, ws_style: &Option<Style>) -> String {
+    pub fn show_whitespace(&self, text: &str, style: &Style, ws_style: &Option<Style>) -> String {
         if let Some(ws_style) = ws_style {
             let newl = format!("{}", ws_style.paint("¶\n"));
             let space = format!("{}", ws_style.paint("•"));
