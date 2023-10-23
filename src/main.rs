@@ -58,7 +58,8 @@ fn cli() -> clap::Command {
         .subcommand(
             Command::new("next")
                 .about("Select next clash")
-                .arg(arg!([PUBLIC_HANDLE] "hexadecimal handle of the clash")),
+                .arg(arg!([PUBLIC_HANDLE] "hexadecimal handle of the clash"))
+                .after_help("Picks a random clash from locally stored clashes when PUBLIC_HANDLE is not given.")
         )
         .subcommand(
             Command::new("run")
@@ -68,17 +69,36 @@ fn cli() -> clap::Command {
                 .arg(arg!(--"auto-advance" "automatically move on to next clash if all test cases pass"))
                 .arg(arg!(--"ignore-failures" "run all tests despite failures"))
                 .arg(arg!([PUBLIC_HANDLE] "hexadecimal handle of the clash"))
+                .after_help(
+                    "If a --build-command is specified, it will be executed once before running any of the test cases. \
+                    The --command is required and will be executed once per test case.\
+                    \nIMPORTANT: The commands you provide will be executed without any sandboxing. Only run code you trust!"
+                )
         )
-        .subcommand(Command::new("status").about("Show status information"))
+        .subcommand(
+            Command::new("status").about("Show status information")
+        )
         .subcommand(
             Command::new("fetch")
                 .about("Fetch a clash from codingame.com and save it locally")
                 .arg(arg!(<PUBLIC_HANDLE> ... "hexadecimal handle of the clash"))
+                .after_help(
+                    "The PUBLIC_HANDLE of a puzzle is the last part of the URL when viewing it on the contribution section on CodinGame (1).\
+                    \nYou can fetch both clash of code and classic (in/out) puzzles.\
+                    \n (1) https://www.codingame.com/contribute/community"
+                )
         )
         .subcommand(
             Command::new("generate-shell-completion")
                 .about("Generate shell completion")
                 .arg(arg!(<SHELL>).value_parser(value_parser!(clap_complete::Shell)))
+                .after_help(
+                    "Prints shell completion for the selected shell to stdout.\
+                    \nIntended to be piped to a file. See documentation for your shell for details about where to place the completion file.\
+                    \nExamples:\
+                    \n  $ clash generate-shell-completion fish > ~/.config/fish/completions/clash.fish\
+                    \n  $ clash generate-shell-completion bash >> ~/.config/bash_completion"
+                )
         )
 }
 
