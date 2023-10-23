@@ -1,9 +1,9 @@
 use anyhow::{anyhow, Context, Result};
-use clap::{arg, ArgMatches, Command};
+use clap::ArgMatches;
 use directories::ProjectDirs;
 use rand::seq::IteratorRandom;
-use std::path::PathBuf;
 use serde_json;
+use std::path::PathBuf;
 
 use clash::Clash;
 
@@ -41,7 +41,9 @@ pub fn run_test(run: &mut std::process::Command, testcase: &clash::ClashTestCase
     }
 }
 
-fn cli() -> Command {
+fn cli() -> clap::Command {
+    use clap::{arg, value_parser, Command};
+
     Command::new("clash")
         .about("Clash CLI")
         .version(clap::crate_version!())
@@ -56,7 +58,8 @@ fn cli() -> Command {
         .subcommand(
             Command::new("next")
                 .about("Select next clash")
-                .arg(arg!([PUBLIC_HANDLE] "hexadecimal handle of the clash")),
+                .arg(arg!([PUBLIC_HANDLE] "hexadecimal handle of the clash"))
+                .after_help("Picks a random clash from locally stored clashes when PUBLIC_HANDLE is not given.")
         )
         .subcommand(
             Command::new("run")
@@ -66,12 +69,50 @@ fn cli() -> Command {
                 .arg(arg!(--"auto-advance" "automatically move on to next clash if all test cases pass"))
                 .arg(arg!(--"ignore-failures" "run all tests despite failures"))
                 .arg(arg!([PUBLIC_HANDLE] "hexadecimal handle of the clash"))
+                .after_help(
+                    "If a --build-command is specified, it will be executed once before running any of the test cases. \
+                    The --command is required and will be executed once per test case.\
+                    \nIMPORTANT: The commands you provide will be executed without any sandboxing. Only run code you trust!"
+                )
         )
-        .subcommand(Command::new("status").about("Show status information"))
+        .subcommand(
+            Command::new("status").about("Show status information")
+        )
+        .subcommand(
+            Command::new("fetch")
+                .about("Fetch a clash from codingame.com and save it locally")
+                .arg(arg!(<PUBLIC_HANDLE> ... "hexadecimal handle of the clash"))
+                .after_help(
+                    "The PUBLIC_HANDLE of a puzzle is the last part of the URL when viewing it on the contribution section on CodinGame (1).\
+                    \nYou can fetch both clash of code and classic (in/out) puzzles.\
+                    \n (1) https://www.codingame.com/contribute/community"
+                )
+        )
+        .subcommand(
+            Command::new("generate-shell-completion")
+                .about("Generate shell completion")
+                .arg(arg!(<SHELL>).value_parser(value_parser!(clap_complete::Shell)))
+                .after_help(
+                    "Prints shell completion for the selected shell to stdout.\
+                    \nIntended to be piped to a file. See documentation for your shell for details about where to place the completion file.\
+                    \nExamples:\
+                    \n  $ clash generate-shell-completion fish > ~/.config/fish/completions/clash.fish\
+                    \n  $ clash generate-shell-completion bash >> ~/.config/bash_completion"
+                )
+        )
 }
 
 #[derive(Debug, Clone)]
 struct PublicHandle(String);
+impl PublicHandle {
+    fn new(s: &str) -> Result<PublicHandle> {
+        if s.chars().all(|ch| ch.is_ascii_hexdigit()) {
+            Ok(PublicHandle(String::from(s)))
+        } else {
+            Err(anyhow!("Invalid clash handle '{}' (valid handles only contain characters 0-9 and a-f)", s))
+        }
+    }
+}
 impl std::fmt::Display for PublicHandle {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "{}", self.0)
@@ -94,12 +135,12 @@ impl App {
     fn current_handle(&self) -> Result<PublicHandle> {
         let content = std::fs::read_to_string(&self.current_clash_file)
             .with_context(|| format!("Unable to read {:?}", &self.current_clash_file))?;
-        Ok(PublicHandle(content))
+        PublicHandle::new(&content)
     }
 
     fn handle_from_args(&self, args: &ArgMatches) -> Result<PublicHandle> {
         match args.get_one::<String>("PUBLIC_HANDLE") {
-            Some(s) => Ok(PublicHandle(s.to_owned())),
+            Some(s) => PublicHandle::new(s),
             None => Err(anyhow!("No clash handle given")),
         }
     }
@@ -119,10 +160,10 @@ impl App {
                 .file_name()
                 .into_string()
                 .expect("unable to convert OsString to String (?!?)");
-            Ok(PublicHandle(match filename.strip_suffix(".json") {
-                Some(handle) => handle.to_string(),
-                None => filename,
-            }))
+            PublicHandle::new(match filename.strip_suffix(".json") {
+                Some(handle) => handle,
+                None => &filename,
+            })
         } else {
             Err(anyhow!("Unable to randomize next clash"))
         }
@@ -257,6 +298,38 @@ impl App {
 
         Ok(())
     }
+
+    fn fetch(&self, args: &ArgMatches) -> Result<()> {
+        if let Some(handles) = args.get_many::<String>("PUBLIC_HANDLE") {
+            for handle in handles {
+                let handle = PublicHandle::new(handle)?;
+                let http = reqwest::blocking::Client::new();
+                let res = http.post("https://www.codingame.com/services/Contribution/findContribution")
+                    .body(format!(r#"["{}", true]"#, handle))
+                    .header(reqwest::header::CONTENT_TYPE, "application/json")
+                    .send()?;
+                let content = res.error_for_status()?.text()?;
+                let clash_file_path = self.clash_dir.join(format!("{}.json", handle));
+                std::fs::write(&clash_file_path, &content)?;
+                println!("Saved clash {} as {}", &handle, &clash_file_path.display());
+            }
+            Ok(())
+        } else {
+            Err(anyhow!("fetched no clashes"))
+        }
+    }
+
+    fn generate_completions(&self, args: &ArgMatches) -> Result<()> {
+        let generator = args
+            .get_one::<clap_complete::Shell>("SHELL")
+            .copied()
+            .with_context(|| anyhow!("shell required"))?;
+        let mut cmd = cli();
+        let name = String::from(cmd.get_name());
+        eprintln!("Generating {generator} completions...");
+        clap_complete::generate(generator, &mut cmd, name, &mut std::io::stdout());
+        Ok(())
+    }
 }
 
 fn main() -> Result<()> {
@@ -271,6 +344,8 @@ fn main() -> Result<()> {
         Some(("next", args)) => app.next(args),
         Some(("status", args)) => app.status(args),
         Some(("run", args)) => app.run(args),
+        Some(("fetch", args)) => app.fetch(args),
+        Some(("generate-shell-completion", args)) => app.generate_completions(args),
         _ => Err(anyhow!("unimplemented subcommand"))
     }
 }

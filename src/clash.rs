@@ -11,10 +11,20 @@ pub struct Clash {
     public_handle: String,
     #[serde(rename = "lastVersion")]
     last_version: ClashVersion,
+    #[serde(rename = "type")]
+    puzzle_type: String,
     #[serde(rename = "upVotes")]
     upvotes: i32,
     #[serde(rename = "downVotes")]
     downvotes: i32,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum PuzzleType {
+    #[serde(rename = "CLASHOFCODE")]
+    Clash,
+    #[serde(rename = "PUZZLE_INOUT")]
+    ClassicInOut
 }
 
 #[derive(Debug, Serialize, Deserialize)]
