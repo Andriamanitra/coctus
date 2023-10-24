@@ -12,11 +12,10 @@ pub struct Formatter {
 impl Default for Formatter {
     fn default() -> Self {
         Formatter {
-            re_variable:  Regex::new(r"\[\[(.+?)\]\]").unwrap(),
-            re_constant:  Regex::new(r"\{\{(.+?)\}\}").unwrap(),
-            re_bold:      Regex::new(r"<<(.+?)>>").unwrap(),
-            // Also capture the previous '\n' if any (`Monospace` rule)
-            re_monospace: Regex::new(r"\n?`([^`]+)`").unwrap(),
+            re_variable:  Regex::new(r"\[\[(.*?)\]\]").unwrap(),
+            re_constant:  Regex::new(r"\{\{(.*?)\}\}").unwrap(),
+            re_bold:      Regex::new(r"<<(.*?)>>").unwrap(),
+            re_monospace: Regex::new(r"`([^`]*?)`").unwrap(),
         }
     }
 }
@@ -30,7 +29,6 @@ impl Formatter {
         // But only if it's not in a Monospace block (between backticks ``)
         let re_backtick = Regex::new(r"(`[^`]+`)|([^`]+)").unwrap();
         let re_spaces = Regex::new(r" +").unwrap();
-
         let mut result = re_backtick.replace_all(text, |caps: &regex::Captures| {
             if let Some(backtick_text) = caps.get(1) {
                 backtick_text.as_str().to_string()
@@ -41,7 +39,41 @@ impl Formatter {
             }
         }).to_string();
 
-        // Replace codingame formatting with proper colours
+        // Deal with newlines in Monospace (irrespective of colour styles)
+        let re_monospace_trim = Regex::new(r"\n? *(`[^`]*`)").unwrap();
+        result = re_monospace_trim.replace_all(&result, |caps: &regex::Captures| {
+            format!("\n{}\n", &caps[1])
+        }).to_string();
+
+        // Nested tags.
+        // Hacky - it's based upon the fact that only 1-level nesting makes sense.
+        // It's adds reverse nester brackets so that the following replacement logic will work.
+        // <<Next [[N]] {{3}} lines:>>
+        result = self.re_bold.replace_all(&result, |caps: &regex::Captures| {
+            let escaped_vars = self.re_variable.replace_all(&caps[0], |inner_caps: &regex::Captures| {
+                format!(">>{}<<", &inner_caps[0])
+            }).to_string();
+            self.re_constant.replace_all(&escaped_vars, |inner_caps: &regex::Captures| {
+                format!(">>{}<<", &inner_caps[0])
+            }).to_string()
+        }).to_string();
+        // `Next [[N]] {{3}} lines:`
+        result = self.re_monospace.replace_all(&result, |caps: &regex::Captures| {
+            let escaped_vars = self.re_variable.replace_all(&caps[0], |inner_caps: &regex::Captures| {
+                format!("`{}`", &inner_caps[0])
+            }).to_string();
+            self.re_constant.replace_all(&escaped_vars, |inner_caps: &regex::Captures| {
+                format!("`{}`", &inner_caps[0])
+            }).to_string()
+        }).to_string();
+        // {{Next [[N]] lines}}
+        result = self.re_constant.replace_all(&result, |caps: &regex::Captures| {
+            self.re_variable.replace_all(&caps[0], |inner_caps: &regex::Captures| {
+                format!("{}{}{}", "}}", &inner_caps[0], "{{")
+            }).to_string()
+        }).to_string();
+
+        // Replace tags with corresponding styles
         if let Some(style) = output_style.variable {
             result = self.re_variable.replace_all(&result, |caps: &regex::Captures| {
                 style.paint(&caps[1]).to_string()
@@ -59,8 +91,7 @@ impl Formatter {
         }
         if let Some(style) = output_style.monospace {
             result = self.re_monospace.replace_all(&result, |caps: &regex::Captures| {
-                // Extra newline at the start for monospace
-                format!("\n{}", style.paint(&caps[1]).to_string())
+                style.paint(&caps[1]).to_string()
             }).to_string();
         }
 
@@ -130,5 +161,18 @@ mod tests {
 
         assert!(!formatted_text.contains("\n\n\n"));
     }
+
+    #[test]
+    fn format_nested() {
+        let formatter = Formatter::default();
+        let text = "<<Next [[N]] lines:>>";
+        let formatted_text = formatter.format(text, &OutputStyle::default());
+        let part1 = formatter.format("<<Next >>", &OutputStyle::default());
+        let part2 = formatter.format("[[N]]", &OutputStyle::default());
+        let part3 = formatter.format("<< lines:>>", &OutputStyle::default());
+        let final_text = format!("{}{}{}", part1, part2, part3);
+
+        assert_eq!(formatted_text, final_text);
+    }    
 }
 

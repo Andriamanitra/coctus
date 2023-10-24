@@ -37,12 +37,12 @@ impl Default for OutputStyle {
             link: Style::new().fg(Color::Yellow),
             variable: Some(Style::new().fg(Color::Yellow)),
             constant: Some(Style::new().fg(Color::Blue)),
-            bold: Some(Style::new().bold()),
+            bold: Some(Style::new().italic()),
             monospace: Some(Style::default()),
             input: Style::new().fg(Color::White),
             input_whitespace: Some(Style::new().fg(Color::Black).dimmed()),
             output: Style::new().fg(Color::Green),
-            output_whitespace: Some(Style::new().fg(Color::Black).dimmed()),
+            output_whitespace: Some(Style::new().fg(Color::White).dimmed()),
         }
     }
 }
