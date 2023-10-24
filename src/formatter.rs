@@ -21,9 +21,8 @@ impl Default for Formatter {
 }
 
 impl Formatter {
-    // TODO: finish support `Monospace` (Newline trimming)
     // For testing `Monospace`: 23214afcdb23616e230097d138bd872ea7c75
-    // TODO: support nested formatting <<Next [[n]] lines:>>
+
     pub fn format(&self, text: &str, output_style: &OutputStyle) -> String {
         // Trim consecutive spaces (imitates html behaviour)
         // But only if it's not in a Monospace block (between backticks ``)
@@ -45,9 +44,10 @@ impl Formatter {
             format!("\n{}\n", &caps[1])
         }).to_string();
 
-        // Nested tags.
+        // Nested tags (only some combinations).
         // Hacky - it's based upon the fact that only 1-level nesting makes sense.
-        // It's adds reverse nester brackets so that the following replacement logic will work.
+        // Adds reverse nester brackets so that the following replacement logic will work.
+        //      i.e : <<Next [[N]] {{3}} lines:>> becomes <<Next >>[[N]]<< {{3}} lines:>>
         // <<Next [[N]] {{3}} lines:>>
         result = self.re_bold.replace_all(&result, |caps: &regex::Captures| {
             let escaped_vars = self.re_variable.replace_all(&caps[0], |inner_caps: &regex::Captures| {
@@ -74,27 +74,21 @@ impl Formatter {
         }).to_string();
 
         // Replace tags with corresponding styles
-        if let Some(style) = output_style.variable {
-            result = self.re_variable.replace_all(&result, |caps: &regex::Captures| {
-                style.paint(&caps[1]).to_string()
-            }).to_string();
+        let regex_style_pairs = vec![
+            (&self.re_variable, &output_style.variable),
+            (&self.re_constant, &output_style.constant),
+            (&self.re_bold, &output_style.bold),
+            (&self.re_monospace, &output_style.monospace),
+        ];
+        
+        for (regex, style) in regex_style_pairs {
+            if let Some(style) = style {
+                result = regex.replace_all(&result, |caps: &regex::Captures| {
+                    style.paint(&caps[1]).to_string()
+                }).to_string();
+            }
         }
-        if let Some(style) = output_style.constant {
-            result = self.re_constant.replace_all(&result, |caps: &regex::Captures| {
-                style.paint(&caps[1]).to_string()
-            }).to_string();
-        }
-        if let Some(style) = output_style.bold {
-            result = self.re_bold.replace_all(&result, |caps: &regex::Captures| {
-                style.paint(&caps[1]).to_string()
-            }).to_string();
-        }
-        if let Some(style) = output_style.monospace {
-            result = self.re_monospace.replace_all(&result, |caps: &regex::Captures| {
-                style.paint(&caps[1]).to_string()
-            }).to_string();
-        }
-
+        
         result
     }
 
@@ -103,12 +97,10 @@ impl Formatter {
         if let Some(ws_style) = ws_style {
             let newl = format!("{}", ws_style.paint("¶\n"));
             let space = format!("{}", ws_style.paint("•"));
-
             let re_nonwhitespace = Regex::new(r"[^\n ]+").unwrap();
             re_nonwhitespace.replace_all(text, |caps: &regex::Captures| {
                 style.paint(&caps[0]).to_string()
             }).to_string().replace('\n', &newl).replace(' ', &space)
-
         } else {
             style.paint(text).to_string()
         }
