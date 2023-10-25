@@ -39,7 +39,7 @@ impl Formatter {
         }).to_string();
 
         // Deal with newlines in Monospace (irrespective of colour styles)
-        let re_monospace_trim = Regex::new(r"\n? *(`[^`]*`)").unwrap();
+        let re_monospace_trim = Regex::new(r"\n? *(`[^`]*`) *").unwrap();
         result = re_monospace_trim.replace_all(&result, |caps: &regex::Captures| {
             format!("\n{}\n", &caps[1])
         }).to_string();
@@ -143,6 +143,15 @@ mod tests {
         let formatted_text = formatter.format(text, &OutputStyle::default());
 
         assert!(formatted_text.contains("\n"));
+    }
+
+    #[test]
+    fn format_monospace_trims_trailing_spaces() {
+        let formatter = Formatter::default();
+        let text = "I have `no whitespace`        and more text";
+        let formatted_text = formatter.format(text, &OutputStyle::default());
+
+        assert!(!formatted_text.contains("\n "));
     }
 
     #[test]
