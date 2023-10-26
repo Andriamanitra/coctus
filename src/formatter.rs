@@ -1,4 +1,4 @@
-use crate::outputstyle::OutputStyle;
+use crate::{outputstyle::OutputStyle, clash::ClashTestCase};
 use ansi_term::Style;
 use regex::Regex;
 
@@ -92,17 +92,29 @@ impl Formatter {
         result
     }
 
+    pub fn format_testcase(&self, testcase: &ClashTestCase, style: &OutputStyle, header: String) -> String {
+        let header = style.title.paint(header).to_string();
+        let test_in = self.show_whitespace(
+            &testcase.test_in, &style.input, &style.input_whitespace);
+        let test_out = self.show_whitespace(
+            &testcase.test_out, &style.output, &style.output_whitespace);
+        
+        format!("{}\n{}\n\n{}", header, &test_in, &test_out)
+    }
+
     // For visibility: turn spaces into "•" and newlines into "¶"
-    pub fn show_whitespace(&self, text: &str, style: &Style, ws_style: &Option<Style>) -> String {
-        if let Some(ws_style) = ws_style {
-            let newl = format!("{}", ws_style.paint("¶\n"));
-            let space = format!("{}", ws_style.paint("•"));
+    pub fn show_whitespace(&self, text: &str, io_style: &Style, io_ws_style: &Option<Style>) -> String {
+        // io_style    can either be &OutputStyle.[input/output]
+        // io_ws_style can either be &OutputStyle.[input_whitespace/output_whitespace]
+        if let Some(io_ws_style) = io_ws_style {
+            let newl  = format!("{}", io_ws_style.paint("¶\n"));
+            let space = format!("{}", io_ws_style.paint("•"));
             let re_nonwhitespace = Regex::new(r"[^\n ]+").unwrap();
             re_nonwhitespace.replace_all(text, |caps: &regex::Captures| {
-                style.paint(&caps[0]).to_string()
+                io_style.paint(&caps[0]).to_string()
             }).to_string().replace('\n', &newl).replace(' ', &space)
         } else {
-            style.paint(text).to_string()
+            io_style.paint(text).to_string()
         }
     }
 }

@@ -34,11 +34,12 @@ fn cli() -> clap::Command {
                 .arg(arg!(--"raw" "do not parse the clash"))
                 .arg(arg!(--"no-color" "don't use ANSI colors in the output"))
                 .arg(
-                    arg!(--"show-whitespace" [BOOL] "render ¶ and • in place of newlines and spaces (default: true)")
+                    arg!(-'w' --"show-whitespace" [BOOL] "render ¶ and • in place of newlines and spaces (default: true)")
                         .value_parser(clap::builder::BoolishValueParser::new())
                         .default_missing_value("true")
                 )
                 .arg(arg!([PUBLIC_HANDLE] "hexadecimal handle of the clash"))
+                .arg(arg!(-'t' --"testcases" "show the inputs of the testset"))
         )
         .subcommand(
             Command::new("next")
@@ -172,23 +173,27 @@ impl App {
             println!("{}", &contents);
             return Ok(())
         }
-        let mut styles = if args.get_flag("no-color") {
+        let mut style = if args.get_flag("no-color") {
             OutputStyle::plain()
         } else {
             OutputStyle::default()
         };
         if let Some(show_ws) = args.get_one::<bool>("show-whitespace") {
             if *show_ws {
-                styles.input_whitespace = styles.input_whitespace.or(Some(styles.input));
-                styles.output_whitespace = styles.output_whitespace.or(Some(styles.output));
+                style.input_whitespace = style.input_whitespace.or(Some(style.input));
+                style.output_whitespace = style.output_whitespace.or(Some(style.output));
             } else {
-                styles.input_whitespace = None;
-                styles.output_whitespace = None;
+                style.input_whitespace = None;
+                style.output_whitespace = None;
             }
         }
         let clash: Clash = serde_json::from_str(&contents)?;
+        if args.get_flag("testcases") {
+            let _ = clash.print_testscases(style);
+            return Ok(())
+        }  
 
-        clash.pretty_print(styles)
+        clash.pretty_print(style)
     }
 
     fn next(&self, args: &ArgMatches) -> Result<()> {

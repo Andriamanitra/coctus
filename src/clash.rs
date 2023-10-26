@@ -95,9 +95,9 @@ impl Clash {
     pub fn testcases(&self) -> &Vec<ClashTestCase> {
         &self.last_version.data.testcases
     }
+
     pub fn pretty_print(&self, style: OutputStyle) -> Result<()> {
         let cdata: &ClashData = &self.last_version.data;
-
         let formatter = Formatter::default();
 
         // Title and link
@@ -114,16 +114,22 @@ impl Clash {
 
         // Example testcase
         let example: &ClashTestCase = &cdata.testcases[0];
-        let test_in =
-            formatter.show_whitespace(&example.test_in, &style.input, &style.input_whitespace);
-        let test_out =
-            formatter.show_whitespace(&example.test_out, &style.output, &style.output_whitespace);
-        println!(
-            "{}\n{}\n\n{}",
-            style.title.paint("Example:"),
-            &test_in,
-            &test_out
-        );
+        let header = style.title.paint("Example:").to_string();
+        println!("{}", formatter.format_testcase(example, &style, header));
+
+        Ok(())
+    }
+
+    pub fn print_testscases(&self, style: OutputStyle) -> Result<()> {
+        let formatter = Formatter::default();
+        let mut test_count: u8 = 0;
+        for testcase in self.testcases() {
+            if testcase.is_validator { continue; }
+            test_count += 1;
+            let header = format!("(TEST {}) {}", test_count, &testcase.title);
+            let test_in = formatter.format_testcase(testcase, &style, header);
+            println!("{}\n", test_in);
+        }
 
         Ok(())
     }
