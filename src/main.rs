@@ -198,12 +198,9 @@ impl App {
         let clash: Clash = serde_json::from_str(&contents)?;
 
         // Testcases subcommand
-        let testcases_to_print: Vec<usize> = args.get_many("testcases")
-            .expect("Not sure why this is here??")
-            .copied()
-            .collect();
-        // Never empty since it defaults to 999 AS LONG AS the flag is present in the command line
-        if !testcases_to_print.is_empty() {
+        if let Some(values) = args.get_many::<usize>("testcases") {
+            let testcases_to_print: Vec<usize> = values.cloned().collect();
+
             // Random default value for "print all"
             if testcases_to_print[0] == 999 {
                 let _ = clash.print_testcases(style);
@@ -225,7 +222,7 @@ impl App {
             }
 
             return Ok(())
-        }  
+        }
 
         clash.pretty_print(style)
     }
