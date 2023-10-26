@@ -120,7 +120,7 @@ impl Clash {
         Ok(())
     }
 
-    pub fn print_testscases(&self, style: OutputStyle) -> Result<()> {
+    pub fn print_testcases(&self, style: OutputStyle) -> Result<()> {
         let formatter = Formatter::default();
         let mut test_count: u8 = 0;
         for testcase in self.testcases() {

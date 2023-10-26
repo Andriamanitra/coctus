@@ -4,6 +4,8 @@ use directories::ProjectDirs;
 use rand::seq::IteratorRandom;
 use std::path::PathBuf;
 
+use crate::formatter::Formatter;
+
 pub mod clash;
 pub mod formatter;
 pub mod outputstyle;
@@ -36,10 +38,16 @@ fn cli() -> clap::Command {
                 .arg(
                     arg!(-'w' --"show-whitespace" [BOOL] "render ¶ and • in place of newlines and spaces (default: true)")
                         .value_parser(clap::builder::BoolishValueParser::new())
+                        // Needed?
                         .default_missing_value("true")
                 )
                 .arg(arg!([PUBLIC_HANDLE] "hexadecimal handle of the clash"))
-                .arg(arg!(-'t' --"testcases" "show the inputs of the testset"))
+                .arg(
+                    arg!(-'t' --"testcases" [TESTCASE_NUM] "show the inputs of the testset (shows all if no extra args)")
+                        .action(clap::ArgAction::Append)
+                        .value_parser(value_parser!(usize))
+                        .default_missing_value("999")
+                )
         )
         .subcommand(
             Command::new("next")
@@ -188,8 +196,34 @@ impl App {
             }
         }
         let clash: Clash = serde_json::from_str(&contents)?;
-        if args.get_flag("testcases") {
-            let _ = clash.print_testscases(style);
+
+        // Testcases subcommand
+        let testcases_to_print: Vec<usize> = args.get_many("testcases")
+            .expect("Not sure why this is here??")
+            .copied()
+            .collect();
+        // Never empty since it defaults to 999 AS LONG AS the flag is present in the command line
+        if !testcases_to_print.is_empty() {
+            // Random default value for "print all"
+            if testcases_to_print[0] == 999 {
+                let _ = clash.print_testcases(style);
+                return Ok(())
+            }
+
+            // println!("{} {:?}", "some args were given", &testcases_to_print);
+            let max_idx = clash.testcases().len() / 2;
+            for testcase_idx in testcases_to_print {
+                if testcase_idx > max_idx {
+                    return Err(anyhow!("Invalid index: {}. The clash only has {} tests.", testcase_idx, max_idx));
+                }
+                // To factor validators and 1-indexing
+                let actual_idx = (testcase_idx - 1) * 2;
+                let testcase = &clash.testcases()[actual_idx];
+                let formatter = Formatter::default();
+                let header = format!("(TEST {}) {}", actual_idx + 1, testcase.title);
+                println!("{}\n", formatter.format_testcase(&testcase, &style, header));
+            }
+
             return Ok(())
         }  
 
