@@ -1,6 +1,7 @@
 use crate::clash::ClashTestCase;
 use crate::formatter::Formatter;
-use ansi_term::{Color, Style};
+use crate::outputstyle::TestCaseStyle;
+use ansi_term::Color;
 use anyhow::{anyhow, Result};
 use std::process::Command;
 
@@ -8,7 +9,7 @@ use std::process::Command;
 pub enum TestRunResult {
     Success,
     WrongOutput { stdout: String, stderr: String },
-    RuntimeError { stderr: String },
+    RuntimeError { stdout: String, stderr: String },
 }
 
 pub fn make_command(cmd_str: &str) -> Result<Command> {
@@ -47,72 +48,80 @@ pub fn run_test(run: &mut Command, testcase: &ClashTestCase) -> Result<TestRunRe
     } else if output.status.success() {
         Ok(TestRunResult::WrongOutput { stdout, stderr })
     } else {
-        Ok(TestRunResult::RuntimeError { stderr })
+        Ok(TestRunResult::RuntimeError { stdout, stderr })
     }
 }
 
 pub fn show_test_result(result: &TestRunResult, testcase: &ClashTestCase) {
-    // TODO: use OutputStyle
-    let success_style = Style::new().on(Color::Green);
-    let failure_style = Style::new().on(Color::Red);
-    let error_style = Style::new().on(Color::Red);
-    let title_style = Style::new().fg(Color::Yellow);
-    let stderr_style = Style::new().fg(Color::Red);
-    let out_style = Style::new().fg(Color::White);
-    let ws_style = Some(Style::new().fg(Color::RGB(43, 43, 43)));
-
-    let title = title_style.paint(&testcase.title);
+    let testcase_style = TestCaseStyle::default();
+    let formatter = Formatter::default();
+    let title = testcase_style.title.paint(&testcase.title);
     match result {
         TestRunResult::Success => {
-            println!("{} {}", success_style.paint("PASS"), title);
+            println!("{} {}", testcase_style.success.paint("PASS"), title);
         }
 
         TestRunResult::WrongOutput { stderr, stdout } => {
-            println!("{} {}", failure_style.paint("FAIL"), title);
+            println!("{} {}", testcase_style.failure.paint("FAIL"), title);
             if !stderr.is_empty() {
-                println!("{}", stderr_style.paint(stderr.trim_end()));
+                println!("{}", testcase_style.stderr.paint(stderr.trim_end()));
             }
-            let formatter = Formatter::default();
-
+            
+            // print the original failed testcase?
+            let help_message = format!(">>> The input was:\n>>> {}", &testcase.test_in);
+            println!("{}", Color::Green.paint(&help_message));
             // compare in bulk
-            print_pair(&stdout, &testcase.test_out, &formatter, out_style, ws_style);
-
+            print_pair(&stdout, &testcase.test_out, &formatter, &testcase_style);
             // compare line by line
-            // If no output at all, special message
-            if stdout.is_empty() && !testcase.test_out.is_empty() {
-                if let Some(first_line) = testcase.test_out.lines().next() {
-                    print_pair(first_line, "No output", &formatter, out_style, ws_style);
-                } else {
-                    // Unreachable (means the test_out is empty), should catch
-                }
-            }
-
-            let stdout_lines = stdout.lines();
-            let testcase_lines = testcase.test_out.lines();
-            for (idx_row, (actual_line, expected_line)) in stdout_lines.zip(testcase_lines).enumerate() {
-                let (difference_str, idx_col) = compare_line(&actual_line, &expected_line, &formatter, out_style, ws_style, failure_style);
-                // Found an difference?
-                if difference_str.len() > 0 {
-                    // Lines should be 1-indexed
-                    let position = format!("At line {}, char {}", idx_row + 1, idx_col);
-                    let cposition = failure_style.paint(&position).to_string();
-                    println!("{}", cposition);
-                    print_pair(&difference_str, expected_line, &formatter, out_style, ws_style);
-                    break;
-                } 
-            }
+            compare_line_by_line(&stdout, &testcase.test_out, &formatter, &testcase_style);
         }
 
-        TestRunResult::RuntimeError { stderr } => {
-            println!("{} {}", error_style.paint("ERROR"), title);
-            println!("{}\n", stderr_style.paint(stderr.trim_end()));
+        TestRunResult::RuntimeError { stdout, stderr } => {
+            println!("{} {}", testcase_style.error.paint("ERROR"), title);
+            println!("{}\n", testcase_style.stderr.paint(stderr.trim_end()));
+            print_pair(&stdout, &testcase.test_out, &formatter, &testcase_style);
         }
     }
 }
 
-fn compare_line(
-    actual: &str, expected: &str, formatter: &Formatter, out_style: Style, ws_style: Option<Style>, failure_style: Style
-) -> (String, i32) {
+fn compare_line_by_line(stdout: &str, test_output: &str, formatter: &Formatter, testcase_style: &TestCaseStyle) {
+    // If no output at all, special message
+    if stdout.is_empty() && !test_output.is_empty() {
+        if let Some(first_line) = test_output.lines().next() {
+            print_pair(first_line, "No output", &formatter, testcase_style);
+            return;
+        } else {
+            // Unreachable (means the test_out is empty), should catch
+        }
+    }
+
+    let stdout_lines = stdout.lines();
+    let testcase_lines = test_output.lines();
+    for (idx_row, (actual_line, expected_line)) in stdout_lines.zip(testcase_lines).enumerate() {
+        let (difference_str, idx_col) = compare_line(&actual_line, &expected_line, &formatter, &testcase_style);
+        // Found an difference?
+        if difference_str.len() > 0 {
+            // Lines should be 1-indexed
+            let position = format!("At line {}, char {}", idx_row + 1, idx_col);
+            let cposition = testcase_style.failure.paint(&position).to_string();
+            println!("{}", cposition);
+            print_pair(&difference_str, expected_line, &formatter, &testcase_style);
+            return;
+        } 
+    }
+
+    // Didn't find any difference? There are less lines than expected
+    // TODO: fix the repetition
+    let idx_row = stdout.lines().count() - 1;
+    // Do I really need to send the char when we know it's 0?
+    let position = format!("At line {}, char {}", idx_row + 1, 0);
+    let cposition = testcase_style.failure.paint(&position).to_string();
+    println!("{}", cposition);
+    let tmp: Vec<&str> = test_output.lines().collect();
+    print_pair("Nothing", tmp[idx_row], &formatter, &testcase_style);
+}
+
+fn compare_line(actual: &str, expected: &str, formatter: &Formatter, testcase_style: &TestCaseStyle) -> (String, i32) {
     // If actual is empty, print a special message.
     if actual.len() == 0 && expected.len() > 0 {
         return ("Nothing".to_string(), 0);
@@ -124,9 +133,9 @@ fn compare_line(
 
     for (idx, (c1, c2)) in actual.chars().zip(expected.chars()).enumerate() {
         if c1 == c2 {
-            buffer += &formatter.show_whitespace(&c1.to_string(), &out_style, &ws_style);
+            buffer += &formatter.show_whitespace(&c1.to_string(), &testcase_style.out, &testcase_style.whitespace);
         } else {
-            buffer += &failure_style.paint(c1.to_string()).to_string();
+            buffer += &testcase_style.failure.paint(c1.to_string()).to_string();
             if idx_first_error == -1 {
                 idx_first_error = idx as i32;
             }
@@ -140,20 +149,20 @@ fn compare_line(
         }
     }
     if error_count > 0 {
-        return (buffer, idx_first_error) 
+        (buffer, idx_first_error) 
     } else {
         // Strings are the same, return this default.
         ("".to_string(), -1)
     }
 }
 
-fn print_pair(actual: &str, expected: &str, formatter: &Formatter, out_style: Style, ws_style: Option<Style>) {
+fn print_pair(actual: &str, expected: &str, formatter: &Formatter, testcase_style: &TestCaseStyle) {
     println!(
         "==== EXPECTED ====\n{}",
-        formatter.show_whitespace(expected, &out_style, &ws_style)
+        formatter.show_whitespace(expected, &testcase_style.out, &testcase_style.whitespace)
     );
     println!(
         "===== ACTUAL =====\n{}",
-        formatter.show_whitespace(actual, &out_style, &ws_style)
+        formatter.show_whitespace(actual, &testcase_style.out, &testcase_style.whitespace)
     );  
 }
