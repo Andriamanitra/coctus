@@ -36,9 +36,9 @@ fn cli() -> clap::Command {
                 .arg(arg!(--"raw" "do not parse the clash"))
                 .arg(arg!(--"no-color" "don't use ANSI colors in the output"))
                 .arg(
-                    arg!(-'w' --"show-whitespace" [BOOL] "render ¶ and • in place of newlines and spaces (default: true)")
+                    arg!(--"show-whitespace" [BOOL] "render ¶ and • in place of newlines and spaces (default: true)")
+                        // This means show-whitespace=1 also works
                         .value_parser(clap::builder::BoolishValueParser::new())
-                        // Needed?
                         .default_missing_value("true")
                 )
                 .arg(arg!([PUBLIC_HANDLE] "hexadecimal handle of the clash"))
