@@ -21,6 +21,12 @@ pub enum OutputStyleOption {
     Plain
 }
 
+enum TestCaseSelection {
+    None,
+    All,
+    Selected(Vec<usize>),
+}
+
 fn cli() -> clap::Command {
     use clap::{arg, value_parser, Command};
 
@@ -197,31 +203,44 @@ impl App {
         }
         let clash: Clash = serde_json::from_str(&contents)?;
 
-        // Testcases subcommand
-        if let Some(values) = args.get_many::<usize>("testcases") {
-            let testcases_to_print: Vec<usize> = values.cloned().collect();
+        // -t / --testcase flags (temporary)
+        let testcases_to_print = match args.get_many::<usize>("testcases") {
+            Some(values) => {
+                let selected: Vec<usize> = values.cloned().collect();
+                if selected.contains(&999) {
+                    TestCaseSelection::All
+                } else {
+                    TestCaseSelection::Selected(selected)
+                }
+            }
+            None => {
+                TestCaseSelection::None
+            }
+        };
 
-            // Random default value for "print all"
-            if testcases_to_print[0] == 999 {
+        match testcases_to_print {
+            TestCaseSelection::None => {
+                // Do nothing
+            }
+            TestCaseSelection::All => {
                 let _ = clash.print_testcases(&ostyle);
                 return Ok(())
             }
-
-            // println!("{} {:?}", "some args were given", &testcases_to_print);
-            let max_idx = clash.testcases().len() / 2;
-            for testcase_idx in testcases_to_print {
-                if testcase_idx > max_idx {
-                    return Err(anyhow!("Invalid index: {}. The clash only has {} tests.", testcase_idx, max_idx));
+            TestCaseSelection::Selected(selected) => {
+                let max_idx = clash.testcases().len() / 2;
+                for testcase_idx in selected {
+                    if testcase_idx > max_idx {
+                        return Err(anyhow!("Invalid index: {}. The clash only has {} tests.", testcase_idx, max_idx));
+                    }
+                    // To factor validators and 1-indexing
+                    let actual_idx = (testcase_idx - 1) * 2;
+                    let testcase = &clash.testcases()[actual_idx];
+                    let formatter = Formatter::default();
+                    let header = format!("(TEST {}) {}", actual_idx + 1, testcase.title);
+                    println!("{}\n", formatter.format_testcase(&testcase, &ostyle, header));
                 }
-                // To factor validators and 1-indexing
-                let actual_idx = (testcase_idx - 1) * 2;
-                let testcase = &clash.testcases()[actual_idx];
-                let formatter = Formatter::default();
-                let header = format!("(TEST {}) {}", actual_idx + 1, testcase.title);
-                println!("{}\n", formatter.format_testcase(&testcase, &ostyle, header));
+                return Ok(())
             }
-
-            return Ok(())
         }
 
         clash.pretty_print(&ostyle)
