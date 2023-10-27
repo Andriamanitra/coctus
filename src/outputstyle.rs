@@ -46,3 +46,27 @@ impl Default for OutputStyle {
         }
     }
 }
+
+pub struct TestCaseStyle {
+    pub success: Style,
+    pub failure: Style,
+    pub error: Style,
+    pub title: Style,
+    pub stderr: Style,
+    pub out: Style,
+    pub whitespace: Option<Style>,
+}
+
+impl Default for TestCaseStyle {
+    fn default() -> Self {
+        TestCaseStyle {
+            success: Style::new().on(Color::Green),
+            failure: Style::new().on(Color::Red),
+            error:  Style::new().on(Color::Red),
+            title: Style::new().fg(Color::Yellow),
+            stderr: Style::new().fg(Color::Red),
+            out: Style::new().fg(Color::White),
+            whitespace: Some(Style::new().fg(Color::RGB(43, 43, 43))),
+        }
+    }
+}
