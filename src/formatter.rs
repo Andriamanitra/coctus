@@ -92,8 +92,8 @@ impl Formatter {
         result
     }
 
-    pub fn format_testcase(&self, testcase: &ClashTestCase, ostyle: &OutputStyle, header: &String) -> String {
-        let header = ostyle.title.paint(header).to_string();
+    pub fn format_testcase(&self, testcase: &ClashTestCase, ostyle: &OutputStyle, header: &str) -> String {
+        let header = ostyle.title.paint(header);
         let test_in = self.show_whitespace(
             &testcase.test_in, &ostyle.input, &ostyle.input_whitespace);
         let test_out = self.show_whitespace(

@@ -114,8 +114,8 @@ impl Clash {
 
         // Example testcase
         let example: &ClashTestCase = &cdata.testcases[0];
-        let header = ostyle.title.paint("Example:").to_string();
-        println!("{}", formatter.format_testcase(example, &ostyle, &header));
+        let header = "Example:";
+        println!("{}", formatter.format_testcase(example, &ostyle, header));
 
         Ok(())
     }
