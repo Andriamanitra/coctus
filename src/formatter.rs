@@ -92,14 +92,14 @@ impl Formatter {
         result
     }
 
-    pub fn format_testcase(&self, testcase: &ClashTestCase, ostyle: &OutputStyle, header: String) -> String {
+    pub fn format_testcase(&self, testcase: &ClashTestCase, ostyle: &OutputStyle, header: &String) -> String {
         let header = ostyle.title.paint(header).to_string();
         let test_in = self.show_whitespace(
             &testcase.test_in, &ostyle.input, &ostyle.input_whitespace);
         let test_out = self.show_whitespace(
             &testcase.test_out, &ostyle.output, &ostyle.output_whitespace);
         
-        format!("{}\n{}\n\n{}", header, &test_in, &test_out)
+        format!("{}\n{}\n\n{}", &header, &test_in, &test_out)
     }
 
     // For visibility: turn spaces into "•" and newlines into "¶"
