@@ -96,9 +96,8 @@ impl Clash {
         &self.last_version.data.testcases
     }
 
-    pub fn pretty_print(&self, ostyle: &OutputStyle) -> Result<()> {
+    pub fn pretty_print(&self, formatter: &Formatter, ostyle: &OutputStyle) -> Result<()> {
         let cdata: &ClashData = &self.last_version.data;
-        let formatter = Formatter::default();
 
         // Title and link
         println!("{}\n", ostyle.title.paint(format!("=== {} ===", &cdata.title)));
@@ -120,10 +119,8 @@ impl Clash {
         Ok(())
     }
 
-    pub fn print_testcases(&self, ostyle: &OutputStyle, selection: Vec<usize>) -> Result<()> {
+    pub fn print_testcases(&self, formatter: &Formatter, ostyle: &OutputStyle, selection: &Vec<usize>) -> Result<()> {
         // Skips validators: -t 1 will print the example, -t 2 will print the second test (skipping validator 1)
-        // NOTE: doesn't print anything if given an index bigger than the number of testcases (like -t 777)
-        let formatter = Formatter::default();
         let mut test_count: usize = 0;
         for testcase in self.testcases() {
             if testcase.is_validator { continue; }

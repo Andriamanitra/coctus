@@ -1,6 +1,7 @@
 use anyhow::{anyhow, Context, Result};
 use clap::ArgMatches;
 use directories::ProjectDirs;
+use formatter::Formatter;
 use rand::seq::IteratorRandom;
 use std::path::PathBuf;
 
@@ -178,6 +179,7 @@ impl App {
             println!("{}", &contents);
             return Ok(())
         }
+        let formatter = Formatter::default();
         let mut ostyle = if args.get_flag("no-color") {
             OutputStyle::plain()
         } else {
@@ -198,16 +200,22 @@ impl App {
         if let Some(values) = args.get_many::<usize>("testcases") {
             let testcases_to_print: Vec<usize> = values.cloned().collect();
 
+            // Return an error if any index is out of bounds
+            let max_idx = clash.testcases().len() / 2;
+            if testcases_to_print.iter().any(|&x| x > max_idx) {
+                return Err(anyhow!("Invalid index. The clash only has {} tests.", max_idx));
+            }
+
             // If the flag has no arguments, print everything
             let selection = if testcases_to_print.is_empty() {
                 (0..clash.testcases().len()).collect::<Vec<usize>>()
             } else {
                 testcases_to_print
             };
-            return clash.print_testcases(&ostyle, selection)
+            return clash.print_testcases(&formatter, &ostyle, &selection)
         }
 
-        clash.pretty_print(&ostyle)
+        clash.pretty_print(&formatter, &ostyle)
     }
 
     fn next(&self, args: &ArgMatches) -> Result<()> {
