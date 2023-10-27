@@ -108,7 +108,7 @@ impl Formatter {
         if let Some(ws_style) = ws_style {
             let newl  = format!("{}", ws_style.paint("¶\n"));
             let space = format!("{}", ws_style.paint("•"));
-            let re_nonwhitespace = Regex::new(r"[^\n ]+").unwrap();
+            let re_nonwhitespace = Regex::new(r"[^\r\n ]+").unwrap();
             re_nonwhitespace.replace_all(text, |caps: &regex::Captures| {
                 style.paint(&caps[0]).to_string()
             }).to_string().replace('\n', &newl).replace(' ', &space)
