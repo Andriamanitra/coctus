@@ -244,6 +244,7 @@ impl App {
     }
 
     fn run(&self, args: &ArgMatches) -> Result<()> {
+        // TODO: support running individual tests?
         let handle = self
             .handle_from_args(args)
             .or_else(|_| self.current_handle())?;
