@@ -4,8 +4,6 @@ use directories::ProjectDirs;
 use rand::seq::IteratorRandom;
 use std::path::PathBuf;
 
-use crate::formatter::Formatter;
-
 pub mod clash;
 pub mod formatter;
 pub mod outputstyle;
@@ -19,12 +17,6 @@ use tester::TestRunResult;
 pub enum OutputStyleOption {
     Default,
     Plain
-}
-
-enum TestCaseSelection {
-    None,
-    All,
-    Selected(Vec<usize>),
 }
 
 fn cli() -> clap::Command {
@@ -52,7 +44,6 @@ fn cli() -> clap::Command {
                     arg!(-'t' --"testcases" [TESTCASE_NUM] "show the inputs of the testset (shows all if no extra args)")
                         .action(clap::ArgAction::Append)
                         .value_parser(value_parser!(usize))
-                        .default_missing_value("999")
                 )
         )
         .subcommand(
@@ -204,43 +195,16 @@ impl App {
         let clash: Clash = serde_json::from_str(&contents)?;
 
         // -t / --testcase flags (temporary)
-        let testcases_to_print = match args.get_many::<usize>("testcases") {
-            Some(values) => {
-                let selected: Vec<usize> = values.cloned().collect();
-                if selected.contains(&999) {
-                    TestCaseSelection::All
-                } else {
-                    TestCaseSelection::Selected(selected)
-                }
-            }
-            None => {
-                TestCaseSelection::None
-            }
-        };
+        if let Some(values) = args.get_many::<usize>("testcases") {
+            let testcases_to_print: Vec<usize> = values.cloned().collect();
 
-        match testcases_to_print {
-            TestCaseSelection::None => {
-                // Do nothing
-            }
-            TestCaseSelection::All => {
-                let _ = clash.print_testcases(&ostyle);
-                return Ok(())
-            }
-            TestCaseSelection::Selected(selected) => {
-                let max_idx = clash.testcases().len() / 2;
-                for testcase_idx in selected {
-                    if testcase_idx > max_idx {
-                        return Err(anyhow!("Invalid index: {}. The clash only has {} tests.", testcase_idx, max_idx));
-                    }
-                    // To factor validators and 1-indexing
-                    let actual_idx = (testcase_idx - 1) * 2;
-                    let testcase = &clash.testcases()[actual_idx];
-                    let formatter = Formatter::default();
-                    let header = format!("(TEST {}) {}", actual_idx + 1, testcase.title);
-                    println!("{}\n", formatter.format_testcase(&testcase, &ostyle, header));
-                }
-                return Ok(())
-            }
+            // If the flag has no arguments, print everything
+            let selection = if testcases_to_print.is_empty() {
+                (0..clash.testcases().len()).collect::<Vec<usize>>()
+            } else {
+                testcases_to_print
+            };
+            return clash.print_testcases(&ostyle, selection)
         }
 
         clash.pretty_print(&ostyle)

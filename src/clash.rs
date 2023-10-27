@@ -120,15 +120,19 @@ impl Clash {
         Ok(())
     }
 
-    pub fn print_testcases(&self, ostyle: &OutputStyle) -> Result<()> {
+    pub fn print_testcases(&self, ostyle: &OutputStyle, selection: Vec<usize>) -> Result<()> {
+        // Skips validators: -t 1 will print the example, -t 2 will print the second test (skipping validator 1)
+        // NOTE: doesn't print anything if given an index bigger than the number of testcases (like -t 777)
         let formatter = Formatter::default();
-        let mut test_count: u8 = 0;
+        let mut test_count: usize = 0;
         for testcase in self.testcases() {
             if testcase.is_validator { continue; }
             test_count += 1;
-            let header = format!("(TEST {}) {}", test_count, &testcase.title);
-            let test_in = formatter.format_testcase(testcase, &ostyle, header);
-            println!("{}\n", test_in);
+            if selection.contains(&test_count) {
+                let header = format!("(TEST {}) {}", test_count, &testcase.title);
+                let test_in = formatter.format_testcase(testcase, &ostyle, header);
+                println!("{}\n", test_in);
+            }
         }
 
         Ok(())

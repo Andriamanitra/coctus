@@ -113,6 +113,8 @@ impl Formatter {
                 style.paint(&caps[0]).to_string()
             }).to_string().replace('\n', &newl).replace(' ', &space)
         } else {
+            // If ws_style is None, we apply style to everything.
+            // NOTE: we may consider just applying style to the non whitespace text to be consistent
             style.paint(text).to_string()
         }
     }
