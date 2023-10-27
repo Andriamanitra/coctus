@@ -212,7 +212,7 @@ impl App {
             } else {
                 testcases_to_print
             };
-            return clash.print_testcases(&formatter, &ostyle, &selection)
+            return clash.print_testcases(&formatter, &ostyle, selection)
         }
 
         clash.pretty_print(&formatter, &ostyle)

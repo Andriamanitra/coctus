@@ -119,7 +119,7 @@ impl Clash {
         Ok(())
     }
 
-    pub fn print_testcases(&self, formatter: &Formatter, ostyle: &OutputStyle, selection: &Vec<usize>) -> Result<()> {
+    pub fn print_testcases(&self, formatter: &Formatter, ostyle: &OutputStyle, selection: Vec<usize>) -> Result<()> {
         // Skips validators: -t 1 will print the example, -t 2 will print the second test (skipping validator 1)
         let mut test_count: usize = 0;
         for testcase in self.testcases() {
