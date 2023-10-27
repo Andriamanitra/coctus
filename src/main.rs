@@ -181,18 +181,18 @@ impl App {
             println!("{}", &contents);
             return Ok(())
         }
-        let mut style = if args.get_flag("no-color") {
+        let mut ostyle = if args.get_flag("no-color") {
             OutputStyle::plain()
         } else {
             OutputStyle::default()
         };
         if let Some(show_ws) = args.get_one::<bool>("show-whitespace") {
             if *show_ws {
-                style.input_whitespace = style.input_whitespace.or(Some(style.input));
-                style.output_whitespace = style.output_whitespace.or(Some(style.output));
+                ostyle.input_whitespace = ostyle.input_whitespace.or(Some(ostyle.input));
+                ostyle.output_whitespace = ostyle.output_whitespace.or(Some(ostyle.output));
             } else {
-                style.input_whitespace = None;
-                style.output_whitespace = None;
+                ostyle.input_whitespace = None;
+                ostyle.output_whitespace = None;
             }
         }
         let clash: Clash = serde_json::from_str(&contents)?;
@@ -203,7 +203,7 @@ impl App {
 
             // Random default value for "print all"
             if testcases_to_print[0] == 999 {
-                let _ = clash.print_testcases(style);
+                let _ = clash.print_testcases(&ostyle);
                 return Ok(())
             }
 
@@ -218,13 +218,13 @@ impl App {
                 let testcase = &clash.testcases()[actual_idx];
                 let formatter = Formatter::default();
                 let header = format!("(TEST {}) {}", actual_idx + 1, testcase.title);
-                println!("{}\n", formatter.format_testcase(&testcase, &style, header));
+                println!("{}\n", formatter.format_testcase(&testcase, &ostyle, header));
             }
 
             return Ok(())
         }
 
-        clash.pretty_print(style)
+        clash.pretty_print(&ostyle)
     }
 
     fn next(&self, args: &ArgMatches) -> Result<()> {
