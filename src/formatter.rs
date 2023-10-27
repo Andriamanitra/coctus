@@ -1,4 +1,4 @@
-use crate::outputstyle::OutputStyle;
+use crate::{outputstyle::OutputStyle, clash::ClashTestCase};
 use ansi_term::Style;
 use regex::Regex;
 
@@ -23,7 +23,7 @@ impl Default for Formatter {
 impl Formatter {
     // For testing `Monospace`: 23214afcdb23616e230097d138bd872ea7c75
 
-    pub fn format(&self, text: &str, output_style: &OutputStyle) -> String {
+    pub fn format(&self, text: &str, ostyle: &OutputStyle) -> String {
         // Trim consecutive spaces (imitates html behaviour)
         // But only if it's not in a Monospace block (between backticks ``)
         let re_backtick = Regex::new(r"(`[^`]+`)|([^`]+)").unwrap();
@@ -75,10 +75,10 @@ impl Formatter {
 
         // Replace tags with corresponding styles
         let regex_style_pairs = vec![
-            (&self.re_variable, &output_style.variable),
-            (&self.re_constant, &output_style.constant),
-            (&self.re_bold, &output_style.bold),
-            (&self.re_monospace, &output_style.monospace),
+            (&self.re_variable, &ostyle.variable),
+            (&self.re_constant, &ostyle.constant),
+            (&self.re_bold, &ostyle.bold),
+            (&self.re_monospace, &ostyle.monospace),
         ];
         
         for (regex, style) in regex_style_pairs {
@@ -92,16 +92,29 @@ impl Formatter {
         result
     }
 
+    pub fn format_testcase(&self, testcase: &ClashTestCase, ostyle: &OutputStyle, header: &str) -> String {
+        let header = ostyle.title.paint(header);
+        let test_in = self.show_whitespace(
+            &testcase.test_in, &ostyle.input, &ostyle.input_whitespace);
+        let test_out = self.show_whitespace(
+            &testcase.test_out, &ostyle.output, &ostyle.output_whitespace);
+        
+        format!("{}\n{}\n\n{}", &header, &test_in, &test_out)
+    }
+
     // For visibility: turn spaces into "•" and newlines into "¶"
     pub fn show_whitespace(&self, text: &str, style: &Style, ws_style: &Option<Style>) -> String {
+        // ws_style for the whitespace, style for the non whitespace text.
         if let Some(ws_style) = ws_style {
-            let newl = format!("{}", ws_style.paint("¶\n"));
+            let newl  = format!("{}", ws_style.paint("¶\n"));
             let space = format!("{}", ws_style.paint("•"));
             let re_nonwhitespace = Regex::new(r"[^\n ]+").unwrap();
             re_nonwhitespace.replace_all(text, |caps: &regex::Captures| {
                 style.paint(&caps[0]).to_string()
             }).to_string().replace('\n', &newl).replace(' ', &space)
         } else {
+            // If ws_style is None, we apply style to everything.
+            // NOTE: we may consider just applying style to the non whitespace text to be consistent
             style.paint(text).to_string()
         }
     }

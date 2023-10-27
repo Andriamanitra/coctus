@@ -95,35 +95,42 @@ impl Clash {
     pub fn testcases(&self) -> &Vec<ClashTestCase> {
         &self.last_version.data.testcases
     }
-    pub fn pretty_print(&self, style: OutputStyle) -> Result<()> {
+
+    pub fn pretty_print(&self, formatter: &Formatter, ostyle: &OutputStyle) -> Result<()> {
         let cdata: &ClashData = &self.last_version.data;
 
-        let formatter = Formatter::default();
-
         // Title and link
-        println!("{}\n", style.title.paint(format!("=== {} ===", &cdata.title)));
-        println!("{}\n", style.link.paint(format!("https://www.codingame.com/contribute/view/{}", self.public_handle)));
+        println!("{}\n", ostyle.title.paint(format!("=== {} ===", &cdata.title)));
+        println!("{}\n", ostyle.link.paint(format!("https://www.codingame.com/contribute/view/{}", self.public_handle)));
 
         // Statement
-        println!("{}\n", formatter.format(&cdata.statement, &style));
-        println!("{}\n{}\n", style.title.paint("Input:"), formatter.format(&cdata.input_description, &style));
-        println!("{}\n{}\n", style.title.paint("Output:"), formatter.format(&cdata.output_description, &style));
+        println!("{}\n", formatter.format(&cdata.statement, &ostyle));
+        println!("{}\n{}\n", ostyle.title.paint("Input:"), formatter.format(&cdata.input_description, &ostyle));
+        println!("{}\n{}\n", ostyle.title.paint("Output:"), formatter.format(&cdata.output_description, &ostyle));
         if let Some(constraints) = &cdata.constraints {
-            println!("{}\n{}\n", style.title.paint("Constraints:"), formatter.format(constraints, &style));
+            println!("{}\n{}\n", ostyle.title.paint("Constraints:"), formatter.format(constraints, &ostyle));
         }
 
         // Example testcase
         let example: &ClashTestCase = &cdata.testcases[0];
-        let test_in =
-            formatter.show_whitespace(&example.test_in, &style.input, &style.input_whitespace);
-        let test_out =
-            formatter.show_whitespace(&example.test_out, &style.output, &style.output_whitespace);
-        println!(
-            "{}\n{}\n\n{}",
-            style.title.paint("Example:"),
-            &test_in,
-            &test_out
-        );
+        let header = "Example:";
+        println!("{}", formatter.format_testcase(example, &ostyle, header));
+
+        Ok(())
+    }
+
+    pub fn print_testcases(&self, formatter: &Formatter, ostyle: &OutputStyle, selection: Vec<usize>) -> Result<()> {
+        // Skips validators: -t 1 will print the example, -t 2 will print the second test (skipping validator 1)
+        let mut test_count: usize = 0;
+        for testcase in self.testcases() {
+            if testcase.is_validator { continue; }
+            test_count += 1;
+            if selection.contains(&test_count) {
+                let header = format!("(TEST {}) {}", test_count, &testcase.title);
+                let test_in = formatter.format_testcase(testcase, &ostyle, &header);
+                println!("{}\n", test_in);
+            }
+        }
 
         Ok(())
     }

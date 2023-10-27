@@ -1,6 +1,7 @@
 use anyhow::{anyhow, Context, Result};
 use clap::ArgMatches;
 use directories::ProjectDirs;
+use formatter::Formatter;
 use rand::seq::IteratorRandom;
 use std::path::PathBuf;
 
@@ -35,10 +36,16 @@ fn cli() -> clap::Command {
                 .arg(arg!(--"no-color" "don't use ANSI colors in the output"))
                 .arg(
                     arg!(--"show-whitespace" [BOOL] "render ¶ and • in place of newlines and spaces (default: true)")
+                        // This means show-whitespace=1 also works
                         .value_parser(clap::builder::BoolishValueParser::new())
                         .default_missing_value("true")
                 )
                 .arg(arg!([PUBLIC_HANDLE] "hexadecimal handle of the clash"))
+                .arg(
+                    arg!(-'t' --"testcases" [TESTCASE_NUM] "show the inputs of the testset (shows all if no extra args)")
+                        .action(clap::ArgAction::Append)
+                        .value_parser(value_parser!(usize))
+                )
         )
         .subcommand(
             Command::new("next")
@@ -172,23 +179,43 @@ impl App {
             println!("{}", &contents);
             return Ok(())
         }
-        let mut styles = if args.get_flag("no-color") {
+        let formatter = Formatter::default();
+        let mut ostyle = if args.get_flag("no-color") {
             OutputStyle::plain()
         } else {
             OutputStyle::default()
         };
         if let Some(show_ws) = args.get_one::<bool>("show-whitespace") {
             if *show_ws {
-                styles.input_whitespace = styles.input_whitespace.or(Some(styles.input));
-                styles.output_whitespace = styles.output_whitespace.or(Some(styles.output));
+                ostyle.input_whitespace = ostyle.input_whitespace.or(Some(ostyle.input));
+                ostyle.output_whitespace = ostyle.output_whitespace.or(Some(ostyle.output));
             } else {
-                styles.input_whitespace = None;
-                styles.output_whitespace = None;
+                ostyle.input_whitespace = None;
+                ostyle.output_whitespace = None;
             }
         }
         let clash: Clash = serde_json::from_str(&contents)?;
 
-        clash.pretty_print(styles)
+        // -t / --testcase flags (temporary)
+        if let Some(values) = args.get_many::<usize>("testcases") {
+            let testcases_to_print: Vec<usize> = values.cloned().collect();
+
+            // Return an error if any index is out of bounds
+            let max_idx = clash.testcases().len() / 2;
+            if testcases_to_print.iter().any(|&x| x > max_idx) {
+                return Err(anyhow!("Invalid index. The clash only has {} tests.", max_idx));
+            }
+
+            // If the flag has no arguments, print everything
+            let selection = if testcases_to_print.is_empty() {
+                (0..clash.testcases().len()).collect::<Vec<usize>>()
+            } else {
+                testcases_to_print
+            };
+            return clash.print_testcases(&formatter, &ostyle, selection)
+        }
+
+        clash.pretty_print(&formatter, &ostyle)
     }
 
     fn next(&self, args: &ArgMatches) -> Result<()> {
