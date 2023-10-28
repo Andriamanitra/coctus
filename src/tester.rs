@@ -1,6 +1,6 @@
 use crate::clash::ClashTestCase;
 use crate::formatter::Formatter;
-use crate::outputstyle::TestCaseStyle;
+use crate::outputstyle::OutputStyle;
 use ansi_term::{Color,Style};
 use anyhow::{anyhow, Result};
 use std::process::Command;
@@ -54,7 +54,7 @@ pub fn run_test(run: &mut Command, testcase: &ClashTestCase) -> Result<TestRunRe
 
 pub fn show_test_result(result: &TestRunResult, testcase: &ClashTestCase) {
     // Create class Tester?
-    let style = TestCaseStyle::default();
+    let style = OutputStyle::default();
     let formatter = Formatter::default();
 
     let title = style.title.paint(&testcase.title);
@@ -87,7 +87,7 @@ pub fn show_test_result(result: &TestRunResult, testcase: &ClashTestCase) {
     }
 }
 
-fn compare(input: &str, expected: &str, received: &str, formatter: &Formatter, style: &TestCaseStyle) {
+fn compare(input: &str, expected: &str, received: &str, formatter: &Formatter, style: &OutputStyle) {
     let errors_allowed = 1000; // This should turn off the abbreviation logic for the moment
 
     // If nothing was received at all, special message?
@@ -104,7 +104,7 @@ fn compare(input: &str, expected: &str, received: &str, formatter: &Formatter, s
             if crec == '\n' {
                 buffer += &crec.to_string()
             } else {
-                buffer += &formatter.show_whitespace(&crec.to_string(), &style.out, &style.whitespace)
+                buffer += &formatter.show_whitespace(&crec.to_string(), &style.output_testcase, &style.output_whitespace)
             };
         } else {
             if crec == '\n' {
@@ -143,21 +143,21 @@ fn compare(input: &str, expected: &str, received: &str, formatter: &Formatter, s
     print_pair(input, expected, &buffer, &formatter, &style);
 }
 
-fn print_pair(input: &str, expected: &str, received: &str, formatter: &Formatter, style: &TestCaseStyle) {
+fn print_pair(input: &str, expected: &str, received: &str, formatter: &Formatter, style: &OutputStyle) {
     let title_style = Style::new().fg(Color::Purple).bold();
     println!(
         "{}\n{}",
         &title_style.paint("===== INPUT ======"),
-        formatter.show_whitespace(&input, &style.out, &style.whitespace)
+        formatter.show_whitespace(&input, &style.output_testcase, &style.input_whitespace)
     );
     println!(
         "{}\n{}",
         &title_style.paint("==== EXPECTED ===="),
-        formatter.show_whitespace(&expected, &style.out, &style.whitespace)
+        formatter.show_whitespace(&expected, &style.output_testcase, &style.output_whitespace)
     );
     println!(
         "{}\n{}",
         &title_style.paint("==== RECEIVED ===="),
-        formatter.show_whitespace(&received, &style.out, &style.whitespace)
+        formatter.show_whitespace(&received, &style.output_testcase, &style.output_whitespace)
     );  
 }

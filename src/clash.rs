@@ -114,7 +114,7 @@ impl Clash {
         // Example testcase
         let example: &ClashTestCase = &cdata.testcases[0];
         let header = "Example:";
-        println!("{}", formatter.format_testcase(example, &ostyle, header));
+        println!("{}", formatter.format_testcase_as_example(example, &ostyle, header));
 
         Ok(())
     }
@@ -127,7 +127,7 @@ impl Clash {
             test_count += 1;
             if selection.contains(&test_count) {
                 let header = format!("(TEST {}) {}", test_count, &testcase.title);
-                let test_in = formatter.format_testcase(testcase, &ostyle, &header);
+                let test_in = formatter.format_testcase_as_example(testcase, &ostyle, &header);
                 println!("{}\n", test_in);
             }
         }

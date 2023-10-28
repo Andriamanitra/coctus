@@ -7,10 +7,16 @@ pub struct OutputStyle {
     pub constant: Option<Style>,
     pub bold: Option<Style>,
     pub monospace: Option<Style>,
-    pub input: Style,
+    pub input_example: Style,
+    pub input_testcase: Style,
     pub input_whitespace: Option<Style>,
-    pub output: Style,
+    pub output_example: Style,
+    pub output_testcase: Style,
     pub output_whitespace: Option<Style>,
+    pub success: Style,
+    pub failure: Style,
+    pub error: Style,
+    pub stderr: Style,
 }
 
 impl OutputStyle {
@@ -22,10 +28,16 @@ impl OutputStyle {
             constant: Some(Style::default()),
             bold: Some(Style::default()),
             monospace: Some(Style::default()),
-            input: Style::default(),
+            input_example: Style::default(),
+            input_testcase: Style::default(),
             input_whitespace: None,
-            output: Style::default(),
+            output_example: Style::default(),
+            output_testcase: Style::default(),
             output_whitespace: None,
+            success: Style::default(),
+            failure: Style::default(),
+            error: Style::default(),
+            stderr: Style::default(),
         }
     }
 }
@@ -39,34 +51,17 @@ impl Default for OutputStyle {
             constant: Some(Style::new().fg(Color::Blue)),
             bold: Some(Style::new().italic()),
             monospace: Some(Style::default()),
-            input: Style::new().fg(Color::White),
+            input_example: Style::new().fg(Color::White),
+            input_testcase: Style::new().fg(Color::White),
             input_whitespace: Some(Style::new().fg(Color::Black).dimmed()),
-            output: Style::new().fg(Color::Green),
-            output_whitespace: Some(Style::new().fg(Color::White).dimmed()),
-        }
-    }
-}
-
-pub struct TestCaseStyle {
-    pub success: Style,
-    pub failure: Style,
-    pub error: Style,
-    pub title: Style,
-    pub stderr: Style,
-    pub out: Style,
-    pub whitespace: Option<Style>,
-}
-
-impl Default for TestCaseStyle {
-    fn default() -> Self {
-        TestCaseStyle {
+            output_example: Style::new().fg(Color::Green),
+            output_testcase: Style::new().fg(Color::White),
+            output_whitespace: Some(Style::new().fg(Color::RGB(43, 43, 43))),
+            // output_whitespace: Some(Style::new().fg(Color::White).dimmed()),
             success: Style::new().on(Color::Green),
             failure: Style::new().on(Color::Red),
             error:  Style::new().on(Color::Red),
-            title: Style::new().fg(Color::Yellow),
             stderr: Style::new().fg(Color::Red),
-            out: Style::new().fg(Color::White),
-            whitespace: Some(Style::new().fg(Color::RGB(43, 43, 43))),
         }
     }
 }

@@ -187,8 +187,8 @@ impl App {
         };
         if let Some(show_ws) = args.get_one::<bool>("show-whitespace") {
             if *show_ws {
-                ostyle.input_whitespace = ostyle.input_whitespace.or(Some(ostyle.input));
-                ostyle.output_whitespace = ostyle.output_whitespace.or(Some(ostyle.output));
+                ostyle.input_whitespace = ostyle.input_whitespace.or(Some(ostyle.input_example));
+                ostyle.output_whitespace = ostyle.output_whitespace.or(Some(ostyle.output_example));
             } else {
                 ostyle.input_whitespace = None;
                 ostyle.output_whitespace = None;
