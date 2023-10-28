@@ -128,7 +128,7 @@ fn compare(input: &str, expected: &str, received: &str, formatter: &Formatter, s
         return;
     }
     // There's more received 
-    for irec in expected.chars().count()..=received.chars().count() {
+    for irec in expected.chars().count()..received.chars().count() {
         let crec = received.chars().nth(irec).unwrap();
         buffer += &style.failure.paint(crec.to_string()).to_string();
         error_count += 1;
