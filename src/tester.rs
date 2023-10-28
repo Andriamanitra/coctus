@@ -69,11 +69,14 @@ pub fn show_test_result(result: &TestRunResult, testcase: &ClashTestCase) {
                 println!("{}", style.stderr.paint(stderr.trim_end()));
             }
 
+            let input = &testcase.test_in;
+            let expected = &testcase.test_out;
+            let received = &stdout;
             // compare in bulk
-            print_pair(&testcase.test_in,&testcase.test_out, &stdout, &formatter, &style);
+            print_pair(input, expected, received, &formatter, &style);
             println!("");
-            // compare line by line
-            compare_line_by_line(&stdout, &testcase, &formatter, &style);
+            // compare but stop printing RECEIVED when an error is found (+format)
+            compare(input, expected, received, &formatter, &style);
         }
 
         TestRunResult::RuntimeError { stdout, stderr } => {
@@ -84,73 +87,65 @@ pub fn show_test_result(result: &TestRunResult, testcase: &ClashTestCase) {
     }
 }
 
-fn compare_line_by_line(stdout: &str, test: &ClashTestCase, formatter: &Formatter, testcase_style: &TestCaseStyle) {
-    let no_output_message = Color::Purple.paint("None").to_string();
+fn compare(input: &str, expected: &str, received: &str, formatter: &Formatter, style: &TestCaseStyle) {
+    let no_output_message = Color::Red.paint("Nothing").to_string();
+    let errors_allowed = 4;
 
     // If nothing was received at all, special message?
-    if stdout.is_empty() && !test.test_out.is_empty() {
-        if let Some(first_line) = test.test_out.lines().next() {
-            print_pair(&test.test_in, first_line, &no_output_message, &formatter, testcase_style);
+    if received.is_empty() && !expected.is_empty() {
+        if let Some(first_line) = expected.lines().next() {
+            print_pair(input, first_line, &no_output_message, &formatter, style);
             return;
         } 
-    }
-
-    for (idx_row, (actual_line, expected_line)) in stdout.lines().zip(test.test_out.lines()).enumerate() {
-        let (received_formatted, idx_col) = compare_line(&actual_line, &expected_line, &formatter, &testcase_style);
-        // Found an difference?
-        if received_formatted.len() > 0 {
-            // Lines should be 1-indexed
-            let position = format!("At line {}, char {}", idx_row + 1, idx_col);
-            let cposition = testcase_style.failure.paint(&position).to_string();
-            println!("{}", cposition);
-            print_pair(&test.test_in, expected_line, &received_formatted, &formatter, &testcase_style);
-            return;
-        } 
-    }
-
-    // Didn't find any difference? There are less lines than expected
-    let idx_row = stdout.lines().count() - 1;
-    // Do I really need to send the char when we know it's 0?
-    let position = format!("At line {}, char {}", idx_row + 1, 0);
-    let cposition = testcase_style.failure.paint(&position).to_string();
-    println!("{}", cposition);
-    let expected = test.test_out.lines().collect::<Vec<&str>>()[idx_row];
-    print_pair(&test.test_in, &expected, "Lacks a line", &formatter, &testcase_style);
-}
-
-fn compare_line(received_line: &str, expected: &str, formatter: &Formatter, testcase_style: &TestCaseStyle) -> (String, i32) {
-    // If actual is empty, print a special message.
-    if received_line.is_empty() && !expected.is_empty() {
-        return ("Empty line".to_string(), 0);
     }
 
     let mut buffer = String::new();
     let mut error_count = 0;
-    let mut idx_first_error: i32 = -1;
+    let mut iexp = 0;
+    let mut irec = 0;
 
-    for (idx, (c1, c2)) in received_line.chars().zip(expected.chars()).enumerate() {
-        if c1 == c2 {
-            buffer += &formatter.show_whitespace(&c1.to_string(), &testcase_style.out, &testcase_style.whitespace);
+    while iexp < expected.chars().count() && irec < received.chars().count() {
+        let cexp = expected.chars().nth(iexp).unwrap();
+        let crec = received.chars().nth(irec).unwrap();
+    
+        if crec == cexp {
+            buffer += &formatter.show_whitespace(&crec.to_string(), &style.out, &style.whitespace);
         } else {
-            buffer += &testcase_style.failure.paint(c1.to_string()).to_string();
-            if idx_first_error == -1 {
-                idx_first_error = idx as i32;
-            }
+            buffer += &style.failure.paint(crec.to_string()).to_string();
             error_count += 1;
         }
-
         // To many errors, stop here
-        if error_count > 5 {
-            let difference_str = format!("{}...", buffer);
-            return (difference_str, idx_first_error)
+        if error_count > errors_allowed {
+            let fmt_received = format!("{}{}", buffer, &style.failure.paint("..."));
+            print_pair(input, expected, &fmt_received, &formatter, &style);
+            return;
         }
+        iexp += 1;
+        irec += 1;
     }
-    if error_count > 0 {
-        (buffer, idx_first_error) 
-    } else {
-        // Strings are the same, return this default.
-        ("".to_string(), -1)
+
+    // There's more expected
+    if iexp < expected.chars().count() {
+        let fmt_received = format!("{}", buffer);
+        print_pair(input, expected, &fmt_received, &formatter, &style);
+        return;
     }
+    // There's more received 
+    while irec < received.chars().count() {
+        let crec = received.chars().nth(irec).unwrap();
+        buffer += &style.failure.paint(crec.to_string()).to_string();
+        error_count += 1;
+        // To many errors, stop here
+        if error_count > errors_allowed {
+            let fmt_received = format!("{}{}", buffer, &style.failure.paint("..."));
+            print_pair(input, expected, &fmt_received, &formatter, &style);
+            return;
+        }
+        irec += 1;
+    }
+    // There was more received, but we didn't reach the error threshold
+    let fmt_received = format!("{}", buffer);
+    print_pair(input, expected, &fmt_received, &formatter, &style);
 }
 
 fn print_pair(input: &str, expected: &str, received: &str, formatter: &Formatter, style: &TestCaseStyle) {
