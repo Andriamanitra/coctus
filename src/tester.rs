@@ -98,13 +98,8 @@ fn compare(input: &str, expected: &str, received: &str, formatter: &Formatter, s
 
     let mut buffer = String::new();
     let mut error_count = 0;
-    let mut iexp = 0;
-    let mut irec = 0;
 
-    while iexp < expected.chars().count() && irec < received.chars().count() {
-        let cexp = expected.chars().nth(iexp).unwrap();
-        let crec = received.chars().nth(irec).unwrap();
-
+    for (cexp, crec) in expected.chars().zip(received.chars()) {
         if crec == cexp {
             if crec == '\n' {
                 buffer += &crec.to_string()
@@ -125,18 +120,15 @@ fn compare(input: &str, expected: &str, received: &str, formatter: &Formatter, s
             print_pair(input, expected, &fmt_received, &formatter, &style);
             return;
         }
-        iexp += 1;
-        irec += 1;
     }
     
     // There's more expected
-    if iexp < expected.chars().count() {
-        let fmt_received = format!("{}", buffer);
-        print_pair(input, expected, &fmt_received, &formatter, &style);
+    if received.chars().count() < expected.chars().count() {
+        print_pair(input, expected, &buffer, &formatter, &style);
         return;
     }
     // There's more received 
-    while irec < received.chars().count() {
+    for irec in expected.chars().count()..=received.chars().count() {
         let crec = received.chars().nth(irec).unwrap();
         buffer += &style.failure.paint(crec.to_string()).to_string();
         error_count += 1;
@@ -146,11 +138,9 @@ fn compare(input: &str, expected: &str, received: &str, formatter: &Formatter, s
             print_pair(input, expected, &fmt_received, &formatter, &style);
             return;
         }
-        irec += 1;
     }
     // There was more received, but we didn't reach the error threshold
-    let fmt_received = format!("{}", buffer);
-    print_pair(input, expected, &fmt_received, &formatter, &style);
+    print_pair(input, expected, &buffer, &formatter, &style);
 }
 
 fn print_pair(input: &str, expected: &str, received: &str, formatter: &Formatter, style: &TestCaseStyle) {
