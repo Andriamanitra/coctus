@@ -88,15 +88,12 @@ pub fn show_test_result(result: &TestRunResult, testcase: &ClashTestCase) {
 }
 
 fn compare(input: &str, expected: &str, received: &str, formatter: &Formatter, style: &TestCaseStyle) {
-    let no_output_message = Color::Red.paint("Nothing").to_string();
-    let errors_allowed = 4;
+    let errors_allowed = 10;
 
     // If nothing was received at all, special message?
-    if received.is_empty() && !expected.is_empty() {
-        if let Some(first_line) = expected.lines().next() {
-            print_pair(input, first_line, &no_output_message, &formatter, style);
-            return;
-        } 
+    if received.is_empty() {
+        print_pair(input, expected, &Color::Red.paint("Nothing").to_string(), &formatter, style);
+        return;
     }
 
     let mut buffer = String::new();
