@@ -1,7 +1,7 @@
 use crate::clash::ClashTestCase;
 use crate::formatter::Formatter;
 use crate::outputstyle::TestCaseStyle;
-use ansi_term::Color;
+use ansi_term::{Color,Style};
 use anyhow::{anyhow, Result};
 use std::process::Command;
 
@@ -53,85 +53,82 @@ pub fn run_test(run: &mut Command, testcase: &ClashTestCase) -> Result<TestRunRe
 }
 
 pub fn show_test_result(result: &TestRunResult, testcase: &ClashTestCase) {
-    let testcase_style = TestCaseStyle::default();
+    // Create class Tester?
+    let style = TestCaseStyle::default();
     let formatter = Formatter::default();
-    let title = testcase_style.title.paint(&testcase.title);
+
+    let title = style.title.paint(&testcase.title);
     match result {
         TestRunResult::Success => {
-            println!("{} {}", testcase_style.success.paint("PASS"), title);
+            println!("{} {}", style.success.paint("PASS"), title);
         }
 
         TestRunResult::WrongOutput { stderr, stdout } => {
-            println!("{} {}", testcase_style.failure.paint("FAIL"), title);
+            println!("{} {}", style.failure.paint("FAIL"), title);
             if !stderr.is_empty() {
-                println!("{}", testcase_style.stderr.paint(stderr.trim_end()));
+                println!("{}", style.stderr.paint(stderr.trim_end()));
             }
-            
-            // print the original failed testcase?
-            let help_message = format!(">>> The input was:\n>>> {}", &testcase.test_in);
-            println!("{}", Color::Green.paint(&help_message));
+
             // compare in bulk
-            print_pair(&stdout, &testcase.test_out, &formatter, &testcase_style);
+            print_pair(&testcase.test_in,&testcase.test_out, &stdout, &formatter, &style);
+            println!("");
             // compare line by line
-            compare_line_by_line(&stdout, &testcase.test_out, &formatter, &testcase_style);
+            compare_line_by_line(&stdout, &testcase, &formatter, &style);
         }
 
         TestRunResult::RuntimeError { stdout, stderr } => {
-            println!("{} {}", testcase_style.error.paint("ERROR"), title);
-            println!("{}\n", testcase_style.stderr.paint(stderr.trim_end()));
-            print_pair(&stdout, &testcase.test_out, &formatter, &testcase_style);
+            println!("{} {}", style.error.paint("ERROR"), title);
+            println!("{}\n", style.stderr.paint(stderr.trim_end()));
+            print_pair(&testcase.test_in,&testcase.test_out, &stdout, &formatter, &style);
         }
     }
 }
 
-fn compare_line_by_line(stdout: &str, test_output: &str, formatter: &Formatter, testcase_style: &TestCaseStyle) {
-    // If no output at all, special message
-    if stdout.is_empty() && !test_output.is_empty() {
-        if let Some(first_line) = test_output.lines().next() {
-            print_pair(first_line, "No output", &formatter, testcase_style);
+fn compare_line_by_line(stdout: &str, test: &ClashTestCase, formatter: &Formatter, testcase_style: &TestCaseStyle) {
+    let no_output_message = Color::Purple.paint("None").to_string();
+
+    // If nothing was received at all, special message?
+    if stdout.is_empty() && !test.test_out.is_empty() {
+        if let Some(first_line) = test.test_out.lines().next() {
+            print_pair(&test.test_in, first_line, &no_output_message, &formatter, testcase_style);
             return;
-        } else {
-            // Unreachable (means the test_out is empty), should catch
-        }
+        } 
     }
 
-    let stdout_lines = stdout.lines();
-    let testcase_lines = test_output.lines();
-    for (idx_row, (actual_line, expected_line)) in stdout_lines.zip(testcase_lines).enumerate() {
-        let (difference_str, idx_col) = compare_line(&actual_line, &expected_line, &formatter, &testcase_style);
+    for (idx_row, (actual_line, expected_line)) in stdout.lines().zip(test.test_out.lines()).enumerate() {
+        let (received_formatted, idx_col) = compare_line(&actual_line, &expected_line, &formatter, &testcase_style);
         // Found an difference?
-        if difference_str.len() > 0 {
+        if received_formatted.len() > 0 {
             // Lines should be 1-indexed
             let position = format!("At line {}, char {}", idx_row + 1, idx_col);
             let cposition = testcase_style.failure.paint(&position).to_string();
             println!("{}", cposition);
-            print_pair(&difference_str, expected_line, &formatter, &testcase_style);
+            print_pair(&test.test_in, expected_line, &received_formatted, &formatter, &testcase_style);
             return;
         } 
     }
 
     // Didn't find any difference? There are less lines than expected
-    // TODO: fix the repetition
     let idx_row = stdout.lines().count() - 1;
     // Do I really need to send the char when we know it's 0?
     let position = format!("At line {}, char {}", idx_row + 1, 0);
     let cposition = testcase_style.failure.paint(&position).to_string();
     println!("{}", cposition);
-    let tmp: Vec<&str> = test_output.lines().collect();
-    print_pair("Nothing", tmp[idx_row], &formatter, &testcase_style);
+    let expected = test.test_out.lines().collect::<Vec<&str>>()[idx_row];
+    print_pair(&test.test_in, &expected, "Lacks a line", &formatter, &testcase_style);
 }
 
-fn compare_line(actual: &str, expected: &str, formatter: &Formatter, testcase_style: &TestCaseStyle) -> (String, i32) {
+fn compare_line(received_line: &str, expected: &str, formatter: &Formatter, testcase_style: &TestCaseStyle) -> (String, i32) {
     // If actual is empty, print a special message.
-    if actual.len() == 0 && expected.len() > 0 {
-        return ("Nothing".to_string(), 0);
+    if received_line.is_empty() && !expected.is_empty() {
+        return ("Empty line".to_string(), 0);
     }
 
     let mut buffer = String::new();
     let mut error_count = 0;
     let mut idx_first_error: i32 = -1;
 
-    for (idx, (c1, c2)) in actual.chars().zip(expected.chars()).enumerate() {
+    for (idx, (c1, c2)) in received_line.chars().zip(expected.chars()).enumerate() {
         if c1 == c2 {
             buffer += &formatter.show_whitespace(&c1.to_string(), &testcase_style.out, &testcase_style.whitespace);
         } else {
@@ -156,13 +153,21 @@ fn compare_line(actual: &str, expected: &str, formatter: &Formatter, testcase_st
     }
 }
 
-fn print_pair(actual: &str, expected: &str, formatter: &Formatter, testcase_style: &TestCaseStyle) {
+fn print_pair(input: &str, expected: &str, received: &str, formatter: &Formatter, style: &TestCaseStyle) {
+    let title_style = Style::new().fg(Color::Purple).bold();
     println!(
-        "==== EXPECTED ====\n{}",
-        formatter.show_whitespace(expected, &testcase_style.out, &testcase_style.whitespace)
+        "{}\n{}",
+        &title_style.paint("===== INPUT ======"),
+        formatter.show_whitespace(&input, &style.out, &style.whitespace)
     );
     println!(
-        "===== ACTUAL =====\n{}",
-        formatter.show_whitespace(actual, &testcase_style.out, &testcase_style.whitespace)
+        "{}\n{}",
+        &title_style.paint("==== EXPECTED ===="),
+        formatter.show_whitespace(&expected, &style.out, &style.whitespace)
+    );
+    println!(
+        "{}\n{}",
+        &title_style.paint("==== RECEIVED ===="),
+        formatter.show_whitespace(&received, &style.out, &style.whitespace)
     );  
 }
