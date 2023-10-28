@@ -104,11 +104,19 @@ fn compare(input: &str, expected: &str, received: &str, formatter: &Formatter, s
     while iexp < expected.chars().count() && irec < received.chars().count() {
         let cexp = expected.chars().nth(iexp).unwrap();
         let crec = received.chars().nth(irec).unwrap();
-    
+
         if crec == cexp {
-            buffer += &formatter.show_whitespace(&crec.to_string(), &style.out, &style.whitespace);
+            if crec == '\n' {
+                buffer += &crec.to_string()
+            } else {
+                buffer += &formatter.show_whitespace(&crec.to_string(), &style.out, &style.whitespace)
+            };
         } else {
-            buffer += &style.failure.paint(crec.to_string()).to_string();
+            if crec == '\n' {
+                buffer += &style.failure.paint("¶\n").to_string()
+            } else {
+                buffer += &style.failure.paint(crec.to_string()).to_string()
+            };
             error_count += 1;
         }
         // To many errors, stop here
@@ -120,7 +128,7 @@ fn compare(input: &str, expected: &str, received: &str, formatter: &Formatter, s
         iexp += 1;
         irec += 1;
     }
-
+    
     // There's more expected
     if iexp < expected.chars().count() {
         let fmt_received = format!("{}", buffer);
