@@ -88,7 +88,7 @@ pub fn show_test_result(result: &TestRunResult, testcase: &ClashTestCase) {
 }
 
 fn compare(input: &str, expected: &str, received: &str, formatter: &Formatter, style: &TestCaseStyle) {
-    let errors_allowed = 10;
+    let errors_allowed = 1000; // This should turn off the abbreviation logic for the moment
 
     // If nothing was received at all, special message?
     if received.is_empty() {
