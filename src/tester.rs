@@ -3,7 +3,8 @@ use crate::formatter::Formatter;
 use crate::outputstyle::OutputStyle;
 use ansi_term::{Color,Style};
 use anyhow::{anyhow, Result};
-use std::process::Command;
+use std::{process::Command, cmp};
+use difference::Changeset;
 
 #[derive(Debug, PartialEq)]
 pub enum TestRunResult {
@@ -76,7 +77,12 @@ pub fn show_test_result(result: &TestRunResult, testcase: &ClashTestCase) {
             print_pair(input, expected, received, &formatter, &style);
             println!("");
             // compare but stop printing RECEIVED when an error is found (+format)
+            println!("RAFA ======");
             compare(input, expected, received, &formatter, &style);
+            // using difference crate
+            let plain = OutputStyle::plain();
+            print_linewise_difference(received, expected, &formatter, &plain);
+            print_block_difference(received, expected, &formatter, &plain);
         }
 
         TestRunResult::RuntimeError { stdout, stderr } => {
@@ -85,6 +91,22 @@ pub fn show_test_result(result: &TestRunResult, testcase: &ClashTestCase) {
             print_pair(&testcase.test_in,&testcase.test_out, &stdout, &formatter, &style);
         }
     }
+}
+
+fn print_linewise_difference(received: &str, expected: &str, formatter: &Formatter, style: &OutputStyle) {
+    println!("\nLINEWISE DIFFERENCE ======\n");
+    for line_number in 0..(cmp::max(expected.lines().count(), received.lines().count())) {
+        let exp_line = expected.lines().nth(line_number).unwrap_or("");
+        let rec_line = received.lines().nth(line_number).unwrap_or("");
+        let diffed_line = format!("{}", Changeset::new(rec_line, exp_line, ""));
+        println!("{}", formatter.show_whitespace(&diffed_line, &style.output_testcase, &style.output_whitespace))
+    }
+}
+
+fn print_block_difference(received: &str, expected: &str, formatter: &Formatter, style: &OutputStyle) {
+    println!("\nBLOCK DIFFERENCE ======\n");
+    let compared = format!("{}", Changeset::new(received, expected, ""));
+    println!("{}", formatter.show_whitespace(&compared, &style.output_testcase, &style.output_whitespace))
 }
 
 fn compare(input: &str, expected: &str, received: &str, formatter: &Formatter, style: &OutputStyle) {
@@ -128,7 +150,7 @@ fn compare(input: &str, expected: &str, received: &str, formatter: &Formatter, s
         return;
     }
     // There's more received 
-    for irec in expected.chars().count()..=received.chars().count() {
+    for irec in expected.chars().count()..received.chars().count() {
         let crec = received.chars().nth(irec).unwrap();
         buffer += &style.failure.paint(crec.to_string()).to_string();
         error_count += 1;

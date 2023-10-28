@@ -33,7 +33,7 @@ impl OutputStyle {
             input_whitespace: None,
             output_example: Style::default(),
             output_testcase: Style::default(),
-            output_whitespace: None,
+            output_whitespace: Some(Style::default()),
             success: Style::default(),
             failure: Style::default(),
             error: Style::default(),
