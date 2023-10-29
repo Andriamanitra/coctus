@@ -37,7 +37,7 @@ pub fn run_test(run: &mut Command, testcase: &ClashTestCase) -> Result<TestRunRe
 
     let output = run.wait_with_output()?;
     let stdout = String::from_utf8(output.stdout)?;
-    let stdout = stdout.trim_end().to_string();
+    let stdout = stdout.replace("\r\n", "\n").trim_end().to_string();
     let stderr = String::from_utf8(output.stderr)?;
     if stdout == testcase.test_out.trim_end() {
         Ok(TestRunResult::Success)
