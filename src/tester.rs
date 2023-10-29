@@ -1,6 +1,6 @@
 use crate::clash::ClashTestCase;
-use crate::formatter::Formatter;
-use ansi_term::{Color, Style};
+use crate::formatter;
+use crate::outputstyle::OutputStyle;
 use anyhow::{anyhow, Result};
 use std::process::Command;
 
@@ -8,7 +8,7 @@ use std::process::Command;
 pub enum TestRunResult {
     Success,
     WrongOutput { stdout: String, stderr: String },
-    RuntimeError { stderr: String },
+    RuntimeError { stdout: String, stderr: String },
 }
 
 pub fn make_command(cmd_str: &str) -> Result<Command> {
@@ -44,45 +44,58 @@ pub fn run_test(run: &mut Command, testcase: &ClashTestCase) -> Result<TestRunRe
     } else if output.status.success() {
         Ok(TestRunResult::WrongOutput { stdout, stderr })
     } else {
-        Ok(TestRunResult::RuntimeError { stderr })
+        Ok(TestRunResult::RuntimeError { stdout, stderr })
     }
 }
 
 pub fn show_test_result(result: &TestRunResult, testcase: &ClashTestCase) {
-    // TODO: use OutputStyle
-    let success_style = Style::new().on(Color::Green);
-    let failure_style = Style::new().on(Color::Red);
-    let error_style = Style::new().on(Color::Red);
-    let title_style = Style::new().fg(Color::Yellow);
-    let stderr_style = Style::new().fg(Color::Red);
-    let out_style = Style::new().fg(Color::White);
-    let ws_style = Some(Style::new().fg(Color::RGB(43, 43, 43)));
+    let ostyle = &OutputStyle::default();
 
-    let title = title_style.paint(&testcase.title);
+    let title = ostyle.title.paint(&testcase.title);
     match result {
         TestRunResult::Success => {
-            println!("{} {}", success_style.paint("PASS"), title);
+            println!("{} {}", ostyle.success.paint("PASS"), title);
         }
 
         TestRunResult::WrongOutput { stderr, stdout } => {
-            println!("{} {}", failure_style.paint("FAIL"), title);
+            println!("{} {}", ostyle.failure.paint("FAIL"), title);
+            print_diff(testcase, stdout, ostyle);
             if !stderr.is_empty() {
-                println!("{}", stderr_style.paint(stderr.trim_end()));
+                println!("{}", ostyle.stderr.paint(stderr.trim_end()));
             }
-            let formatter = Formatter::default();
-            println!(
-                "==== EXPECTED ====\n{}",
-                formatter.show_whitespace(&testcase.test_out, &out_style, &ws_style)
-            );
-            println!(
-                "===== ACTUAL =====\n{}\n",
-                formatter.show_whitespace(stdout, &out_style, &ws_style)
-            );
         }
 
-        TestRunResult::RuntimeError { stderr } => {
-            println!("{} {}", error_style.paint("ERROR"), title);
-            println!("{}\n", stderr_style.paint(stderr.trim_end()));
+        TestRunResult::RuntimeError { stdout, stderr } => {
+            println!("{} {}", ostyle.error.paint("ERROR"), title);
+            if !stdout.is_empty() {
+                print_diff(testcase, stdout, ostyle);
+            }
+            if !stderr.is_empty() {
+                println!("{}", ostyle.stderr.paint(stderr.trim_end()));
+            }
         }
     }
+}
+
+pub fn print_diff(testcase: &ClashTestCase, stdout: &str, ostyle: &OutputStyle) {
+    println!(
+        "{}\n{}",
+        &ostyle.secondary_title.paint("===== INPUT ======"),
+        testcase.styled_input(ostyle)
+    );
+    println!(
+        "{}\n{}",
+        &ostyle.secondary_title.paint("==== EXPECTED ===="),
+        testcase.styled_output(ostyle)
+    );
+    println!(
+        "{}\n{}",
+        &ostyle.secondary_title.paint("==== RECEIVED ===="),
+        if let Some(ws_style) = ostyle.output_whitespace {
+            formatter::show_whitespace(stdout, &ostyle.output, &ws_style)
+        } else {
+            ostyle.output.paint(stdout).to_string()
+        }
+    );
+    println!("{}", ostyle.secondary_title.paint("=================="));
 }
