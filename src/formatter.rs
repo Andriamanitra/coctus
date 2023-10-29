@@ -5,9 +5,9 @@ use regex::Regex;
 
 // use lazy_static! to make sure regexes are only compiled once
 lazy_static! {
-    static ref RE_VARIABLE: Regex       = Regex::new(r"\[\[(.*?)\]\]").unwrap();
-    static ref RE_CONSTANT: Regex       = Regex::new(r"\{\{(.*?)\}\}").unwrap();
-    static ref RE_BOLD: Regex           = Regex::new(r"<<(.*?)>>").unwrap();
+    static ref RE_VARIABLE: Regex       = Regex::new(r"\[\[((?s).*?)\]\]").unwrap();
+    static ref RE_CONSTANT: Regex       = Regex::new(r"\{\{((?s).*?)\}\}").unwrap();
+    static ref RE_BOLD: Regex           = Regex::new(r"<<((?s).*?)>>").unwrap();
     static ref RE_MONOSPACE: Regex      = Regex::new(r"`([^`]*?)`").unwrap();
     static ref RE_MONOSPACE_TRIM: Regex = Regex::new(r"\n? *(`[^`]*`) *").unwrap();
     static ref RE_BACKTICK: Regex       = Regex::new(r"(`[^`]+`)|([^`]+)").unwrap();
@@ -61,9 +61,12 @@ pub fn format_cg(text: &str, ostyle: &OutputStyle) -> String {
         }).to_string()
     }).to_string();
 
-    // {{Next [[N]] lines}}
+    // {{Next [[N]] `Mono \n and more` lines}}
     result = RE_CONSTANT.replace_all(&result, |caps: &regex::Captures| {
-        RE_VARIABLE.replace_all(&caps[0], |inner_caps: &regex::Captures| {
+        let escaped_cons = RE_VARIABLE.replace_all(&caps[0], |inner_caps: &regex::Captures| {
+            format!("{}{}{}", "}}", &inner_caps[0], "{{")
+        }).to_string();
+        RE_MONOSPACE.replace_all(&escaped_cons, |inner_caps: &regex::Captures| {
             format!("{}{}{}", "}}", &inner_caps[0], "{{")
         }).to_string()
     }).to_string();
@@ -161,6 +164,13 @@ mod tests {
         ].join("");
 
         assert_eq!(formatted_text, expected);
+    }
+
+    #[test]
+    fn matches_newlines_bold() {
+        let text = "<<Bold text spread \n across two lines:>>";
+        
+        assert_eq!(RE_BOLD.is_match(&text), true);
     }
 }
 
