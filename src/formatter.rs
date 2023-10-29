@@ -12,7 +12,7 @@ lazy_static! {
     static ref RE_MONOSPACE_TRIM: Regex = Regex::new(r"\n? *(`[^`]*`) *").unwrap();
     static ref RE_BACKTICK: Regex       = Regex::new(r"(`[^`]+`)|([^`]+)").unwrap();
     static ref RE_SPACES: Regex         = Regex::new(r" +").unwrap();
-    static ref RE_NONWHITESPACE: Regex  = Regex::new(r"[^\n ]+").unwrap();
+    static ref RE_NONWHITESPACE: Regex  = Regex::new(r"[^\r\n ]+").unwrap();
 }
 
 /// Format Codingame statement that contains special formatting syntax
