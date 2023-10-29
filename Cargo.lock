@@ -213,6 +213,7 @@ dependencies = [
  "clap",
  "clap_complete",
  "directories",
+ "lazy_static",
  "rand",
  "regex",
  "reqwest",

@@ -1,8 +1,7 @@
 use anyhow::Result;
 use serde::{Deserialize, Deserializer, Serialize};
 
-use crate::formatter::Formatter;
-
+use crate::formatter::{format_cg, show_whitespace};
 use crate::outputstyle::OutputStyle;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -60,7 +59,7 @@ struct ClashData {
     output_description: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ClashTestCase {
     #[serde(deserialize_with = "deserialize_testcase_title")]
     pub title: String,
@@ -91,47 +90,66 @@ fn deserialize_testcase_title<'de, D: Deserializer<'de>>(de: D) -> Result<String
     Ok(title)
 }
 
+impl ClashTestCase {
+    pub fn styled_input(&self, ostyle: &OutputStyle) -> String {
+        match ostyle.input_whitespace {
+            Some(ws_style) => show_whitespace(&self.test_in, &ostyle.input, &ws_style),
+            None => ostyle.input.paint(&self.test_in).to_string(),
+        }
+    }
+    pub fn styled_output(&self, ostyle: &OutputStyle) -> String {
+        match ostyle.output_whitespace {
+            Some(ws_style) => show_whitespace(&self.test_out, &ostyle.output, &ws_style),
+            None => ostyle.output.paint(&self.test_out).to_string(),
+        }
+    }
+}
+
 impl Clash {
     pub fn testcases(&self) -> &Vec<ClashTestCase> {
         &self.last_version.data.testcases
     }
 
-    pub fn pretty_print(&self, formatter: &Formatter, ostyle: &OutputStyle) -> Result<()> {
+    pub fn codingame_link(&self) -> String {
+        format!("https://www.codingame.com/contribute/view/{}", self.public_handle)
+    }
+
+    pub fn pretty_print(&self, ostyle: &OutputStyle) {
         let cdata: &ClashData = &self.last_version.data;
 
         // Title and link
         println!("{}\n", ostyle.title.paint(format!("=== {} ===", &cdata.title)));
-        println!("{}\n", ostyle.link.paint(format!("https://www.codingame.com/contribute/view/{}", self.public_handle)));
+        println!("{}\n", ostyle.link.paint(self.codingame_link()));
 
         // Statement
-        println!("{}\n", formatter.format(&cdata.statement, &ostyle));
-        println!("{}\n{}\n", ostyle.title.paint("Input:"), formatter.format(&cdata.input_description, &ostyle));
-        println!("{}\n{}\n", ostyle.title.paint("Output:"), formatter.format(&cdata.output_description, &ostyle));
+        println!("{}\n", format_cg(&cdata.statement, ostyle));
+        println!("{}\n{}\n", ostyle.title.paint("Input:"), format_cg(&cdata.input_description, ostyle));
+        println!("{}\n{}\n", ostyle.title.paint("Output:"), format_cg(&cdata.output_description, ostyle));
         if let Some(constraints) = &cdata.constraints {
-            println!("{}\n{}\n", ostyle.title.paint("Constraints:"), formatter.format(constraints, &ostyle));
+            println!("{}\n{}\n", ostyle.title.paint("Constraints:"), format_cg(constraints, ostyle));
         }
 
         // Example testcase
-        let example: &ClashTestCase = &cdata.testcases[0];
-        let header = "Example:";
-        println!("{}", formatter.format_testcase(example, &ostyle, header));
-
-        Ok(())
+        let example = self.testcases().first().expect("no test cases");
+        println!("{}\n{}\n{}\n{}",
+            ostyle.title.paint("Example:"),
+            example.styled_input(ostyle),
+            ostyle.title.paint("Expected output:"),
+            example.styled_output(ostyle),
+        );
     }
 
-    pub fn print_testcases(&self, formatter: &Formatter, ostyle: &OutputStyle, selection: Vec<usize>) -> Result<()> {
+    pub fn print_testcases(&self, ostyle: &OutputStyle, selection: Vec<usize>) {
         // Skips validators: -t 1 will print the example, -t 2 will print the second test (skipping validator 1)
-        let mut test_count: usize = 0;
-        for testcase in self.testcases() {
-            if testcase.is_validator { continue; }
-            test_count += 1;
-            if selection.contains(&test_count) {
-                let header = format!("(TEST {}) {}", test_count, &testcase.title);
-                let test_in = formatter.format_testcase(testcase, &ostyle, &header);
-                println!("{}\n", test_in);
+        for (idx, testcase) in self.testcases().iter().filter(|t| !t.is_validator).enumerate() {
+            if selection.contains(&idx) {
+                let styled_title = ostyle.title.paint(format!("#{} {}", idx, testcase.title));
+                println!("{}\n{}\n\n{}\n",
+                    styled_title,
+                    testcase.styled_input(ostyle),
+                    testcase.styled_output(ostyle),
+                );
             }
         }
-
-        Ok(())
     }
 }

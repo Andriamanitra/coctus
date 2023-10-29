@@ -1,7 +1,6 @@
 use anyhow::{anyhow, Context, Result};
 use clap::ArgMatches;
 use directories::ProjectDirs;
-use formatter::Formatter;
 use rand::seq::IteratorRandom;
 use std::path::PathBuf;
 
@@ -179,7 +178,7 @@ impl App {
             println!("{}", &contents);
             return Ok(())
         }
-        let formatter = Formatter::default();
+
         let mut ostyle = if args.get_flag("no-color") {
             OutputStyle::plain()
         } else {
@@ -212,10 +211,12 @@ impl App {
             } else {
                 testcases_to_print
             };
-            return clash.print_testcases(&formatter, &ostyle, selection)
+            clash.print_testcases(&ostyle, selection);
+            return Ok(())
         }
 
-        clash.pretty_print(&formatter, &ostyle)
+        clash.pretty_print(&ostyle);
+        Ok(())
     }
 
     fn next(&self, args: &ArgMatches) -> Result<()> {
