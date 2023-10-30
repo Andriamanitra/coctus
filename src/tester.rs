@@ -381,6 +381,16 @@ mod tests {
     }
 
     #[test]
+    fn diff_forgot_to_remove_debug_print() {
+        test_diff("1337", "4 5\n1337")
+    }
+
+    #[test]
+    fn diff_off_by_one() {
+        test_diff("Keeping values between -9 and 21", "Keeping values between -10 and 20")
+    }
+
+    #[test]
     fn diff_unicorn() {
         test_diff(
             indoc! {r#"
