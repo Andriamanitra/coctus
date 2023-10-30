@@ -2,7 +2,8 @@ use crate::clash::ClashTestCase;
 use crate::formatter;
 use crate::outputstyle::OutputStyle;
 use anyhow::{anyhow, Result};
-use std::process::Command;
+use std::{process::Command, cmp};
+use difference::Changeset;
 
 #[derive(Debug, PartialEq)]
 pub enum TestRunResult {
@@ -63,6 +64,14 @@ pub fn show_test_result(result: &TestRunResult, testcase: &ClashTestCase) {
             if !stderr.is_empty() {
                 println!("{}", ostyle.stderr.paint(stderr.trim_end()));
             }
+
+            let fmt_stdout = zipped_difference(testcase, stdout, &ostyle);
+            print_diff(testcase, &fmt_stdout, ostyle);
+
+            // using difference crate
+            let plain = OutputStyle::plain();
+            print_linewise_difference(testcase, stdout, &plain);
+            print_block_difference(testcase, stdout, &plain);
         }
 
         TestRunResult::RuntimeError { stdout, stderr } => {
@@ -75,6 +84,83 @@ pub fn show_test_result(result: &TestRunResult, testcase: &ClashTestCase) {
             }
         }
     }
+}
+
+fn print_linewise_difference(testcase: &ClashTestCase, stdout: &str, ostyle: &OutputStyle) {
+    let expected = &testcase.test_out;
+    let received = &stdout;
+
+    println!("\nLINEWISE DIFFERENCE ======\n");
+    for line_number in 0..(cmp::max(expected.lines().count(), received.lines().count())) {
+        let exp_line = expected.lines().nth(line_number).unwrap_or("");
+        let rec_line = received.lines().nth(line_number).unwrap_or("");
+        let diffed_line = format!("{}", Changeset::new(rec_line, exp_line, ""));
+        println!("{}",
+            if let Some(ws_style) = ostyle.output_whitespace {
+                formatter::show_whitespace(&diffed_line, &ostyle.output, &ws_style)
+            } else {
+                ostyle.output.paint(&diffed_line).to_string()
+            }
+        )
+    }
+}
+
+fn print_block_difference(testcase: &ClashTestCase, stdout: &str, ostyle: &OutputStyle) {
+    let expected = &testcase.test_out;
+    let received = &stdout;
+
+    println!("\nBLOCK DIFFERENCE ======\n");
+    let compared = format!("{}", Changeset::new(received, expected, ""));
+    println!("{}",
+        if let Some(ws_style) = ostyle.output_whitespace {
+            formatter::show_whitespace(&compared, &ostyle.output, &ws_style)
+        } else {
+            ostyle.output.paint(&compared).to_string()
+        }
+    )
+}
+
+fn zipped_difference(testcase: &ClashTestCase, stdout: &str, ostyle: &OutputStyle) -> String {
+    let expected = &testcase.test_out;
+    let received = &stdout;
+    let mut buffer = String::new();
+
+    for (cexp, crec) in expected.chars().zip(received.chars()) {
+        if crec == cexp {
+            if crec == '\n' {
+                buffer += &crec.to_string()
+            } else {
+                let tmp = if let Some(ws_style) = ostyle.output_whitespace {
+                    formatter::show_whitespace(&crec.to_string(), &ostyle.output, &ws_style)
+                } else {
+                    ostyle.output.paint(&crec.to_string()).to_string()
+                };
+                buffer += &tmp;
+            };
+        } else {
+            if crec == '\n' {
+                buffer += &ostyle.failure.paint("¶\n").to_string()
+            } else {
+                let tmp = if let Some(ws_style) = ostyle.output_whitespace {
+                    formatter::show_whitespace(&crec.to_string(), &ostyle.output, &ws_style)
+                } else {
+                    ostyle.output.paint(&crec.to_string()).to_string()
+                };
+                buffer += &ostyle.failure.paint(tmp.to_string()).to_string()
+            };
+        }
+    }
+    // There's more expected
+    if received.chars().count() < expected.chars().count() {
+        return buffer;
+    }
+    // There's more received 
+    for irec in expected.chars().count()..received.chars().count() {
+        let crec = received.chars().nth(irec).unwrap();
+        buffer += &ostyle.failure.paint(crec.to_string()).to_string();
+    }
+
+    buffer
 }
 
 pub fn print_diff(testcase: &ClashTestCase, stdout: &str, ostyle: &OutputStyle) {
