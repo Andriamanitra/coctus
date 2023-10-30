@@ -200,7 +200,7 @@ pub fn diff_mji(testcase: &ClashTestCase, stdout: &str, ostyle: &OutputStyle) {
             }
         }
     }
-    let missing_lines = testcase.test_out.lines().count() - stdout.lines().count();
+    let missing_lines = testcase.test_out.lines().count() as i32 - stdout.lines().count() as i32;
     if missing_lines > 0 {
         let msg = format!("\n(expected {} more lines)", missing_lines);
         println!("{}", dim_color.paint(msg));
@@ -371,6 +371,16 @@ mod tests {
     }
 
     #[test]
+    fn diff_spacing() {
+        test_diff("(0.00,2.00),(2.00,6.00)", "(0.00, 2.00), (2.0, 6.0)")
+    }
+
+    #[test]
+    fn diff_casing() {
+        test_diff("true\ntrue\nfalse", "True\nFalse\nFalse")
+    }
+
+    #[test]
     fn diff_unicorn() {
         test_diff(
             indoc! {r#"
@@ -396,5 +406,19 @@ mod tests {
                 ~~~~~~~~~~~~~"#
             }
         )
+    }
+
+    #[test]
+    fn diff_empty_lines() {
+        test_diff("much\noutput", "");
+        test_diff("hello\nworld", "hello\n\nworld");
+        test_diff("hello\n\nworld", "hello\nworld");
+    }
+
+    #[test]
+    fn diff_trailing_whitespace() {
+        test_diff("extra newline", "extra newline\n");
+        test_diff("two newlines", "two newlines\n\n");
+        test_diff("1 1 2 3 5", "1 1 2 3 5 ");
     }
 }
