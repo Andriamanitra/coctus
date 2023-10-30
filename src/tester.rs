@@ -208,63 +208,48 @@ pub fn diff_mji(testcase: &ClashTestCase, stdout: &str, ostyle: &OutputStyle) {
     println!("");
 }
 
-pub fn diff_rafa(testcase: &ClashTestCase, stdout: &str, ostyle: &OutputStyle) {
-//input: &str, expected: &str, received: &str, formatter: &Formatter, style: &OutputStyle) {
-    let errors_allowed = 1000; // This should turn off the abbreviation logic for the moment
+fn diff_rafa_zipped(testcase: &ClashTestCase, stdout: &str, ostyle: &OutputStyle) {
     let expected = &testcase.test_out;
-    let received = stdout;
-    let ws_style = &ostyle.output_whitespace.unwrap_or(ostyle.output);
-    // If nothing was received at all, special message?
-    if received.is_empty() {
-        println!("{}", ansi_term::Color::Red.paint("Nothing"));
-        return;
-    }
-
+    let received = &stdout;
     let mut buffer = String::new();
-    let mut error_count = 0;
 
     for (cexp, crec) in expected.chars().zip(received.chars()) {
         if crec == cexp {
             if crec == '\n' {
                 buffer += &crec.to_string()
             } else {
-                buffer += &show_whitespace(&crec.to_string(), &ostyle.output, ws_style)
+                let tmp = if let Some(ws_style) = ostyle.output_whitespace {
+                    show_whitespace(&crec.to_string(), &ostyle.output, &ws_style)
+                } else {
+                    ostyle.output.paint(&crec.to_string()).to_string()
+                };
+                buffer += &tmp;
             };
         } else {
             if crec == '\n' {
                 buffer += &ostyle.failure.paint("¶\n").to_string()
             } else {
-                buffer += &ostyle.failure.paint(crec.to_string()).to_string()
+                let tmp = if let Some(ws_style) = ostyle.output_whitespace {
+                    show_whitespace(&crec.to_string(), &ostyle.output, &ws_style)
+                } else {
+                    ostyle.output.paint(&crec.to_string()).to_string()
+                };
+                buffer += &ostyle.failure.paint(tmp.to_string()).to_string()
             };
-            error_count += 1;
-        }
-        // To many errors, stop here
-        if error_count > errors_allowed {
-            let fmt_received = format!("{}{}", buffer, &ostyle.failure.paint("..."));
-            println!("{}", show_whitespace(&fmt_received, &ostyle.output, &ws_style));
-            return;
         }
     }
-    
     // There's more expected
     if received.chars().count() < expected.chars().count() {
-        println!("{}", show_whitespace(&buffer, &ostyle.output, &ws_style));
-        return;
+        println!("{}", buffer);
+        return
     }
     // There's more received 
     for irec in expected.chars().count()..received.chars().count() {
         let crec = received.chars().nth(irec).unwrap();
         buffer += &ostyle.failure.paint(crec.to_string()).to_string();
-        error_count += 1;
-        // To many errors, stop here
-        if error_count > errors_allowed {
-            let fmt_received = format!("{}{}", buffer, &ostyle.failure.paint("..."));
-            println!("{}", show_whitespace(&fmt_received, &ostyle.output, &ws_style));
-            return;
-        }
     }
-    // There was more received, but we didn't reach the error threshold
-    println!("{}", &buffer);
+
+    println!("{}", buffer);
 }
 
 #[cfg(test)]
@@ -282,14 +267,14 @@ mod tests {
         };
         println!("");
         print_diff(&testcase, actual, ostyle);
-        //println!("{}", ostyle.secondary_title.paint("==== LINEWISE DIFFERENCE ======"));
-        //diff_linewise(&testcase, actual, ostyle);
-        println!("{}", ostyle.secondary_title.paint("==== BLOCK DIFFERENCE ===="));
+        println!("{}", ostyle.secondary_title.paint("==== LINEWISE DIFFERENCE ===="));
+        diff_linewise(&testcase, actual, ostyle);
+        println!("{}", ostyle.secondary_title.paint("==== BLOCK DIFFERENCE ======="));
         diff_block(&testcase, actual, ostyle);
-        println!("{}", ostyle.secondary_title.paint("==== MJI ================="));
+        println!("{}", ostyle.secondary_title.paint("==== MJI ===================="));
         diff_mji(&testcase, actual, ostyle);
-        println!("{}", ostyle.secondary_title.paint("==== RAFA ================"));
-        diff_rafa(&testcase, actual, ostyle);
+        println!("{}", ostyle.secondary_title.paint("==== RAFA ZIPPED ============"));
+        diff_rafa_zipped(&testcase, actual, ostyle);
     }
 
     #[test]
