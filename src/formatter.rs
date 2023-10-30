@@ -95,9 +95,10 @@ pub fn format_cg(text: &str, ostyle: &OutputStyle) -> String {
 pub fn show_whitespace(text: &str, style: &Style, ws_style: &Style) -> String {
     let newl  = format!("{}", ws_style.paint("⏎\n"));
     let space = format!("{}", ws_style.paint("•"));
-    RE_NONWHITESPACE.replace_all(text, |caps: &regex::Captures| {
+    let fmt_non_ws = RE_NONWHITESPACE.replace_all(text, |caps: &regex::Captures| {
         style.paint(&caps[0]).to_string()
-    }).to_string().replace('\n', &newl).replace(' ', &space)
+    }).to_string();
+    fmt_non_ws.replace('\n', &newl).replace(' ', &space)
 }
 
 #[cfg(test)]
