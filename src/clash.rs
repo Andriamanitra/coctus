@@ -114,14 +114,20 @@ impl Clash {
         format!("https://www.codingame.com/contribute/view/{}", self.public_handle)
     }
 
-    pub fn pretty_print(&self, ostyle: &OutputStyle) {
+    pub fn is_reverse_only(&self) -> bool {
+        let cdata: &ClashData = &self.last_version.data;
+        cdata.reverse && !cdata.fastest && !cdata.shortest
+    }
+
+    pub fn print_headers(&self, ostyle: &OutputStyle) {
+        let cdata: &ClashData = &self.last_version.data;
+        println!("{}\n", ostyle.title.paint(format!("=== {} ===", &cdata.title)));
+        println!("{}\n", ostyle.link.paint(self.codingame_link()));  
+    }
+
+    pub fn print_statement(&self, ostyle: &OutputStyle) {
         let cdata: &ClashData = &self.last_version.data;
 
-        // Title and link
-        println!("{}\n", ostyle.title.paint(format!("=== {} ===", &cdata.title)));
-        println!("{}\n", ostyle.link.paint(self.codingame_link()));
-
-        // Statement
         println!("{}\n", format_cg(&cdata.statement, ostyle));
         println!("{}\n{}\n", ostyle.title.paint("Input:"), format_cg(&cdata.input_description, ostyle));
         println!("{}\n{}\n", ostyle.title.paint("Output:"), format_cg(&cdata.output_description, ostyle));
@@ -129,7 +135,6 @@ impl Clash {
             println!("{}\n{}\n", ostyle.title.paint("Constraints:"), format_cg(constraints, ostyle));
         }
 
-        // Example testcase
         let example = self.testcases().first().expect("no test cases");
         println!("{}\n{}\n{}\n{}",
             ostyle.title.paint("Example:"),
@@ -151,5 +156,12 @@ impl Clash {
                 );
             }
         }
+    }
+
+    pub fn print_reverse_mode(&self, ostyle: &OutputStyle) {
+        self.print_headers(&ostyle);
+        println!("{}\n", ostyle.title.paint("REVERSE ONLY!"));
+        let selection = (0..self.testcases().len()).collect::<Vec<usize>>();
+        self.print_testcases(&ostyle, selection);
     }
 }

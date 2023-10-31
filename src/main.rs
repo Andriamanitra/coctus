@@ -215,7 +215,14 @@ impl App {
             return Ok(())
         }
 
-        clash.pretty_print(&ostyle);
+        // If the clash is reverse only, print the headers and testcases.
+        if clash.is_reverse_only() {
+            clash.print_reverse_mode(&ostyle);
+            return Ok(());
+        }
+
+        clash.print_headers(&ostyle);
+        clash.print_statement(&ostyle);
         Ok(())
     }
 
