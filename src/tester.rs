@@ -155,60 +155,55 @@ pub fn diff_mji(testcase: &ClashTestCase, stdout: &str, ostyle: &OutputStyle) {
     use dissimilar::Chunk::*;
     use itertools::Itertools;
     use itertools::EitherOrBoth::{Left, Right, Both};
+
+    // (TODO) temporary styling, to be replaced with OutputStyle eventually
     let green = ansi_term::Style::new().fg(ansi_term::Color::RGB(0,185,0));
     let red = ansi_term::Style::new().fg(ansi_term::Color::Red);
     let error_red = ansi_term::Style::new().fg(ansi_term::Color::Red).on(ansi_term::Color::RGB(70,0,0));
     let dim_color = ansi_term::Style::new().fg(ansi_term::Color::RGB(50,50,50));
-    for either_or_both in LinesWithEndings::from(&testcase.test_out).zip_longest(LinesWithEndings::from(stdout)) {
-        match either_or_both {
-            Left(_) => break,
-            Right(s) => {
-                println!("{}", show_whitespace(s, &red, &error_red));
-            }
-            Both(a, b) => {
-                let mut prevchunk = Equal("");
-                for chunk in dissimilar::diff(a, b) {
-                    let ws_style = &ostyle.output_whitespace.unwrap_or_else(|| ostyle.output);
+    let ws_style = &ostyle.output_whitespace.unwrap_or(ostyle.output);
 
+    let expected_lines = LinesWithEndings::from(&testcase.test_out);
+    let actual_lines = LinesWithEndings::from(stdout);
+
+    let mut missing_lines = 0;
+    for either_or_both in expected_lines.zip_longest(actual_lines) {
+        match either_or_both {
+            Left(_) => missing_lines += 1,
+            Right(s) => println!("{}", show_whitespace(s, &red, &error_red)),
+            Both(a, b) => {
+                let mut prev_deleted = false;
+
+                for chunk in dissimilar::diff(a, b) {
                     match chunk {
-                        Equal(s) => {
-                            if let Delete(_) = prevchunk {
-                                let first_char = show_whitespace(&s[0..1], &red, &error_red);
-                                if s[1..].is_empty() {
-                                    print!("{}", first_char);
-                                } else {
-                                    print!(
-                                        "{}{}",
-                                        first_char,
-                                        show_whitespace(&s[1..], &green, ws_style)
-                                    )
-                                }
-                            } else {
-                                prevchunk = chunk;
-                                print!("{}", show_whitespace(s, &green, ws_style))
+                        Equal(text) if prev_deleted => {
+                            let mut chars = text.chars();
+                            let first_char = chars.next().expect("no chars???").to_string();
+                            let rest = chars.as_str();
+                            print!("{}", show_whitespace(&first_char, &red, &error_red));
+                            if !rest.is_empty() {
+                                print!("{}", show_whitespace(rest, &green, ws_style));
                             }
                         },
-                        Delete(_) => {
-                            prevchunk = chunk;
-                        },
-                        Insert(s) => {
-                            prevchunk = chunk;
-                            print!("{}", show_whitespace(s, &red, &error_red))
-                        },
+                        Equal(text) => print!("{}", show_whitespace(text, &green, ws_style)),
+                        Insert(text) => print!("{}", show_whitespace(text, &red, &error_red)),
+                        Delete(_) => {},
                     }
+
+                    prev_deleted = matches!(chunk, Delete(_));
                 }
             }
         }
     }
-    let missing_lines = testcase.test_out.lines().count() as i32 - stdout.lines().count() as i32;
+
     if missing_lines > 0 {
         let msg = format!("\n(expected {} more lines)", missing_lines);
         println!("{}", dim_color.paint(msg));
     }
-    println!("");
+    println!();
 }
 
-fn diff_rafa_zipped(testcase: &ClashTestCase, stdout: &str, ostyle: &OutputStyle) {
+pub fn diff_rafa_zipped(testcase: &ClashTestCase, stdout: &str, ostyle: &OutputStyle) {
     let expected = &testcase.test_out;
     let received = &stdout;
     let mut buffer = String::new();
@@ -430,5 +425,21 @@ mod tests {
         test_diff("extra newline", "extra newline\n");
         test_diff("two newlines", "two newlines\n\n");
         test_diff("1 1 2 3 5", "1 1 2 3 5 ");
+    }
+
+    #[test]
+    fn diff_stuff_missing_at_the_end() {
+        test_diff("24 hours", "24 hour");
+    }
+
+    #[test]
+    fn diff_multibyte_characters() {
+        // just to make sure nothing crashes
+        test_diff("漢字", "kanji");
+        test_diff("kanji", "漢字");
+        test_diff("漢X字", "漢字");
+        test_diff("漢字", "漢X字");
+        test_diff("Привет", "привет");
+        test_diff("(╯°□°）╯︵ ┻━┻)", "(╯*益*）╯︵ ┻━┻)")
     }
 }
