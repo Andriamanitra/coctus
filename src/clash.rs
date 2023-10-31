@@ -12,7 +12,7 @@ pub struct Clash {
     #[serde(rename = "lastVersion")]
     last_version: ClashVersion,
     #[serde(rename = "type")]
-    puzzle_type: String,
+    puzzle_type: PuzzleType,
     #[serde(rename = "upVotes")]
     upvotes: i32,
     #[serde(rename = "downVotes")]
@@ -114,24 +114,53 @@ impl Clash {
         format!("https://www.codingame.com/contribute/view/{}", self.public_handle)
     }
 
+    pub fn title(&self) -> &str {
+        &self.last_version.data.title
+    }
+
+    pub fn statement(&self) -> &str {
+        &self.last_version.data.statement
+    }
+
+    pub fn constraints(&self) -> Option<&str> {
+        self.last_version.data.constraints.as_deref()
+    }
+
+    pub fn input_description(&self) -> &str {
+        &self.last_version.data.input_description
+    }
+
+    pub fn output_description(&self) -> &str {
+        &self.last_version.data.output_description
+    }
+
+    pub fn is_reverse(&self) -> bool {
+        self.last_version.data.reverse
+    }
+
+    pub fn is_fastest(&self) -> bool {
+        self.last_version.data.fastest
+    }
+
+    pub fn is_shortest(&self) -> bool {
+        self.last_version.data.shortest
+    }
+
     pub fn is_reverse_only(&self) -> bool {
-        let cdata: &ClashData = &self.last_version.data;
-        cdata.reverse && !cdata.fastest && !cdata.shortest
+        self.is_reverse() && !self.is_fastest() && !self.is_shortest()
     }
 
     pub fn print_headers(&self, ostyle: &OutputStyle) {
-        let cdata: &ClashData = &self.last_version.data;
-        println!("{}\n", ostyle.title.paint(format!("=== {} ===", &cdata.title)));
+        println!("{}\n", ostyle.title.paint(format!("=== {} ===", self.title())));
         println!("{}\n", ostyle.link.paint(self.codingame_link()));  
     }
 
     pub fn print_statement(&self, ostyle: &OutputStyle) {
-        let cdata: &ClashData = &self.last_version.data;
 
-        println!("{}\n", format_cg(&cdata.statement, ostyle));
-        println!("{}\n{}\n", ostyle.title.paint("Input:"), format_cg(&cdata.input_description, ostyle));
-        println!("{}\n{}\n", ostyle.title.paint("Output:"), format_cg(&cdata.output_description, ostyle));
-        if let Some(constraints) = &cdata.constraints {
+        println!("{}\n", format_cg(self.statement(), ostyle));
+        println!("{}\n{}\n", ostyle.title.paint("Input:"), format_cg(self.input_description(), ostyle));
+        println!("{}\n{}\n", ostyle.title.paint("Output:"), format_cg(self.output_description(), ostyle));
+        if let Some(constraints) = self.constraints() {
             println!("{}\n{}\n", ostyle.title.paint("Constraints:"), format_cg(constraints, ostyle));
         }
 
