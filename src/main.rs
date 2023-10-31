@@ -195,6 +195,15 @@ impl App {
         }
         let clash: Clash = serde_json::from_str(&contents)?;
 
+        // If the clash is reverse only, print the headers and testcases.
+        if clash.is_reverse_only() {
+            clash.print_headers(&ostyle);
+            println!("REVERSE!\n");
+            let selection = (0..clash.testcases().len()).collect::<Vec<usize>>();
+            clash.print_testcases(&ostyle, selection);
+            return Ok(());
+        }
+
         // -t / --testcase flags (temporary)
         if let Some(values) = args.get_many::<usize>("testcases") {
             let testcases_to_print: Vec<usize> = values.cloned().collect();
@@ -215,7 +224,8 @@ impl App {
             return Ok(())
         }
 
-        clash.pretty_print(&ostyle);
+        clash.print_headers(&ostyle);
+        clash.print_statement(&ostyle);
         Ok(())
     }
 
