@@ -8,10 +8,12 @@ pub mod clash;
 pub mod formatter;
 pub mod outputstyle;
 pub mod tester;
+pub mod solution;
 
 use clash::Clash;
 use outputstyle::OutputStyle;
 use tester::TestRunResult;
+use solution::Solution;
 
 #[derive(Clone)]
 pub enum OutputStyleOption {
@@ -257,8 +259,17 @@ impl App {
             .or_else(|_| self.current_handle())?;
 
         // Run build
+        let build_command: String = args.get_one("build-command")
+            .unwrap_or(&String::new()).clone();
+        let command: String = args.get_one::<String>("command")
+            .expect("--command is required to run solution.")
+            .clone();
+        let clash = self.read_clash(&handle)?;
+        let style = OutputStyle::default();
+        Solution::new(clash, build_command, command, style);
+
         if let Some(build_cmd_str) = args.get_one::<String>("build-command") {
-            if let Ok(mut build) = tester::make_command(build_cmd_str) {
+            if let Ok(mut build) = solution::make_command(build_cmd_str) {
                 let build = build.output()?;
                 if !build.status.success() {
                     if !build.stderr.is_empty() {
