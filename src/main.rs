@@ -271,21 +271,6 @@ impl App {
         let ignore_failures = args.get_flag("ignore-failures");
         solution.run(ignore_failures);
 
-
-        if let Some(build_cmd_str) = args.get_one::<String>("build-command") {
-            if let Ok(mut build) = solution::make_command(build_cmd_str) {
-                let build = build.output()?;
-                if !build.status.success() {
-                    if !build.stderr.is_empty() {
-                        println!("Build command STDERR:\n{}", String::from_utf8(build.stderr)?);
-                    }
-                    if !build.stdout.is_empty() {
-                        println!("Build command STDOUT:\n{}", String::from_utf8(build.stdout)?);
-                    }
-                    return Err(anyhow!("Build failed"));
-                }
-            } else {
-                return Err(anyhow!("Invalid --build-command"));
             }
         }
 
@@ -320,6 +305,8 @@ impl App {
         } else {
             Err(anyhow!("Invalid --command"))
         }
+
+        Ok(())
     }
 
     fn fetch(&self, args: &ArgMatches) -> Result<()> {

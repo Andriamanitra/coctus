@@ -22,8 +22,9 @@ impl Solution {
         Self { clash, build_command, run_command, style }
     }
 
-    pub fn run(&self, ignore_failures: bool) -> SuiteRun {
-        self.build();
+    pub fn run(&self, ignore_failures: bool) -> Result<SuiteRun> {
+        self.build()?;
+
         let mut command = make_command(&self.run_command)
             .expect("Error parsing --command");
 
@@ -55,16 +56,30 @@ impl Solution {
 
             let failure = result != TestRunResult::Success;
             results.push(TestRun::new(test.to_owned(), result));
+
             if !ignore_failures && failure { break }
         }
 
-        SuiteRun::new(results)
+        Ok(SuiteRun::new(results))
     }
 
-    fn build(&self) {
-        if self.build_command.is_empty() { return };
+    fn build(&self) -> Result<()> {
+        if self.build_command.is_empty() { return Ok(()) };
 
-        let command = make_command(&self.build_command);
+        let mut build_command = make_command(&self.build_command)?;
+        let build = build_command.output()?;
+
+        if !build.status.success() {
+            if !build.stderr.is_empty() {
+                println!("Build command STDERR:\n{}", String::from_utf8(build.stderr)?);
+            }
+            if !build.stdout.is_empty() {
+                println!("Build command STDOUT:\n{}", String::from_utf8(build.stdout)?);
+            }
+            return Err(anyhow!("Build failed"));
+        }
+
+        Ok(())
     }
 }
 pub fn make_command(cmd_str: &str) -> Result<Command> {
