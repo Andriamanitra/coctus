@@ -170,7 +170,7 @@ pub fn diff_mji(testcase: &ClashTestCase, stdout: &str, ostyle: &OutputStyle) {
     for either_or_both in expected_lines.zip_longest(actual_lines) {
         match either_or_both {
             Left(_) => missing_lines += 1,
-            Right(s) => println!("{}", show_whitespace(s, &red, &error_red)),
+            Right(s) => print!("{}", show_whitespace(s, &red, &error_red)),
             Both(a, b) => {
                 let mut prev_deleted = false;
 
@@ -441,5 +441,15 @@ mod tests {
         test_diff("漢字", "漢X字");
         test_diff("Привет", "привет");
         test_diff("(╯°□°）╯︵ ┻━┻)", "(╯*益*）╯︵ ┻━┻)")
+    }
+
+    #[test]
+    fn diff_words_at_the_end() {
+        test_diff("hello world", "hello forld world");
+    }
+
+    #[test]
+    fn diff_extra_newlines() {
+        test_diff("abcd", "a\nb\n\nc\nd");
     }
 }
