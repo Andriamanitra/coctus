@@ -1,4 +1,4 @@
-use crate::clash::ClashTestCase;
+use crate::clash::TestCase as ClashTestCase;
 use crate::formatter::show_whitespace;
 use crate::outputstyle::OutputStyle;
 use anyhow::{anyhow, Result};
