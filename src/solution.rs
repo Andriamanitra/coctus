@@ -3,6 +3,13 @@ use anyhow::{anyhow, Result};
 use crate::Clash;
 use crate::outputstyle::OutputStyle;
 
+mod suite_run;
+use suite_run::SuiteRun;
+mod test_run;
+use test_run::TestRun;
+
+use self::test_run::TestRunResult;
+
 pub struct Solution {
     clash: Clash,
     build_command: String,
@@ -14,8 +21,52 @@ impl Solution {
     pub fn new(clash: Clash, build_command: String, run_command: String, style: OutputStyle) -> Self {
         Self { clash, build_command, run_command, style }
     }
-}
 
+    pub fn run(&self, ignore_failures: bool) -> SuiteRun {
+        self.build();
+        let mut command = make_command(&self.run_command)
+            .expect("Error parsing --command");
+
+        let testcases = self.clash.testcases();
+        let mut results: Vec<TestRun> = Vec::with_capacity(testcases.len());
+
+        for test in testcases {
+            let mut run = command
+                .stdin(std::process::Stdio::piped())
+                .stdout(std::process::Stdio::piped())
+                .stderr(std::process::Stdio::piped())
+                .spawn().expect("Failed to run --command");
+
+            let mut stdin = run.stdin.as_mut().unwrap();
+            std::io::Write::write(&mut stdin, test.test_in.as_bytes())
+                .expect("Fatal error: could not write to stdin.");
+
+            let output = run.wait_with_output().expect("Could not wait for program execution.");
+            let stdout = String::from_utf8(output.stdout).unwrap_or(String::new());
+            let stdout = stdout.replace("\r\n", "\n").trim_end().to_string();
+            let stderr = String::from_utf8(output.stderr).unwrap_or(String::new());
+            let result = if stdout == test.test_out.trim_end() {
+                TestRunResult::Success
+            } else if output.status.success() {
+                TestRunResult::WrongOutput { stdout, stderr }
+            } else {
+                TestRunResult::RuntimeError { stdout, stderr }
+            };
+
+            let failure = result != TestRunResult::Success;
+            results.push(TestRun::new(test.to_owned(), result));
+            if !ignore_failures && failure { break }
+        }
+
+        SuiteRun::new(results)
+    }
+
+    fn build(&self) {
+        if self.build_command.is_empty() { return };
+
+        let command = make_command(&self.build_command);
+    }
+}
 pub fn make_command(cmd_str: &str) -> Result<Command> {
     match shlex::split(cmd_str) {
         Some(shlexed_cmd) if shlexed_cmd.is_empty() => Err(anyhow!("COMMAND is required")),

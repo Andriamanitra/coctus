@@ -266,7 +266,11 @@ impl App {
             .clone();
         let clash = self.read_clash(&handle)?;
         let style = OutputStyle::default();
-        Solution::new(clash, build_command, command, style);
+        let solution = Solution::new(clash, build_command, command, style);
+
+        let ignore_failures = args.get_flag("ignore-failures");
+        solution.run(ignore_failures);
+
 
         if let Some(build_cmd_str) = args.get_one::<String>("build-command") {
             if let Ok(mut build) = solution::make_command(build_cmd_str) {
