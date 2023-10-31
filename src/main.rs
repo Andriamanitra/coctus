@@ -217,10 +217,7 @@ impl App {
 
         // If the clash is reverse only, print the headers and testcases.
         if clash.is_reverse_only() {
-            clash.print_headers(&ostyle);
-            println!("REVERSE!\n");
-            let selection = (0..clash.testcases().len()).collect::<Vec<usize>>();
-            clash.print_testcases(&ostyle, selection);
+            clash.print_reverse_mode(&ostyle);
             return Ok(());
         }
 

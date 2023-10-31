@@ -157,4 +157,11 @@ impl Clash {
             }
         }
     }
+
+    pub fn print_reverse_mode(&self, ostyle: &OutputStyle) {
+        self.print_headers(&ostyle);
+        println!("{}\n", ostyle.title.paint("REVERSE ONLY!"));
+        let selection = (0..self.testcases().len()).collect::<Vec<usize>>();
+        self.print_testcases(&ostyle, selection);
+    }
 }
