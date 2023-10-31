@@ -14,12 +14,11 @@ pub struct Solution {
     clash: Clash,
     build_command: String,
     run_command: String,
-    style: OutputStyle,
 }
 
 impl Solution {
-    pub fn new(clash: Clash, build_command: String, run_command: String, style: OutputStyle) -> Self {
-        Self { clash, build_command, run_command, style }
+    pub fn new(clash: Clash, build_command: String, run_command: String) -> Self {
+        Self { clash, build_command, run_command }
     }
 
     pub fn run(&self, ignore_failures: bool) -> Result<SuiteRun> {
@@ -31,7 +30,7 @@ impl Solution {
         let testcases = self.clash.testcases();
         let mut results: Vec<TestRun> = Vec::with_capacity(testcases.len());
 
-        for test in testcases {
+        for (test_i, test) in testcases.iter().enumerate() {
             let mut run = command
                 .stdin(std::process::Stdio::piped())
                 .stdout(std::process::Stdio::piped())
@@ -58,6 +57,7 @@ impl Solution {
             results.push(TestRun::new(test.to_owned(), result));
 
             if !ignore_failures && failure { break }
+            println!("{}/{} tests passed", test_i, testcases.len());
         }
 
         Ok(SuiteRun::new(results))

@@ -265,45 +265,22 @@ impl App {
             .expect("--command is required to run solution.")
             .clone();
         let clash = self.read_clash(&handle)?;
-        let style = OutputStyle::default();
-        let solution = Solution::new(clash, build_command, command, style);
+        let solution = Solution::new(clash, build_command, command);
 
         let ignore_failures = args.get_flag("ignore-failures");
-        solution.run(ignore_failures);
+        let run = solution.run(ignore_failures)?;
 
+        if run.is_successful() {
+            println!("All {} tests passed!", run.tests_count());
+            // Move on to next clash if --auto-advance is set
+            if args.get_flag("auto-advance") {
+                let next_handle = self.random_handle()?;
+                std::fs::write(&self.current_clash_file, next_handle.to_string())?;
+                println!("Moving on to next clash...");
             }
-        }
-
-        // Run tests
-        let run_cmd_str = args.get_one::<String>("command").unwrap();
-        if let Ok(mut run) = tester::make_command(run_cmd_str) {
-            let clash = self.read_clash(&handle)?;
-            let ignore_failures = args.get_flag("ignore-failures");
-            let mut num_passed = 0;
-            let total = clash.testcases().len();
-            for testcase in clash.testcases() {
-                let run_result = tester::run_test(&mut run, testcase)?;
-                tester::show_test_result(&run_result, testcase);
-                if let TestRunResult::Success = run_result {
-                    num_passed += 1;
-                } else if !ignore_failures {
-                    break;
-                }
-            }
-            if num_passed == total {
-                println!("{}/{} tests passed!", num_passed, total);
-                // Move on to next clash if --auto-advance is set
-                if args.get_flag("auto-advance") {
-                    let next_handle = self.random_handle()?;
-                    std::fs::write(&self.current_clash_file, next_handle.to_string())?;
-                    println!("Moving on to next clash...");
-                }
-            } else {
-                println!("{}/{} tests passed", num_passed, total);
-            }
-            Ok(())
         } else {
-            Err(anyhow!("Invalid --command"))
+            let style = OutputStyle::default();
+            run.print_mistakes(style);
         }
 
         Ok(())
