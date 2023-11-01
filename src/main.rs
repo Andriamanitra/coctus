@@ -11,7 +11,6 @@ pub mod solution;
 
 use clash::Clash;
 use outputstyle::OutputStyle;
-use solution::Solution;
 
 #[derive(Clone)]
 pub enum OutputStyleOption {
@@ -275,16 +274,13 @@ impl App {
             .handle_from_args(args)
             .or_else(|_| self.current_handle())?;
 
-        let clash = self.read_clash(&handle)?;
-        let mut solution = Solution::new(clash);
-
-
         let build_command: Option<Command> = command_from_argument(args.get_one::<String>("build-command"))?;
-        solution.build(build_command)?;
+        solution::build(build_command)?;
 
         let run_command: Command = command_from_argument(args.get_one::<String>("command"))?
             .expect("--command is required to run solution.");
-        let suite_run = solution.run(run_command)?;
+        let testcases = self.read_clash(&handle)?.testcases().to_owned();
+        let suite_run = solution::run(testcases, run_command);
 
         let ignore_failures = args.get_flag("ignore-failures");
         let style = &OutputStyle::default();
