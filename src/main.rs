@@ -20,9 +20,12 @@ pub enum OutputStyleOption {
 }
 
 fn command_from_argument(cmd_arg: Option<&String>) -> Result<Option<Command>> {
-    if cmd_arg.is_none() { return Ok(None) };
+    let cmd = match cmd_arg {
+        Some(cmd) => cmd,
+        None => return Ok(None),
+    };
 
-    match shlex::split(&cmd_arg.unwrap()) {
+    match shlex::split(cmd) {
         Some(shlexed_cmd) if shlexed_cmd.is_empty() => Ok(None),
         Some(shlexed_cmd) => {
             let exe = &shlexed_cmd[0];

@@ -58,7 +58,10 @@ impl Solution {
     }
 
     pub fn build(&mut self) -> Result<()> {
-        let command: &mut Command = self.build_command.as_mut().unwrap();
+        let command: &mut Command = match self.build_command.as_mut() {
+            Some(cmd) => cmd,
+            None => return Ok(()),
+        };
         
         let build = command.output()?;
 
