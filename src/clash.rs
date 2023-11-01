@@ -1,7 +1,6 @@
-use anyhow::Result;
-use serde::{Deserialize, Deserializer, Serialize};
+use serde::{Deserialize, Serialize};
 
-use crate::formatter::{format_cg, show_whitespace};
+use crate::formatter::format_cg;
 use crate::outputstyle::OutputStyle;
 
 mod test_case;

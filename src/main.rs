@@ -7,7 +7,6 @@ use std::{path::PathBuf, process::Command};
 pub mod clash;
 pub mod formatter;
 pub mod outputstyle;
-pub mod tester;
 pub mod solution;
 
 use clash::Clash;
