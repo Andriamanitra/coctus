@@ -1,7 +1,6 @@
 use std::process::Command;
 use anyhow::{anyhow, Result};
 use crate::Clash;
-use crate::outputstyle::OutputStyle;
 
 mod suite_run;
 use suite_run::SuiteRun;
@@ -12,24 +11,21 @@ use self::test_run::TestRunResult;
 
 pub struct Solution {
     clash: Clash,
-    build_command: Option<String>,
-    run_command: String,
+    build_command: Option<Command>,
+    run_command: Command,
 }
 
 impl Solution {
-    pub fn new(clash: Clash, build_command: Option<String>, run_command: String) -> Self {
+    pub fn new(clash: Clash, build_command: Option<Command>, run_command: Command) -> Self {
         Self { clash, build_command, run_command }
     }
 
-    pub fn run(&self, ignore_failures: bool) -> Result<SuiteRun> {
-        let mut command = make_command(&self.run_command)
-            .expect("Error parsing --command");
-
+    pub fn run(&mut self, ignore_failures: bool) -> Result<SuiteRun> {
         let testcases = self.clash.testcases();
         let mut results: Vec<TestRun> = Vec::with_capacity(testcases.len());
 
         for (test_i, test) in testcases.iter().enumerate() {
-            let mut run = command
+            let mut run = self.run_command
                 .stdin(std::process::Stdio::piped())
                 .stdout(std::process::Stdio::piped())
                 .stderr(std::process::Stdio::piped())
@@ -61,14 +57,10 @@ impl Solution {
         Ok(SuiteRun::new(results))
     }
 
-    pub fn build(&self) -> Result<()> {
-        let cmd = match &self.build_command {
-            Some(string) => string,
-            None => return Ok(()) 
-        };
-
-        let mut build_command = make_command(cmd)?;
-        let build = build_command.output()?;
+    pub fn build(&mut self) -> Result<()> {
+        let command: &mut Command = self.build_command.as_mut().unwrap();
+        
+        let build = command.output()?;
 
         if !build.status.success() {
             if !build.stderr.is_empty() {
@@ -83,16 +75,4 @@ impl Solution {
         Ok(())
     }
 }
-pub fn make_command(cmd_str: &str) -> Result<Command> {
-    match shlex::split(cmd_str) {
-        Some(shlexed_cmd) if shlexed_cmd.is_empty() => Err(anyhow!("COMMAND is required")),
-        Some(shlexed_cmd) => {
-            let exe = &shlexed_cmd[0];
-            let exe_args = &shlexed_cmd[1..];
-            let mut cmd = Command::new(exe);
-            cmd.args(exe_args);
-            Ok(cmd)
-        }
-        _ => Err(anyhow!("Invalid COMMAND")),
-    }
-}
+

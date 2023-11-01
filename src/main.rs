@@ -2,7 +2,7 @@ use anyhow::{anyhow, Context, Result};
 use clap::ArgMatches;
 use directories::ProjectDirs;
 use rand::seq::IteratorRandom;
-use std::path::PathBuf;
+use std::{path::PathBuf, process::Command};
 
 pub mod clash;
 pub mod formatter;
@@ -12,13 +12,28 @@ pub mod solution;
 
 use clash::Clash;
 use outputstyle::OutputStyle;
-use tester::TestRunResult;
 use solution::Solution;
 
 #[derive(Clone)]
 pub enum OutputStyleOption {
     Default,
     Plain
+}
+
+fn command_from_argument(cmd_arg: Option<&String>) -> Result<Option<Command>> {
+    if cmd_arg.is_none() { return Ok(None) };
+
+    match shlex::split(&cmd_arg.unwrap()) {
+        Some(shlexed_cmd) if shlexed_cmd.is_empty() => Ok(None),
+        Some(shlexed_cmd) => {
+            let exe = &shlexed_cmd[0];
+            let exe_args = &shlexed_cmd[1..];
+            let mut cmd = Command::new(exe);
+            cmd.args(exe_args);
+            Ok(Some(cmd))
+        }
+        _ => Err(anyhow!("Invalid COMMAND")),
+    }
 }
 
 fn cli() -> clap::Command {
@@ -258,14 +273,13 @@ impl App {
             .handle_from_args(args)
             .or_else(|_| self.current_handle())?;
 
-        let build_command: Option<String> = args.get_one::<String>("build-command").cloned();
-        let run_command: String = args.get_one::<String>("command")
-            .expect("--command is required to run solution.")
-            .clone();
+        let build_command: Option<Command> = command_from_argument(args.get_one::<String>("build-command"))?;
+        let run_command: Command = command_from_argument(args.get_one::<String>("command"))?
+            .expect("--command is required to run solution.");
         let clash = self.read_clash(&handle)?;
         let ignore_failures = args.get_flag("ignore-failures");
 
-        let solution = Solution::new(clash, build_command, run_command);
+        let mut solution = Solution::new(clash, build_command, run_command);
         solution.build()?;
         let run = solution.run(ignore_failures)?;
 
