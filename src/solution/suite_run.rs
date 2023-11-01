@@ -17,8 +17,7 @@ impl SuiteRun {
     }
 
     pub fn is_successful(&self) -> bool  {
-        self.0.last().expect("At least one test should have been run")
-            .is_successful()
+        self.0.iter().all(|test_run| test_run.is_successful())
     }
 
     pub fn print_mistakes(&self, style: OutputStyle) {
