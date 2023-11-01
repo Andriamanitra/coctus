@@ -2,21 +2,39 @@ use anyhow::{anyhow, Context, Result};
 use clap::ArgMatches;
 use directories::ProjectDirs;
 use rand::seq::IteratorRandom;
-use std::path::PathBuf;
+use std::{path::PathBuf, process::Command};
 
 pub mod clash;
 pub mod formatter;
 pub mod outputstyle;
-pub mod tester;
+pub mod solution;
 
 use clash::Clash;
 use outputstyle::OutputStyle;
-use tester::TestRunResult;
 
 #[derive(Clone)]
 pub enum OutputStyleOption {
     Default,
     Plain
+}
+
+fn command_from_argument(cmd_arg: Option<&String>) -> Result<Option<Command>> {
+    let cmd = match cmd_arg {
+        Some(cmd) => cmd,
+        None => return Ok(None),
+    };
+
+    match shlex::split(cmd) {
+        Some(shlexed_cmd) if shlexed_cmd.is_empty() => Ok(None),
+        Some(shlexed_cmd) => {
+            let exe = &shlexed_cmd[0];
+            let exe_args = &shlexed_cmd[1..];
+            let mut cmd = Command::new(exe);
+            cmd.args(exe_args);
+            Ok(Some(cmd))
+        }
+        _ => Err(anyhow!("Invalid COMMAND")),
+    }
 }
 
 fn cli() -> clap::Command {
@@ -256,55 +274,35 @@ impl App {
             .handle_from_args(args)
             .or_else(|_| self.current_handle())?;
 
-        // Run build
-        if let Some(build_cmd_str) = args.get_one::<String>("build-command") {
-            if let Ok(mut build) = tester::make_command(build_cmd_str) {
-                let build = build.output()?;
-                if !build.status.success() {
-                    if !build.stderr.is_empty() {
-                        println!("Build command STDERR:\n{}", String::from_utf8(build.stderr)?);
-                    }
-                    if !build.stdout.is_empty() {
-                        println!("Build command STDOUT:\n{}", String::from_utf8(build.stdout)?);
-                    }
-                    return Err(anyhow!("Build failed"));
-                }
-            } else {
-                return Err(anyhow!("Invalid --build-command"));
+        let build_command: Option<Command> = command_from_argument(args.get_one::<String>("build-command"))?;
+        solution::build(build_command)?;
+
+        let run_command: Command = command_from_argument(args.get_one::<String>("command"))?
+            .expect("--command is required to run solution.");
+        let testcases = self.read_clash(&handle)?.testcases().to_owned();
+        let suite_run = solution::run(testcases, run_command);
+
+        let ignore_failures = args.get_flag("ignore-failures");
+        let style = &OutputStyle::default();
+        let mut success = true;
+
+        for test_run in suite_run {
+            test_run.print_result(style);
+
+            if !test_run.is_successful() {
+                success = false;
+                if !ignore_failures { break }
             }
         }
 
-        // Run tests
-        let run_cmd_str = args.get_one::<String>("command").unwrap();
-        if let Ok(mut run) = tester::make_command(run_cmd_str) {
-            let clash = self.read_clash(&handle)?;
-            let ignore_failures = args.get_flag("ignore-failures");
-            let mut num_passed = 0;
-            let total = clash.testcases().len();
-            for testcase in clash.testcases() {
-                let run_result = tester::run_test(&mut run, testcase)?;
-                tester::show_test_result(&run_result, testcase);
-                if let TestRunResult::Success = run_result {
-                    num_passed += 1;
-                } else if !ignore_failures {
-                    break;
-                }
-            }
-            if num_passed == total {
-                println!("{}/{} tests passed!", num_passed, total);
-                // Move on to next clash if --auto-advance is set
-                if args.get_flag("auto-advance") {
-                    let next_handle = self.random_handle()?;
-                    std::fs::write(&self.current_clash_file, next_handle.to_string())?;
-                    println!("Moving on to next clash...");
-                }
-            } else {
-                println!("{}/{} tests passed", num_passed, total);
-            }
-            Ok(())
-        } else {
-            Err(anyhow!("Invalid --command"))
+        // Move on to next clash if --auto-advance is set
+        if success && args.get_flag("auto-advance") {
+            let next_handle = self.random_handle()?;
+            std::fs::write(&self.current_clash_file, next_handle.to_string())?;
+            println!("Moving on to next clash...");
         }
+
+        Ok(())
     }
 
     fn fetch(&self, args: &ArgMatches) -> Result<()> {

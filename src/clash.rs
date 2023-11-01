@@ -1,8 +1,10 @@
-use anyhow::Result;
-use serde::{Deserialize, Deserializer, Serialize};
+use serde::{Deserialize, Serialize};
 
-use crate::formatter::{format_cg, show_whitespace};
+use crate::formatter::format_cg;
 use crate::outputstyle::OutputStyle;
+
+mod test_case;
+pub use test_case::TestCase;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Clash {
@@ -49,7 +51,7 @@ struct ClashData {
 
     statement: String,
     #[serde(rename = "testCases")]
-    testcases: Vec<ClashTestCase>,
+    testcases: Vec<TestCase>,
     constraints: Option<String>,
     #[serde(rename = "stubGenerator")]
     stub_generator: Option<String>,
@@ -59,54 +61,11 @@ struct ClashData {
     output_description: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct ClashTestCase {
-    #[serde(deserialize_with = "deserialize_testcase_title")]
-    pub title: String,
-    #[serde(rename = "testIn")]
-    pub test_in: String,
-    #[serde(rename = "testOut")]
-    pub test_out: String,
-    #[serde(rename = "isValidator")]
-    pub is_validator: bool,
-}
 
-// Workaround for some old clashes which have testcase title as
-// { "title": { "2": "The Actual Title" } } for whatever reason
-fn deserialize_testcase_title<'de, D: Deserializer<'de>>(de: D) -> Result<String, D::Error> {
-    #[derive(Deserialize)]
-    #[serde(untagged)]
-    enum TempTitle {
-        Normal(String),
-        Weird {
-            #[serde(rename = "2")]
-            title: String
-        },
-    }
-    let title = match TempTitle::deserialize(de)? {
-        TempTitle::Normal(title) => title,
-        TempTitle::Weird {title} => title
-    };
-    Ok(title)
-}
 
-impl ClashTestCase {
-    pub fn styled_input(&self, ostyle: &OutputStyle) -> String {
-        match ostyle.input_whitespace {
-            Some(ws_style) => show_whitespace(&self.test_in, &ostyle.input, &ws_style),
-            None => ostyle.input.paint(&self.test_in).to_string(),
-        }
-    }
-    pub fn styled_output(&self, ostyle: &OutputStyle) -> String {
-        match ostyle.output_whitespace {
-            Some(ws_style) => show_whitespace(&self.test_out, &ostyle.output, &ws_style),
-            None => ostyle.output.paint(&self.test_out).to_string(),
-        }
-    }
-}
 
 impl Clash {
-    pub fn testcases(&self) -> &Vec<ClashTestCase> {
+    pub fn testcases(&self) -> &Vec<TestCase> {
         &self.last_version.data.testcases
     }
 
