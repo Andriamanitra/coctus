@@ -258,16 +258,15 @@ impl App {
             .handle_from_args(args)
             .or_else(|_| self.current_handle())?;
 
-        // Run build
-        let build_command: String = args.get_one("build-command")
-            .unwrap_or(&String::new()).clone();
-        let command: String = args.get_one::<String>("command")
+        let build_command: Option<String> = args.get_one::<String>("build-command").cloned();
+        let run_command: String = args.get_one::<String>("command")
             .expect("--command is required to run solution.")
             .clone();
         let clash = self.read_clash(&handle)?;
-        let solution = Solution::new(clash, build_command, command);
-
         let ignore_failures = args.get_flag("ignore-failures");
+
+        let solution = Solution::new(clash, build_command, run_command);
+        solution.build()?;
         let run = solution.run(ignore_failures)?;
 
         if run.is_successful() {

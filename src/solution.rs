@@ -12,18 +12,16 @@ use self::test_run::TestRunResult;
 
 pub struct Solution {
     clash: Clash,
-    build_command: String,
+    build_command: Option<String>,
     run_command: String,
 }
 
 impl Solution {
-    pub fn new(clash: Clash, build_command: String, run_command: String) -> Self {
+    pub fn new(clash: Clash, build_command: Option<String>, run_command: String) -> Self {
         Self { clash, build_command, run_command }
     }
 
     pub fn run(&self, ignore_failures: bool) -> Result<SuiteRun> {
-        self.build()?;
-
         let mut command = make_command(&self.run_command)
             .expect("Error parsing --command");
 
@@ -63,10 +61,13 @@ impl Solution {
         Ok(SuiteRun::new(results))
     }
 
-    fn build(&self) -> Result<()> {
-        if self.build_command.is_empty() { return Ok(()) };
+    pub fn build(&self) -> Result<()> {
+        let cmd = match &self.build_command {
+            Some(string) => string,
+            None => return Ok(()) 
+        };
 
-        let mut build_command = make_command(&self.build_command)?;
+        let mut build_command = make_command(cmd)?;
         let build = build_command.output()?;
 
         if !build.status.success() {
