@@ -275,27 +275,35 @@ impl App {
             .handle_from_args(args)
             .or_else(|_| self.current_handle())?;
 
+        let clash = self.read_clash(&handle)?;
+        let mut solution = Solution::new(clash);
+
+
         let build_command: Option<Command> = command_from_argument(args.get_one::<String>("build-command"))?;
+        solution.build(build_command)?;
+
         let run_command: Command = command_from_argument(args.get_one::<String>("command"))?
             .expect("--command is required to run solution.");
-        let clash = self.read_clash(&handle)?;
+        let suite_run = solution.run(run_command)?;
+
         let ignore_failures = args.get_flag("ignore-failures");
+        let style = &OutputStyle::default();
+        let mut success = true;
 
-        let mut solution = Solution::new(clash, build_command, run_command);
-        solution.build()?;
-        let run = solution.run(ignore_failures)?;
+        for test_run in suite_run {
+            test_run.print_result(style);
 
-        if run.is_successful() {
-            println!("All {} tests passed!", run.tests_count());
-            // Move on to next clash if --auto-advance is set
-            if args.get_flag("auto-advance") {
-                let next_handle = self.random_handle()?;
-                std::fs::write(&self.current_clash_file, next_handle.to_string())?;
-                println!("Moving on to next clash...");
+            if !test_run.is_successful() {
+                success = false;
+                if !ignore_failures { break }
             }
-        } else {
-            let style = OutputStyle::default();
-            run.print_mistakes(style);
+        }
+
+        // Move on to next clash if --auto-advance is set
+        if success && args.get_flag("auto-advance") {
+            let next_handle = self.random_handle()?;
+            std::fs::write(&self.current_clash_file, next_handle.to_string())?;
+            println!("Moving on to next clash...");
         }
 
         Ok(())

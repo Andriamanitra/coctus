@@ -1,12 +1,13 @@
 use crate::{clash::TestCase, outputstyle::OutputStyle, formatter::show_whitespace};
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum TestRunResult {
     Success,
     WrongOutput { stdout: String, stderr: String },
     RuntimeError { stdout: String, stderr: String },
 }
 
+#[derive(Clone)]
 pub struct TestRun {
     testcase: TestCase,
     result: TestRunResult,
@@ -33,7 +34,7 @@ impl TestRun {
         self.result == TestRunResult::Success
     }
 
-    pub fn print_mistakes(&self, style: &OutputStyle) {
+    pub fn print_result(&self, style: &OutputStyle) {
         let title = style.title.paint(&self.testcase.title);
         match &self.result {
             TestRunResult::Success => {
