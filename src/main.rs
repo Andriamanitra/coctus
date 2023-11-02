@@ -68,7 +68,10 @@ fn cli() -> clap::Command {
         .subcommand(
             Command::new("next")
                 .about("Select next clash")
-                .arg(arg!([PUBLIC_HANDLE] "hexadecimal handle of the clash"))
+                .arg(
+                    arg!([PUBLIC_HANDLE] "hexadecimal handle of the clash")
+                        .conflicts_with("reverse")
+                )
                 .arg(arg!(--"reverse" "picks a random clash that has reverse mode"))
                 .after_help("Picks a random clash from locally stored clashes when PUBLIC_HANDLE is not given.")
         )
@@ -275,13 +278,6 @@ impl App {
                     self.random_handle()
                 }
             })?;
-        // If we have a PUBLIC_HANDLE and a --reverse flag, throw an error if the clash doesn't have reverse
-        if args.get_flag("reverse") {
-            let clash = self.read_clash(&next_handle).unwrap();
-            if !clash.is_reverse() {
-                return Err(anyhow!("The given handle doesn't has reverse mode."))
-            }
-        }
         println!("Changed clash to https://codingame.com/contribute/view/{}", next_handle);
         println!(" Local file: {}/{}.json", &self.clash_dir.to_str().unwrap(), next_handle);
         std::fs::write(&self.current_clash_file, next_handle.to_string())?;
