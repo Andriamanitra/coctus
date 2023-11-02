@@ -280,23 +280,26 @@ impl App {
         let run_command: Command = command_from_argument(args.get_one::<String>("command"))?
             .expect("--command is required to run solution.");
         let testcases = self.read_clash(&handle)?.testcases().to_owned();
+        let num_tests = testcases.len();
         let suite_run = solution::run(testcases, run_command);
 
         let ignore_failures = args.get_flag("ignore-failures");
         let style = &OutputStyle::default();
-        let mut success = true;
+        let mut num_passed = 0;
 
         for test_run in suite_run {
             test_run.print_result(style);
 
-            if !test_run.is_successful() {
-                success = false;
-                if !ignore_failures { break }
+            if test_run.is_successful() {
+                num_passed += 1;
+            } else if !ignore_failures {
+                break
             }
         }
+        println!("{num_passed}/{num_tests} tests passed");
 
         // Move on to next clash if --auto-advance is set
-        if success && args.get_flag("auto-advance") {
+        if num_passed == num_tests && args.get_flag("auto-advance") {
             let next_handle = self.random_handle()?;
             std::fs::write(&self.current_clash_file, next_handle.to_string())?;
             println!("Moving on to next clash...");

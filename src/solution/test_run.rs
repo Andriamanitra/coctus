@@ -41,51 +41,38 @@ impl TestRun {
                 println!("{} {}", style.success.paint("PASS"), title);
             }
 
-            TestRunResult::WrongOutput { stderr, stdout } => {
+            TestRunResult::WrongOutput { stdout, stderr } => {
                 println!("{} {}", style.failure.paint("FAIL"), title);
-                print_testcase(&self.testcase, &stdout, &style);
-                print_diff(&self.testcase, &stdout, &style);
-                if !stderr.is_empty() {
-                    println!("{}", style.stderr.paint(stderr.trim_end()));
-                }
+                print_failure(&self.testcase, &stdout, &stderr, &style);
             }
 
             TestRunResult::RuntimeError { stdout, stderr } => {
                 println!("{} {}", style.error.paint("ERROR"), title);
-                if !stdout.is_empty() {
-                    print_testcase(&self.testcase, &stdout, &style);
-                    print_diff(&self.testcase, &stdout, &style);
-                }
-                if !stderr.is_empty() {
-                    println!("{}", style.stderr.paint(stderr.trim_end()));
-                }
+                print_failure(&self.testcase, &stdout, &stderr, &style);
             }
         }
     }
 }
 
-
-pub fn print_testcase(testcase: &TestCase, stdout: &str, ostyle: &OutputStyle) {
+pub fn print_failure(testcase: &TestCase, stdout: &str, stderr: &str, ostyle: &OutputStyle) {
     println!(
-        "{}\n{}",
-        &ostyle.secondary_title.paint("===== INPUT ======"),
-        testcase.styled_input(ostyle)
-    );
-    println!(
-        "{}\n{}",
-        &ostyle.secondary_title.paint("==== EXPECTED ===="),
+        "{}\n{}\n{}\n{}",
+        ostyle.secondary_title.paint("===== INPUT ======"),
+        testcase.styled_input(ostyle),
+        ostyle.secondary_title.paint("==== EXPECTED ===="),
         testcase.styled_output(ostyle)
     );
-    println!(
-        "{}\n{}",
-        &ostyle.secondary_title.paint("==== RECEIVED ===="),
-        if let Some(ws_style) = ostyle.output_whitespace {
-            show_whitespace(stdout, &ostyle.output, &ws_style)
-        } else {
-            ostyle.output.paint(stdout).to_string()
-        }
-    );
-    println!("{}", ostyle.secondary_title.paint("=================="));
+
+    println!("{}", &ostyle.secondary_title.paint("===== STDOUT ====="));
+    print_diff(testcase, &stdout, &ostyle);
+
+    if !stderr.is_empty() {
+        println!(
+            "{}\n{}",
+            ostyle.secondary_title.paint("===== STDERR ====="),
+            ostyle.stderr.paint(stderr.trim_end())
+        );
+    }
 }
 
 // https://stackoverflow.com/a/40457615/5465108
@@ -120,10 +107,10 @@ pub fn print_diff(testcase: &TestCase, stdout: &str, ostyle: &OutputStyle) {
     use itertools::EitherOrBoth::{Left, Right, Both};
 
     // (TODO) temporary styling, to be replaced with OutputStyle eventually
-    let green = ansi_term::Style::new().fg(ansi_term::Color::RGB(0,185,0));
-    let red = ansi_term::Style::new().fg(ansi_term::Color::Red);
-    let error_red = ansi_term::Style::new().fg(ansi_term::Color::Red).on(ansi_term::Color::RGB(70,0,0));
-    let dim_color = ansi_term::Style::new().fg(ansi_term::Color::RGB(50,50,50));
+    let green = ansi_term::Style::new().fg(ansi_term::Color::RGB(111, 255, 111));
+    let red = ansi_term::Style::new().fg(ansi_term::Color::RGB(255, 111, 111));
+    let error_red = ansi_term::Style::new().fg(ansi_term::Color::Red).on(ansi_term::Color::RGB(70, 0, 0));
+    let dim_color = ansi_term::Style::new().fg(ansi_term::Color::RGB(50, 50, 50));
     let ws_style = &ostyle.output_whitespace.unwrap_or(ostyle.output);
 
     if stdout.is_empty() {
