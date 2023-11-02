@@ -7,6 +7,7 @@ use clap::ArgMatches;
 use clashlib::clash::{Clash, TestCase};
 use clashlib::outputstyle::OutputStyle;
 use clashlib::solution;
+use clashlib::stub;
 use clashlib::programming_language::ProgrammingLanguage;
 use directories::ProjectDirs;
 use rand::seq::IteratorRandom;
@@ -485,11 +486,14 @@ impl App {
         let handle = self.current_handle()
             .expect("You must have a current clash to generate stubs. Please use clash next");
         let clash: Clash = self.read_clash(&handle).expect("Could not find clash.");
+        let stub_generator = clash.stub_generator()
+            .expect("Clash provides no input stub generator");
+        let language = self.programming_language_from_args(args)
+            .expect("Could not find programming language");
 
-        let stub_generator = clash.stub_generator();
-        let language = self.programming_language_from_args(args);
-        println!("{:?}", language);
+        let stub = stub::generate(language, stub_generator);
 
+        println!("{stub}");
         Ok(())
     }
 
