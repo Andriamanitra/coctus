@@ -264,13 +264,13 @@ impl App {
                 if args.get_flag("reverse") {
                     let max_attemps = 100;
                     for _i in 0..max_attemps {
-                        let handle = self.random_handle().unwrap();
-                        let clash = self.read_clash(&handle).unwrap();
+                        let handle = self.random_handle()?;
+                        let clash = self.read_clash(&handle)?;
                         if clash.is_reverse() {
                             return Ok(handle);
                         }
                     }
-                    Err(anyhow::Error::msg(format!("No reverse clash found after {} attempts.", max_attemps)))
+                    Err(anyhow!(format!("No reverse clash found after {} attempts.", max_attemps)))
                 } else {
                     self.random_handle()
                 }
@@ -279,7 +279,7 @@ impl App {
         if args.get_flag("reverse") {
             let clash = self.read_clash(&next_handle).unwrap();
             if !clash.is_reverse() {
-                return Err(anyhow::Error::msg("The given handle doesn't has reverse mode."))
+                return Err(anyhow!("The given handle doesn't has reverse mode."))
             }
         }
         println!("Changed clash to https://codingame.com/contribute/view/{}", next_handle);
