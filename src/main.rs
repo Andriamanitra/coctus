@@ -68,10 +68,16 @@ fn cli() -> clap::Command {
                 .about("Select next clash")
                 .arg(
                     arg!([PUBLIC_HANDLE] "hexadecimal handle of the clash")
-                        .conflicts_with("reverse")
+                        .exclusive(true)
                 )
-                .arg(arg!(--"reverse" "picks a random clash that has reverse mode"))
-                .after_help("Picks a random clash from locally stored clashes when PUBLIC_HANDLE is not given.")
+                .arg(arg!(--"reverse" "pick a random clash that has reverse mode"))
+                .arg(arg!(--"shortest" "pick a random clash that has shortest mode"))
+                .arg(arg!(--"fastest" "pick a random clash that has fastest mode"))
+                .after_help(
+                    "Pick a random clash from locally stored clashes when PUBLIC_HANDLE is not given.\
+                    \nIf instead flags modes are supplied, it will look for a clash that has at least all of those modes available.\
+                    \nFor example: clash next --fastest --shortest will return a clash that has BOTH fastest and shortest as options."
+                )
         )
         .subcommand(
             Command::new("run")
@@ -259,16 +265,20 @@ impl App {
         let next_handle = self
             .handle_from_args(args)
             .or_else(|_| {
-                if args.get_flag("reverse") {
+                let reverse  = args.get_flag("reverse");
+                let fastest  = args.get_flag("fastest");
+                let shortest = args.get_flag("shortest");
+                if reverse || fastest || shortest {
                     let max_attemps = 100;
                     for _i in 0..max_attemps {
                         let handle = self.random_handle()?;
                         let clash = self.read_clash(&handle)?;
-                        if clash.is_reverse() {
-                            return Ok(handle);
-                        }
+                        if reverse  && !clash.is_reverse()  { continue; }
+                        if fastest  && !clash.is_fastest()  { continue; }
+                        if shortest && !clash.is_shortest() { continue; }
+                        return Ok(handle);
                     }
-                    Err(anyhow!(format!("No reverse clash found after {} attempts.", max_attemps)))
+                    Err(anyhow!(format!("No required clash found after {} attempts.", max_attemps)))
                 } else {
                     self.random_handle()
                 }
