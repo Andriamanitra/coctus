@@ -40,9 +40,9 @@ impl SuiteRun {
             .expect("Fatal error: could not write to stdin.");
 
         let output = run.wait_with_output().expect("Could not wait for program execution.");
-        let stdout = String::from_utf8(output.stdout).unwrap_or(String::new());
+        let stdout = String::from_utf8(output.stdout).unwrap_or_default();
         let stdout = stdout.replace("\r\n", "\n").trim_end().to_string();
-        let stderr = String::from_utf8(output.stderr).unwrap_or(String::new());
+        let stderr = String::from_utf8(output.stderr).unwrap_or_default();
         let result = if stdout == test.test_out.trim_end() {
             TestRunResult::Success
         } else if output.status.success() {

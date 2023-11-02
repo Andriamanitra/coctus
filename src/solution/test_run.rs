@@ -43,12 +43,12 @@ impl TestRun {
 
             TestRunResult::WrongOutput { stdout, stderr } => {
                 println!("{} {}", style.failure.paint("FAIL"), title);
-                print_failure(&self.testcase, &stdout, &stderr, &style);
+                print_failure(&self.testcase, stdout, stderr, style);
             }
 
             TestRunResult::RuntimeError { stdout, stderr } => {
                 println!("{} {}", style.error.paint("ERROR"), title);
-                print_failure(&self.testcase, &stdout, &stderr, &style);
+                print_failure(&self.testcase, stdout, stderr, style);
             }
         }
     }
@@ -64,7 +64,7 @@ pub fn print_failure(testcase: &TestCase, stdout: &str, stderr: &str, ostyle: &O
     );
 
     println!("{}", &ostyle.secondary_title.paint("===== STDOUT ====="));
-    print_diff(testcase, &stdout, &ostyle);
+    print_diff(testcase, stdout, ostyle);
 
     if !stderr.is_empty() {
         println!(
