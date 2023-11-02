@@ -7,6 +7,7 @@ use clap::ArgMatches;
 use clashlib::clash::{Clash, TestCase};
 use clashlib::outputstyle::OutputStyle;
 use clashlib::solution;
+use clashlib::programming_language::ProgrammingLanguage;
 use directories::ProjectDirs;
 use rand::seq::IteratorRandom;
 
@@ -148,6 +149,18 @@ fn cli() -> clap::Command {
                 )
         )
         .subcommand(
+            Command::new("generate-stub")
+                .about("Generate input handling code for a given language")
+                .arg(arg!(<PROGRAMMING_LANGUAGE> ... "programming language of the solution stub"))
+                .after_help(
+                    "Prints boilerplate code for the input of the current clash.\
+                    \nIntended to be piped to a file.\
+                    \nExamples:\
+                    \n  $ clash generate-stub ruby > sol.rb\
+                    \n  $ clash generate-stub bash > sol.sh"
+            )
+        )
+        .subcommand(
             Command::new("generate-shell-completion")
                 .about("Generate shell completion")
                 .arg(arg!(<SHELL>).value_parser(value_parser!(clap_complete::Shell)))
@@ -201,6 +214,13 @@ impl App {
         let content = std::fs::read_to_string(&self.current_clash_file)
             .with_context(|| format!("Unable to read {:?}", &self.current_clash_file))?;
         PublicHandle::from_str(&content)
+    }
+
+    fn programming_language_from_args(&self, args: &ArgMatches) -> Result<ProgrammingLanguage> {
+        match args.get_one::<String>("PROGRAMMING_LANGUAGE") {
+            Some(s) => Ok(ProgrammingLanguage::from(s.to_owned())),
+            None => Err(anyhow!("No clash handle given")),
+        }
     }
 
     fn clashes(&self) -> Result<std::fs::ReadDir> {
@@ -461,6 +481,14 @@ impl App {
         Ok(())
     }
 
+
+    fn generate_stub(&self, args: &ArgMatches) -> Result<()> {
+        let language = self.programming_language_from_args(args);
+        println!("{:?}", language);
+
+        Ok(())
+    }
+
     fn json(&self, args: &ArgMatches) -> Result<()> {
         let handle = match args.get_one::<PublicHandle>("PUBLIC_HANDLE") {
             Some(h) => h.to_owned(),
@@ -502,6 +530,7 @@ fn main() -> Result<()> {
         Some(("fetch", args)) => app.fetch(args),
         Some(("showtests", args)) => app.showtests(args),
         Some(("json", args)) => app.json(args),
+        Some(("generate-stub", args)) => app.generate_stub(args),
         Some(("generate-shell-completion", args)) => app.generate_completions(args),
         _ => Err(anyhow!("unimplemented subcommand")),
     }
