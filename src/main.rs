@@ -48,8 +48,6 @@ fn cli() -> clap::Command {
         .subcommand(
             Command::new("show")
                 .about("Show clash")
-                // TODO: change these flags to some kind of enum (eg. --style=plain)
-                .arg(arg!(--"raw" "do not parse the clash"))
                 .arg(arg!(--"no-color" "don't use ANSI colors in the output"))
                 .arg(
                     arg!(--"show-whitespace" [BOOL] "render ¶ and • in place of newlines and spaces (default: true)")
@@ -96,6 +94,11 @@ fn cli() -> clap::Command {
                     \nYou can fetch both clash of code and classic (in/out) puzzles.\
                     \n (1) https://www.codingame.com/contribute/community"
                 )
+        )
+        .subcommand(
+            Command::new("json")
+                .about("Print the raw source JSON of a clash")
+                .arg(arg!([PUBLIC_HANDLE] "hexadecimal handle of the clash"))
         )
         .subcommand(
             Command::new("generate-shell-completion")
@@ -189,13 +192,7 @@ impl App {
 
     fn show(&self, args: &ArgMatches) -> Result<()> {
         let handle = self.handle_from_args(args).or_else(|_| self.current_handle())?;
-        let clash_file = self.clash_dir.join(format!("{}.json", handle));
-        let contents = std::fs::read_to_string(clash_file)
-            .with_context(|| format!("Unable to find clash with handle {}", handle))?;
-        if args.get_flag("raw") {
-            println!("{}", &contents);
-            return Ok(())
-        }
+        let clash = self.read_clash(&handle)?;
 
         let mut ostyle = if args.get_flag("no-color") {
             OutputStyle::plain()
@@ -211,7 +208,6 @@ impl App {
                 ostyle.output_whitespace = None;
             }
         }
-        let clash: Clash = serde_json::from_str(&contents)?;
 
         // -t / --testcase flags (temporary)
         if let Some(values) = args.get_many::<usize>("testcases") {
@@ -328,6 +324,16 @@ impl App {
         }
     }
 
+    fn json(&self, args: &ArgMatches) -> Result<()> {
+        let handle = self.handle_from_args(args).or_else(|_| self.current_handle())?;
+        let clash_file = self.clash_dir.join(format!("{}.json", handle));
+        let contents = std::fs::read_to_string(clash_file)
+            .with_context(|| format!("Unable to find clash with handle {}", handle))?;
+
+        println!("{}", &contents);
+        Ok(())
+    }
+
     fn generate_completions(&self, args: &ArgMatches) -> Result<()> {
         let generator = args
             .get_one::<clap_complete::Shell>("SHELL")
@@ -354,6 +360,7 @@ fn main() -> Result<()> {
         Some(("status", args)) => app.status(args),
         Some(("run", args)) => app.run(args),
         Some(("fetch", args)) => app.fetch(args),
+        Some(("json", args)) => app.json(args),
         Some(("generate-shell-completion", args)) => app.generate_completions(args),
         _ => Err(anyhow!("unimplemented subcommand"))
     }
