@@ -93,7 +93,7 @@ pub fn format_cg(text: &str, ostyle: &OutputStyle) -> String {
 /// Replaces spaces with "•" and newlines with "¶" and paints them with
 /// `ws_style`. Other characters are painted with `style`.
 pub fn show_whitespace(text: &str, style: &Style, ws_style: &Style) -> String {
-    let newl  = format!("{}", ws_style.paint("⏎\n"));
+    let newl  = format!("{}\n", ws_style.paint("⏎"));
     let space = format!("{}", ws_style.paint("•"));
     let fmt_non_ws = RE_NONWHITESPACE.replace_all(text, |caps: &regex::Captures| {
         style.paint(&caps[0]).to_string()
