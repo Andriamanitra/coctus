@@ -481,8 +481,12 @@ impl App {
         Ok(())
     }
 
-
     fn generate_stub(&self, args: &ArgMatches) -> Result<()> {
+        let handle = self.current_handle()
+            .expect("You must have a current clash to generate stubs. Please use clash next");
+        let clash: Clash = self.read_clash(&handle).expect("Could not find clash.");
+
+        let stub_generator = clash.stub_generator();
         let language = self.programming_language_from_args(args);
         println!("{:?}", language);
 

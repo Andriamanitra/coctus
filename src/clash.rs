@@ -86,6 +86,10 @@ impl Clash {
         self.last_version.data.constraints.as_deref()
     }
 
+    pub fn stub_generator(&self) -> Option<&str> {
+        self.last_version.data.stub_generator.as_deref()
+    }
+ 
     pub fn input_description(&self) -> &str {
         &self.last_version.data.input_description
     }
