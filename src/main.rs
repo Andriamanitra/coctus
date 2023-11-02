@@ -63,11 +63,13 @@ fn cli() -> clap::Command {
                         .action(clap::ArgAction::Append)
                         .value_parser(value_parser!(usize))
                 )
+                .arg(arg!(--"reverse" "print the clash in reverse mode"))
         )
         .subcommand(
             Command::new("next")
                 .about("Select next clash")
                 .arg(arg!([PUBLIC_HANDLE] "hexadecimal handle of the clash"))
+                .arg(arg!(--"reverse" "picks a random clash that has reverse mode"))
                 .after_help("Picks a random clash from locally stored clashes when PUBLIC_HANDLE is not given.")
         )
         .subcommand(
@@ -192,6 +194,7 @@ impl App {
         let clash_file = self.clash_dir.join(format!("{}.json", handle));
         let contents = std::fs::read_to_string(clash_file)
             .with_context(|| format!("Unable to find clash with handle {}", handle))?;
+        // This overrides --reverse 
         if args.get_flag("raw") {
             println!("{}", &contents);
             return Ok(())
@@ -233,6 +236,16 @@ impl App {
             return Ok(())
         }
 
+        // --reverse flag
+        if args.get_flag("reverse") {
+            if clash.is_reverse() {
+                clash.print_reverse_mode(&ostyle);
+                return Ok(());
+            } else {
+                return Err(anyhow::Error::msg("The clash doesn't have a reverse mode"));
+            }
+        }
+
         // If the clash is reverse only, print the headers and testcases.
         if clash.is_reverse_only() {
             clash.print_reverse_mode(&ostyle);
@@ -247,7 +260,28 @@ impl App {
     fn next(&self, args: &ArgMatches) -> Result<()> {
         let next_handle = self
             .handle_from_args(args)
-            .or_else(|_| self.random_handle())?;
+            .or_else(|_| {
+                if args.get_flag("reverse") {
+                    let max_attemps = 100;
+                    for _i in 0..max_attemps {
+                        let handle = self.random_handle().unwrap();
+                        let clash = self.read_clash(&handle).unwrap();
+                        if clash.is_reverse() {
+                            return Ok(handle);
+                        }
+                    }
+                    Err(anyhow::Error::msg(format!("No reverse clash found after {} attempts.", max_attemps)))
+                } else {
+                    self.random_handle()
+                }
+            })?;
+        // If we have a PUBLIC_HANDLE and a --reverse flag, throw an error if the clash doesn't have reverse
+        if args.get_flag("reverse") {
+            let clash = self.read_clash(&next_handle).unwrap();
+            if !clash.is_reverse() {
+                return Err(anyhow::Error::msg("The given handle doesn't has reverse mode."))
+            }
+        }
         println!("Changed clash to https://codingame.com/contribute/view/{}", next_handle);
         println!(" Local file: {}/{}.json", &self.clash_dir.to_str().unwrap(), next_handle);
         std::fs::write(&self.current_clash_file, next_handle.to_string())?;
