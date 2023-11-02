@@ -220,7 +220,7 @@ impl App {
     fn programming_language_from_args(&self, args: &ArgMatches) -> Result<ProgrammingLanguage> {
         match args.get_one::<String>("PROGRAMMING_LANGUAGE") {
             Some(s) => Ok(ProgrammingLanguage::from(s.to_owned())),
-            None => Err(anyhow!("No clash handle given")),
+            None => Err(anyhow!("No programming language given")),
         }
     }
 
