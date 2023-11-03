@@ -10,9 +10,9 @@ pub fn generate(lang: ProgrammingLanguage, generator: &str) -> String {
 
     while let Some(token) = stream.next() {
         let stub_part = match token {
-            "read" => Stub::Read(Parser::parse_readstub_list(&mut stream)),
-            "write" => Stub::Write(Parser::parse_writes(&mut stream)),
             // TODO: Add loop and loopline
+            "read" => Parser::parse_read(&mut stream),
+            "write" => Parser::parse_write(&mut stream),
             "\n" | "" => continue,
             thing => panic!("Error parsing stub generator: {}", thing),
         };
@@ -23,7 +23,7 @@ pub fn generate(lang: ProgrammingLanguage, generator: &str) -> String {
 }
 
 #[derive(Debug)]
-pub enum ReadStub {
+pub enum VariableStub {
   Int { name: String },
   Float { name: String },
   Long { name: String },
@@ -33,9 +33,9 @@ pub enum ReadStub {
 }
 
 #[derive(Debug)]
-enum Stub {
-  Read(Vec<ReadStub>),
-  Loop(Box<Stub>),
-  LoopLine(Box<Stub>),
+pub enum Stub {
+  Read(Vec<VariableStub>),
+  Loop { count: String, command: Box<Stub> },
+  LoopLine { object: String, variables: Vec<VariableStub> },
   Write(String),
 }
