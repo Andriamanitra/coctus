@@ -1,32 +1,37 @@
 use tera::{Tera, Context};
 
 use crate::programming_language::ProgrammingLanguage;
-use super::Stub;
+use super::{Command, Stub};
 
-pub struct Renderer {
+pub fn render_stub(lang: ProgrammingLanguage, stub: Stub) -> String {
+    let rend = Renderer::new(lang, stub);
+    rend.render()
+}
+
+struct Renderer {
     tera: Tera,
     lang: ProgrammingLanguage,
+    stub: Stub,
 }
 
 impl Renderer {
-    pub fn new(lang: ProgrammingLanguage) -> Self {
+    fn new(lang: ProgrammingLanguage, stub: Stub) -> Self {
         let tera = Tera::new(&lang.template_glob())
             .expect("There are no templates for this language");
-        Self { lang, tera }
+        Self { lang, tera, stub }
     }
 
-    pub fn render(&self, stubs: Vec<Stub>) -> String {
+    fn render(&self) -> String {
         let mut context = Context::new();
-        let mut code = String::new();
 
-        let code_lines: Vec<String> = stubs.iter().map(|stub| {
+        let commands: Vec<String> = self.stub.commands.iter().map(|stub| {
             match stub {
-                Stub::Write(message) => self.render_write(message),
+                Command::Write(message) => self.render_write(message),
                 _ => String::from(""),
             }
         }).collect();
 
-        context.insert("code_lines", &code_lines);
+        context.insert("commands", &commands);
 
         self.tera.render(&format!("main.{}", self.lang.source_file_ext), &context)
             .expect("Failed to render template for stub")
