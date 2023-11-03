@@ -1,4 +1,6 @@
-use crate::{clash::TestCase, outputstyle::OutputStyle, formatter::show_whitespace};
+use crate::clash::TestCase;
+use crate::formatter::show_whitespace;
+use crate::outputstyle::OutputStyle;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum TestRunResult {
@@ -92,7 +94,7 @@ impl<'a> Iterator for LinesWithEndings<'a> {
     #[inline]
     fn next(&mut self) -> Option<&'a str> {
         if self.input.is_empty() {
-            return None;
+            return None
         }
         let split = self.input.find('\n').map(|i| i + 1).unwrap_or(self.input.len());
         let (line, rest) = self.input.split_at(split);
@@ -103,8 +105,8 @@ impl<'a> Iterator for LinesWithEndings<'a> {
 
 pub fn print_diff(testcase: &TestCase, stdout: &str, ostyle: &OutputStyle) {
     use dissimilar::Chunk::*;
+    use itertools::EitherOrBoth::{Both, Left, Right};
     use itertools::Itertools;
-    use itertools::EitherOrBoth::{Left, Right, Both};
 
     // (TODO) temporary styling, to be replaced with OutputStyle eventually
     let green = ansi_term::Style::new().fg(ansi_term::Color::RGB(111, 255, 111));
@@ -139,10 +141,10 @@ pub fn print_diff(testcase: &TestCase, stdout: &str, ostyle: &OutputStyle) {
                             if !rest.is_empty() {
                                 print!("{}", show_whitespace(rest, &green, ws_style));
                             }
-                        },
+                        }
                         Equal(text) => print!("{}", show_whitespace(text, &green, ws_style)),
                         Insert(text) => print!("{}", show_whitespace(text, &red, &error_red)),
-                        Delete(_) => {},
+                        Delete(_) => {}
                     }
 
                     prev_deleted = matches!(chunk, Delete(_));
@@ -160,4 +162,3 @@ pub fn print_diff(testcase: &TestCase, stdout: &str, ostyle: &OutputStyle) {
         println!("{}", dim_color.paint(msg));
     }
 }
-

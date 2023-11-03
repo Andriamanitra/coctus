@@ -1,7 +1,8 @@
-use std::{process::Command, vec::IntoIter};
+use std::process::Command;
+use std::vec::IntoIter;
 
-use crate::clash::TestCase;
 use super::test_run::{TestRun, TestRunResult};
+use crate::clash::TestCase;
 
 pub struct SuiteRun {
     testcases: IntoIter<TestCase>,
@@ -24,16 +25,20 @@ impl Iterator for SuiteRun {
 
 impl SuiteRun {
     pub fn new(testcases: Vec<TestCase>, run_command: Command) -> Self {
-        Self { testcases: testcases.into_iter(),
-               run_command }
+        Self {
+            testcases: testcases.into_iter(),
+            run_command,
+        }
     }
 
     fn run_testcase(&mut self, test: TestCase) -> TestRun {
-        let mut run = self.run_command
+        let mut run = self
+            .run_command
             .stdin(std::process::Stdio::piped())
             .stdout(std::process::Stdio::piped())
             .stderr(std::process::Stdio::piped())
-            .spawn().expect("Failed to run --command");
+            .spawn()
+            .expect("Failed to run --command");
 
         let mut stdin = run.stdin.as_mut().unwrap();
         std::io::Write::write(&mut stdin, test.test_in.as_bytes())

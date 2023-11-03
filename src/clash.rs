@@ -26,7 +26,7 @@ pub enum PuzzleType {
     #[serde(rename = "CLASHOFCODE")]
     Clash,
     #[serde(rename = "PUZZLE_INOUT")]
-    ClassicInOut
+    ClassicInOut,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -60,9 +60,6 @@ struct ClashData {
     #[serde(rename = "outputDescription")]
     output_description: String,
 }
-
-
-
 
 impl Clash {
     pub fn testcases(&self) -> &Vec<TestCase> {
@@ -111,20 +108,24 @@ impl Clash {
 
     pub fn print_headers(&self, ostyle: &OutputStyle) {
         println!("{}\n", ostyle.title.paint(format!("=== {} ===", self.title())));
-        println!("{}\n", ostyle.link.paint(self.codingame_link()));  
+        println!("{}\n", ostyle.link.paint(self.codingame_link()));
     }
 
     pub fn print_statement(&self, ostyle: &OutputStyle) {
-
         println!("{}\n", format_cg(self.statement(), ostyle));
         println!("{}\n{}\n", ostyle.title.paint("Input:"), format_cg(self.input_description(), ostyle));
-        println!("{}\n{}\n", ostyle.title.paint("Output:"), format_cg(self.output_description(), ostyle));
+        println!(
+            "{}\n{}\n",
+            ostyle.title.paint("Output:"),
+            format_cg(self.output_description(), ostyle)
+        );
         if let Some(constraints) = self.constraints() {
             println!("{}\n{}\n", ostyle.title.paint("Constraints:"), format_cg(constraints, ostyle));
         }
 
         let example = self.testcases().first().expect("no test cases");
-        println!("{}\n{}\n{}\n{}",
+        println!(
+            "{}\n{}\n{}\n{}",
             ostyle.title.paint("Example:"),
             example.styled_input(ostyle),
             ostyle.title.paint("Expected output:"),
@@ -133,11 +134,13 @@ impl Clash {
     }
 
     pub fn print_testcases(&self, ostyle: &OutputStyle, selection: Vec<usize>) {
-        // Skips validators: -t 1 will print the example, -t 2 will print the second test (skipping validator 1)
+        // Skips validators: -t 1 will print the example, -t 2 will print the second
+        // test (skipping validator 1)
         for (idx, testcase) in self.testcases().iter().filter(|t| !t.is_validator).enumerate() {
             if selection.contains(&idx) {
                 let styled_title = ostyle.title.paint(format!("#{} {}", idx, testcase.title));
-                println!("{}\n{}\n\n{}\n",
+                println!(
+                    "{}\n{}\n\n{}\n",
                     styled_title,
                     testcase.styled_input(ostyle),
                     testcase.styled_output(ostyle),
