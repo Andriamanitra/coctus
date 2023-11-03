@@ -27,3 +27,9 @@ impl From<String> for ProgrammingLanguage {
         toml::from_str(&config_file_content).expect("There was an error with the stub configuration")
     }
 }
+
+impl ProgrammingLanguage {
+    pub fn template_glob(&self) -> String {
+        format!("config/stub_templates/{}/*.{}", self.name, self.source_file_ext)
+    }
+}

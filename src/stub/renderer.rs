@@ -3,32 +3,47 @@ use tera::{Tera, Context};
 use crate::programming_language::ProgrammingLanguage;
 use super::Stub;
 
-pub fn render(lang: ProgrammingLanguage, stubs: Vec<Stub>) -> String {
-    let starting_filepath = format!("config/stub_templates/{}/main.{}", lang.name, lang.source_file_ext);
-    let starting_contents = std::fs::read_to_string(&starting_filepath)
-        .expect("Could not find template for stub");
+pub struct Renderer {
+    tera: Tera,
+    lang: ProgrammingLanguage,
+}
 
-    // let tera = Tera::new(&starting_filepath).expect("Could not find template for stub");
-    let mut context = Context::new();
-    let mut code = String::new();
-
-    for stub in stubs {
-        match stub {
-            Stub::Write(message) => {
-                let lines: Vec<String> = message.lines().map(|line| line.to_string()).collect();
-                let write_template = format!("config/stub_templates/{}/write.{}", lang.name, lang.source_file_ext);
-                let content = std::fs::read_to_string(write_template).unwrap();
-                let mut context = Context::new();
-                context.insert("messages", &lines);
-                let out = Tera::one_off(&content, &context, false).expect("Failed to render write template for stub");
-                code.push_str(&out);
-            },
-            _ => continue,
-        }
+impl Renderer {
+    pub fn new(lang: ProgrammingLanguage) -> Self {
+        let tera = Tera::new(&lang.template_glob())
+            .expect("There are no templates for this language");
+        Self { lang, tera }
     }
 
-    context.insert("code", &code);
+    pub fn render(&self, stubs: Vec<Stub>) -> String {
+        let mut context = Context::new();
+        let mut code = String::new();
 
-    Tera::one_off(&starting_contents, &context, false).expect("Failed to render template for stub")
+        let code_lines: Vec<String> = stubs.iter().map(|stub| {
+            match stub {
+                Stub::Write(message) => self.render_write(message),
+                _ => String::from(""),
+            }
+        }).collect();
+
+        context.insert("code_lines", &code_lines);
+
+        self.tera.render(&format!("main.{}", self.lang.source_file_ext), &context)
+            .expect("Failed to render template for stub")
+    }
+
+    fn render_write(&self, message: &String) -> String {
+        let mut context = Context::new();
+        context.insert("messages", &message.lines().collect::<Vec<&str>>());
+        self.tera.render(&self.template_path("write"), &context)
+            .expect("Could not find write template")
+    }
+
+    fn template_path(&self, template_name: &str) -> String {
+        format!("{template_name}.{}", self.lang.source_file_ext)
+    }
 }
+
+
+
 

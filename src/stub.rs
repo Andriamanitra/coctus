@@ -1,6 +1,7 @@
 mod parser;
 mod renderer;
 
+use renderer::Renderer;
 use parser::Parser;
 use crate::programming_language::ProgrammingLanguage;
 
@@ -21,7 +22,8 @@ pub fn generate(lang: ProgrammingLanguage, generator: &str) -> String {
         stub_parts.push(stub_part);
     }
 
-    let output = renderer::render(lang, stub_parts.clone());
+    let rend = Renderer::new(lang);
+    let output = rend.render(stub_parts.clone());
 
     format!("{}\n{:?}", output, stub_parts)
 }

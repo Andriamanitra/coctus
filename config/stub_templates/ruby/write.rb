@@ -1,2 +1,1 @@
-{% for line in messages %}
-puts '{{line}}'{% endfor %}
+{% for line in messages %}puts '{{line}}'{% endfor %}
