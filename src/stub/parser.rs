@@ -29,7 +29,29 @@ impl<'a> Parser {
         Stub::Write(output.join(" "))
     }
 
-    pub fn parse_variable(token: &str) -> VariableStub {
+    pub fn parse_loop(mut stream: &mut impl Iterator<Item = &'a str>) -> Stub {
+        let count = match stream.next() {
+            Some("\n") | None => panic!("Loop stub not provided with loop count"),
+            Some(other) => String::from(other),
+        };
+
+        let command = Box::new(Self::parse_read_or_write(&mut stream));
+
+        Stub::Loop { count, command }
+    }
+
+    pub fn parse_loopline(mut stream: &mut impl Iterator<Item = &'a str>) -> Stub {
+        let object = match stream.next() {
+            Some("\n") | None => panic!("Loopline stub not provided with identifier to loop through"),
+            Some(other) => String::from(other),
+        };
+
+        let variables = Self::parse_variable_list(&mut stream);
+
+        Stub::LoopLine { object, variables }
+    }
+
+    fn parse_variable(token: &str) -> VariableStub {
         let mut iter = token.split(":");
         let identifier = String::from(iter.next().unwrap());
         let var_type = iter.next().expect("Error in stub generator: missing type");
@@ -53,7 +75,7 @@ impl<'a> Parser {
         }
     }
 
-    pub fn parse_variable_list(stream: &mut impl Iterator<Item = &'a str>) -> Vec<VariableStub> {
+    fn parse_variable_list(stream: &mut impl Iterator<Item = &'a str>) -> Vec<VariableStub> {
         let mut vars = Vec::new();
 
         while let Some(token) = stream.next() {
@@ -69,5 +91,14 @@ impl<'a> Parser {
         };
 
         vars
+    }
+
+    fn parse_read_or_write(mut stream: &mut impl Iterator<Item = &'a str>) -> Stub {
+        match stream.next() {
+            Some("read") => Parser::parse_read(&mut stream),
+            Some("write") => Parser::parse_write(&mut stream),
+            Some(thing) => panic!("Error parsing loop command in stub generator, got: {}", thing),
+            None => panic!("Loop with no arguments in stub generator"),
+        }
     }
 }

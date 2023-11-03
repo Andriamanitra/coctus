@@ -10,9 +10,10 @@ pub fn generate(lang: ProgrammingLanguage, generator: &str) -> String {
 
     while let Some(token) = stream.next() {
         let stub_part = match token {
-            // TODO: Add loop and loopline
             "read" => Parser::parse_read(&mut stream),
             "write" => Parser::parse_write(&mut stream),
+            "loop" => Parser::parse_loop(&mut stream),
+            "loopline" => Parser::parse_loopline(&mut stream),
             "\n" | "" => continue,
             thing => panic!("Error parsing stub generator: {}", thing),
         };
