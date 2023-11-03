@@ -4,7 +4,7 @@ use parser::Parser;
 use crate::programming_language::ProgrammingLanguage;
 
 pub fn generate(lang: ProgrammingLanguage, generator: &str) -> String {
-    let binding = generator.replace("\n", " \n ");
+    let binding = generator.replace("\n", " \n ").replace("\n  \n", "\n \n");
     let mut stream = binding.split(" ");
     let mut stub_parts: Vec<Stub> = Vec::new();
 
@@ -13,7 +13,7 @@ pub fn generate(lang: ProgrammingLanguage, generator: &str) -> String {
             "read" => Stub::Read(Parser::parse_readstub_list(&mut stream)),
             "write" => Stub::Write(Parser::parse_writes(&mut stream)),
             // TODO: Add loop and loopline
-            "\n" => continue,
+            "\n" | "" => continue,
             thing => panic!("Error parsing stub generator: {}", thing),
         };
         stub_parts.push(stub_part);
