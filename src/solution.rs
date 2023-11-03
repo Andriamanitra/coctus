@@ -1,4 +1,5 @@
 use std::process::Command;
+
 use anyhow::{anyhow, Result};
 
 mod suite_run;
@@ -16,7 +17,7 @@ pub fn build(build_command: Option<Command>) -> Result<()> {
         Some(cmd) => cmd,
         None => return Ok(()),
     };
-    
+
     let build = command.output()?;
 
     if !build.status.success() {
@@ -26,9 +27,8 @@ pub fn build(build_command: Option<Command>) -> Result<()> {
         if !build.stdout.is_empty() {
             println!("Build command STDOUT:\n{}", String::from_utf8(build.stdout)?);
         }
-        return Err(anyhow!("Build failed"));
+        return Err(anyhow!("Build failed"))
     }
 
     Ok(())
 }
-

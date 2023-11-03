@@ -1,0 +1,9 @@
+unstable_features = true
+max_width = 120
+fn_call_width = 100
+attr_fn_like_width = 100
+chain_width = 100
+imports_granularity = "Module"
+group_imports = "StdExternalCrate"
+trailing_semicolon = false
+wrap_comments = true

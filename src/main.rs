@@ -1,8 +1,10 @@
+use std::path::PathBuf;
+use std::process::Command;
+
 use anyhow::{anyhow, Context, Result};
 use clap::ArgMatches;
 use directories::ProjectDirs;
 use rand::seq::IteratorRandom;
-use std::{path::PathBuf, process::Command};
 
 pub mod clash;
 pub mod formatter;
@@ -15,7 +17,7 @@ use outputstyle::OutputStyle;
 #[derive(Clone)]
 pub enum OutputStyleOption {
     Default,
-    Plain
+    Plain,
 }
 
 fn command_from_argument(cmd_arg: Option<&String>) -> Result<Option<Command>> {
@@ -176,15 +178,8 @@ impl App {
 
     fn random_handle(&self) -> Result<PublicHandle> {
         let mut rng = rand::thread_rng();
-        if let Ok(entry) = self
-            .clashes()?
-            .choose(&mut rng)
-            .expect("No clashes to choose from!")
-        {
-            let filename = entry
-                .file_name()
-                .into_string()
-                .expect("unable to convert OsString to String (?!?)");
+        if let Ok(entry) = self.clashes()?.choose(&mut rng).expect("No clashes to choose from!") {
+            let filename = entry.file_name().into_string().expect("unable to convert OsString to String (?!?)");
             PublicHandle::new(match filename.strip_suffix(".json") {
                 Some(handle) => handle,
                 None => &filename,
@@ -229,7 +224,7 @@ impl App {
             // Return an error if any index is out of bounds
             let max_idx = clash.testcases().len() / 2;
             if testcases_to_print.iter().any(|&x| x > max_idx) {
-                return Err(anyhow!("Invalid index. The clash only has {} tests.", max_idx));
+                return Err(anyhow!("Invalid index. The clash only has {} tests.", max_idx))
             }
 
             // If the flag has no arguments, print everything
@@ -246,16 +241,16 @@ impl App {
         if args.get_flag("reverse") {
             if clash.is_reverse() {
                 clash.print_reverse_mode(&ostyle);
-                return Ok(());
+                return Ok(())
             } else {
-                return Err(anyhow::Error::msg("The clash doesn't have a reverse mode"));
+                return Err(anyhow::Error::msg("The clash doesn't have a reverse mode"))
             }
         }
 
         // If the clash is reverse only, print the headers and testcases.
         if clash.is_reverse_only() {
             clash.print_reverse_mode(&ostyle);
-            return Ok(());
+            return Ok(())
         }
 
         clash.print_headers(&ostyle);
@@ -264,28 +259,27 @@ impl App {
     }
 
     fn next(&self, args: &ArgMatches) -> Result<()> {
-        let next_handle = self
-            .handle_from_args(args)
-            .or_else(|_| {
-                let reverse  = args.get_flag("reverse");
-                let fastest  = args.get_flag("fastest");
-                let shortest = args.get_flag("shortest");
-                if reverse || fastest || shortest {
-                    let max_attemps = 100;
-                    for _i in 0..max_attemps {
-                        let handle = self.random_handle()?;
-                        let clash = self.read_clash(&handle)?;
-                        if (!reverse  || clash.is_reverse()) 
-                        && (!fastest  || clash.is_fastest()) 
-                        && (!shortest || clash.is_shortest()) {
-                            return Ok(handle);
-                        }
+        let next_handle = self.handle_from_args(args).or_else(|_| {
+            let reverse = args.get_flag("reverse");
+            let fastest = args.get_flag("fastest");
+            let shortest = args.get_flag("shortest");
+            if reverse || fastest || shortest {
+                let max_attemps = 100;
+                for _i in 0..max_attemps {
+                    let handle = self.random_handle()?;
+                    let clash = self.read_clash(&handle)?;
+                    if (!reverse || clash.is_reverse())
+                        && (!fastest || clash.is_fastest())
+                        && (!shortest || clash.is_shortest())
+                    {
+                        return Ok(handle)
                     }
-                    Err(anyhow!(format!("Failed to find a clash with the required modes after {} attempts.", max_attemps)))
-                } else {
-                    self.random_handle()
                 }
-            })?;
+                Err(anyhow!(format!("Failed to find a clash with the required modes after {} attempts.", max_attemps)))
+            } else {
+                self.random_handle()
+            }
+        })?;
         println!("Changed clash to https://codingame.com/contribute/view/{}", next_handle);
         println!(" Local file: {}/{}.json", &self.clash_dir.to_str().unwrap(), next_handle);
         std::fs::write(&self.current_clash_file, next_handle.to_string())?;
@@ -308,15 +302,13 @@ impl App {
     }
 
     fn run(&self, args: &ArgMatches) -> Result<()> {
-        let handle = self
-            .handle_from_args(args)
-            .or_else(|_| self.current_handle())?;
+        let handle = self.handle_from_args(args).or_else(|_| self.current_handle())?;
 
-        let build_command: Option<Command> = command_from_argument(args.get_one::<String>("build-command"))?;
+        let build_command = command_from_argument(args.get_one::<String>("build-command"))?;
         solution::build(build_command)?;
 
-        let run_command: Command = command_from_argument(args.get_one::<String>("command"))?
-            .expect("--command is required to run solution.");
+        let run_command: Command =
+            command_from_argument(args.get_one::<String>("command"))?.expect("--command is required to run solution.");
         let testcases = self.read_clash(&handle)?.testcases().to_owned();
         let num_tests = testcases.len();
         let suite_run = solution::run(testcases, run_command);
@@ -351,7 +343,8 @@ impl App {
             for handle in handles {
                 let handle = PublicHandle::new(handle)?;
                 let http = reqwest::blocking::Client::new();
-                let res = http.post("https://www.codingame.com/services/Contribution/findContribution")
+                let res = http
+                    .post("https://www.codingame.com/services/Contribution/findContribution")
                     .body(format!(r#"["{}", true]"#, handle))
                     .header(reqwest::header::CONTENT_TYPE, "application/json")
                     .send()?;
@@ -377,10 +370,8 @@ impl App {
     }
 
     fn generate_completions(&self, args: &ArgMatches) -> Result<()> {
-        let generator = args
-            .get_one::<clap_complete::Shell>("SHELL")
-            .copied()
-            .with_context(|| anyhow!("shell required"))?;
+        let generator =
+            args.get_one::<clap_complete::Shell>("SHELL").copied().with_context(|| anyhow!("shell required"))?;
         let mut cmd = cli();
         let name = String::from(cmd.get_name());
         eprintln!("Generating {generator} completions...");
@@ -391,8 +382,7 @@ impl App {
 
 fn main() -> Result<()> {
     // We look for the locally stored clashes here:
-    let project_dirs =
-        ProjectDirs::from("com", "Clash CLI", "clash").expect("Unable to find project directory");
+    let project_dirs = ProjectDirs::from("com", "Clash CLI", "clash").expect("Unable to find project directory");
 
     let app = App::new(project_dirs.data_dir());
 
@@ -404,6 +394,6 @@ fn main() -> Result<()> {
         Some(("fetch", args)) => app.fetch(args),
         Some(("json", args)) => app.json(args),
         Some(("generate-shell-completion", args)) => app.generate_completions(args),
-        _ => Err(anyhow!("unimplemented subcommand"))
+        _ => Err(anyhow!("unimplemented subcommand")),
     }
 }

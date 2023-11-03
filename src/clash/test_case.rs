@@ -1,6 +1,7 @@
-use serde::{Serialize, Deserialize, Deserializer};
+use serde::{Deserialize, Deserializer, Serialize};
 
-use crate::{formatter::show_whitespace, outputstyle::OutputStyle};
+use crate::formatter::show_whitespace;
+use crate::outputstyle::OutputStyle;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct TestCase {
@@ -23,12 +24,12 @@ fn deserialize_testcase_title<'de, D: Deserializer<'de>>(de: D) -> Result<String
         Normal(String),
         Weird {
             #[serde(rename = "2")]
-            title: String
+            title: String,
         },
     }
     let title = match TempTitle::deserialize(de)? {
         TempTitle::Normal(title) => title,
-        TempTitle::Weird {title} => title
+        TempTitle::Weird { title } => title,
     };
     Ok(title)
 }
@@ -48,4 +49,3 @@ impl TestCase {
         }
     }
 }
-
