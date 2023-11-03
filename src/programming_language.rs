@@ -15,6 +15,7 @@ pub enum VariableNameFormat {
 pub struct ProgrammingLanguage {
     name: String,
     variable_format: VariableNameFormat,
+    source_file_ext: String,
 }
 
 impl From<String> for ProgrammingLanguage {
