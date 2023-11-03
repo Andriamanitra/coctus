@@ -121,9 +121,8 @@ fn cli() -> clap::Command {
                     \nExamples:\
                     \n  $ clash generate-shell-completion fish > ~/.config/fish/completions/clash.fish\
                     \n  $ clash generate-shell-completion bash >> ~/.config/bash_completion\
-                    \n  $ clash generate-shell-completion powershell >> $PROFILE.CurrentUserCurrentHost
-                    \n    NOTE: You may need to move the using statements to the top of your $PROFILE.CurrentUserCurrentHost.
-                    \n          Run `notepad.exe $PROFILE.CurrentUserCurrentHost` and edit it accordingly."
+                    \n  $ clash generate-shell-completion powershell >> $PROFILE.CurrentUserCurrentHost\
+                    \nNOTE: (powershell) You may need to move the using statements to the top of the script."
                 )
         )
 }
@@ -276,10 +275,11 @@ impl App {
                     for _i in 0..max_attemps {
                         let handle = self.random_handle()?;
                         let clash = self.read_clash(&handle)?;
-                        if reverse  && !clash.is_reverse()  { continue; }
-                        if fastest  && !clash.is_fastest()  { continue; }
-                        if shortest && !clash.is_shortest() { continue; }
-                        return Ok(handle);
+                        if (!reverse  || clash.is_reverse()) 
+                        && (!fastest  || clash.is_fastest()) 
+                        && (!shortest || clash.is_shortest()) {
+                            return Ok(handle);
+                        }
                     }
                     Err(anyhow!(format!("Failed to find a clash with the required modes after {} attempts.", max_attemps)))
                 } else {
