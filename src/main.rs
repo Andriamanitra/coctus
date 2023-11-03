@@ -278,7 +278,7 @@ impl App {
                         if shortest && !clash.is_shortest() { continue; }
                         return Ok(handle);
                     }
-                    Err(anyhow!(format!("No required clash found after {} attempts.", max_attemps)))
+                    Err(anyhow!(format!("Failed to find a clash with the required modes after {} attempts.", max_attemps)))
                 } else {
                     self.random_handle()
                 }
