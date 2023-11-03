@@ -11,7 +11,7 @@ pub mod formatter;
 pub mod outputstyle;
 pub mod solution;
 
-use clash::Clash;      
+use clash::Clash;
 use outputstyle::OutputStyle;
 
 #[derive(Clone)]
