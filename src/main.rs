@@ -120,7 +120,10 @@ fn cli() -> clap::Command {
                     \nIntended to be piped to a file. See documentation for your shell for details about where to place the completion file.\
                     \nExamples:\
                     \n  $ clash generate-shell-completion fish > ~/.config/fish/completions/clash.fish\
-                    \n  $ clash generate-shell-completion bash >> ~/.config/bash_completion"
+                    \n  $ clash generate-shell-completion bash >> ~/.config/bash_completion\
+                    \n  $ clash generate-shell-completion powershell >> $PROFILE.CurrentUserCurrentHost
+                    \n    NOTE: You may need to move the using statements to the top of your $PROFILE.CurrentUserCurrentHost.
+                    \n          Run `notepad.exe $PROFILE.CurrentUserCurrentHost` and edit it accordingly."
                 )
         )
 }
