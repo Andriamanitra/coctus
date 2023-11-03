@@ -19,8 +19,7 @@ pub fn generate(lang: ProgrammingLanguage, generator: &str) -> String {
         stub_parts.push(stub_part);
     }
 
-    println!("{:#?}", stub_parts);
-    String::from("Please compile")
+    format!("{:?}", stub_parts)
 }
 
 #[derive(Debug)]
