@@ -61,7 +61,7 @@ fn cli() -> clap::Command {
                         .action(clap::ArgAction::Append)
                         .value_parser(value_parser!(usize))
                 )
-                .arg(arg!(--"reverse" "print the clash in reverse mode"))
+                .arg(arg!(-'r' --"reverse" "print the clash in reverse mode"))
         )
         .subcommand(
             Command::new("next")
@@ -70,9 +70,9 @@ fn cli() -> clap::Command {
                     arg!([PUBLIC_HANDLE] "hexadecimal handle of the clash")
                         .exclusive(true)
                 )
-                .arg(arg!(--"reverse" "pick a random clash that has reverse mode"))
-                .arg(arg!(--"shortest" "pick a random clash that has shortest mode"))
-                .arg(arg!(--"fastest" "pick a random clash that has fastest mode"))
+                .arg(arg!(-'r' --"reverse" "pick a random clash that has reverse mode"))
+                .arg(arg!(-'s' --"shortest" "pick a random clash that has shortest mode"))
+                .arg(arg!(-'f' --"fastest" "pick a random clash that has fastest mode"))
                 .after_help(
                     "Pick a random clash from locally stored clashes when PUBLIC_HANDLE is not given.\
                     \nIf instead flags modes are supplied, it will look for a clash that has at least all of those modes available.\
