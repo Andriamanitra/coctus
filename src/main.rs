@@ -61,17 +61,23 @@ fn cli() -> clap::Command {
                         .action(clap::ArgAction::Append)
                         .value_parser(value_parser!(usize))
                 )
-                .arg(arg!(--"reverse" "print the clash in reverse mode"))
+                .arg(arg!(-'r' --"reverse" "print the clash in reverse mode"))
         )
         .subcommand(
             Command::new("next")
                 .about("Select next clash")
                 .arg(
                     arg!([PUBLIC_HANDLE] "hexadecimal handle of the clash")
-                        .conflicts_with("reverse")
+                        .exclusive(true)
                 )
-                .arg(arg!(--"reverse" "picks a random clash that has reverse mode"))
-                .after_help("Picks a random clash from locally stored clashes when PUBLIC_HANDLE is not given.")
+                .arg(arg!(-'r' --"reverse" "pick a random clash that has reverse mode"))
+                .arg(arg!(-'s' --"shortest" "pick a random clash that has shortest mode"))
+                .arg(arg!(-'f' --"fastest" "pick a random clash that has fastest mode"))
+                .after_help(
+                    "Pick a random clash from locally stored clashes when PUBLIC_HANDLE is not given.\
+                    \nIf instead flags modes are supplied, it will look for a clash that has at least all of those modes available.\
+                    \nFor example: clash next --fastest --shortest will return a clash that has BOTH fastest and shortest as options."
+                )
         )
         .subcommand(
             Command::new("run")
@@ -114,7 +120,9 @@ fn cli() -> clap::Command {
                     \nIntended to be piped to a file. See documentation for your shell for details about where to place the completion file.\
                     \nExamples:\
                     \n  $ clash generate-shell-completion fish > ~/.config/fish/completions/clash.fish\
-                    \n  $ clash generate-shell-completion bash >> ~/.config/bash_completion"
+                    \n  $ clash generate-shell-completion bash >> ~/.config/bash_completion\
+                    \n  $ clash generate-shell-completion powershell >> $PROFILE.CurrentUserCurrentHost\
+                    \nNOTE: (powershell) You may need to move the using statements to the top of the script."
                 )
         )
 }
@@ -259,16 +267,21 @@ impl App {
         let next_handle = self
             .handle_from_args(args)
             .or_else(|_| {
-                if args.get_flag("reverse") {
+                let reverse  = args.get_flag("reverse");
+                let fastest  = args.get_flag("fastest");
+                let shortest = args.get_flag("shortest");
+                if reverse || fastest || shortest {
                     let max_attemps = 100;
                     for _i in 0..max_attemps {
                         let handle = self.random_handle()?;
                         let clash = self.read_clash(&handle)?;
-                        if clash.is_reverse() {
+                        if (!reverse  || clash.is_reverse()) 
+                        && (!fastest  || clash.is_fastest()) 
+                        && (!shortest || clash.is_shortest()) {
                             return Ok(handle);
                         }
                     }
-                    Err(anyhow!(format!("No reverse clash found after {} attempts.", max_attemps)))
+                    Err(anyhow!(format!("Failed to find a clash with the required modes after {} attempts.", max_attemps)))
                 } else {
                     self.random_handle()
                 }
