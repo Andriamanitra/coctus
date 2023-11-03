@@ -1,6 +1,6 @@
 use regex::Regex;
 
-use super::{VariableCommand, Command, Stub};
+use super::{VariableCommand, Command, Stub, InputComment};
 
 
 pub fn parse_generator_stub(generator: String) -> Stub {
@@ -22,19 +22,17 @@ impl<'a, I: Iterator<Item = &'a str>> Parser<I> {
         let mut stub = Stub::new();
 
         while let Some(token) = self.stream.next() {
-            let command = match token {
-                "read" => self.parse_read(),
-                "write" => self.parse_write(),
-                "loop" => self.parse_loop(),
-                "loopline" => self.parse_loopline(),
-                "OUTPUT" => continue,
-                "INPUT" => continue,
-                "STATEMENT" => continue,
+            match token {
+                "read" => stub.commands.push(self.parse_read()),
+                "write" => stub.commands.push(self.parse_write()),
+                "loop" => stub.commands.push(self.parse_loop()),
+                "loopline" => stub.commands.push(self.parse_loopline()),
+                "OUTPUT" => stub.output_comment = self.parse_output_comment(),
+                "INPUT" => stub.input_comments.append(&mut self.parse_input_comment()),
+                "STATEMENT" => stub.statement = self.parse_statement(),
                 "\n" | "" => continue,
                 thing => panic!("Error parsing stub generator: {}", thing),
             };
-
-            stub.commands.push(command);
         }
 
         stub
@@ -135,5 +133,17 @@ impl<'a, I: Iterator<Item = &'a str>> Parser<I> {
             Some(thing) => panic!("Error parsing loop command in stub generator, got: {}", thing),
             None => panic!("Loop with no arguments in stub generator"),
         }
+    }
+
+    fn parse_output_comment(&self) -> String {
+        todo!()
+    }
+
+    fn parse_input_comment(&self) -> Vec<InputComment> {
+        todo!()
+    }
+
+    fn parse_statement(&self) -> String {
+        todo!()
     }
 }
