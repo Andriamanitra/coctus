@@ -114,7 +114,11 @@ impl Clash {
     pub fn print_statement(&self, ostyle: &OutputStyle) {
         println!("{}\n", format_cg(self.statement(), ostyle));
         println!("{}\n{}\n", ostyle.title.paint("Input:"), format_cg(self.input_description(), ostyle));
-        println!("{}\n{}\n", ostyle.title.paint("Output:"), format_cg(self.output_description(), ostyle));
+        println!(
+            "{}\n{}\n",
+            ostyle.title.paint("Output:"),
+            format_cg(self.output_description(), ostyle)
+        );
         if let Some(constraints) = self.constraints() {
             println!("{}\n{}\n", ostyle.title.paint("Constraints:"), format_cg(constraints, ostyle));
         }
@@ -135,7 +139,12 @@ impl Clash {
         for (idx, testcase) in self.testcases().iter().filter(|t| !t.is_validator).enumerate() {
             if selection.contains(&idx) {
                 let styled_title = ostyle.title.paint(format!("#{} {}", idx, testcase.title));
-                println!("{}\n{}\n\n{}\n", styled_title, testcase.styled_input(ostyle), testcase.styled_output(ostyle),);
+                println!(
+                    "{}\n{}\n\n{}\n",
+                    styled_title,
+                    testcase.styled_input(ostyle),
+                    testcase.styled_output(ostyle),
+                );
             }
         }
     }

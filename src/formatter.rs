@@ -73,7 +73,9 @@ pub fn format_cg(text: &str, ostyle: &OutputStyle) -> String {
     result = RE_CONSTANT
         .replace_all(&result, |caps: &regex::Captures| {
             let escaped_cons = RE_VARIABLE
-                .replace_all(&caps[0], |inner_caps: &regex::Captures| format!("{}{}{}", "}}", &inner_caps[0], "{{"))
+                .replace_all(&caps[0], |inner_caps: &regex::Captures| {
+                    format!("{}{}{}", "}}", &inner_caps[0], "{{")
+                })
                 .to_string();
             RE_MONOSPACE
                 .replace_all(&escaped_cons, |inner_caps: &regex::Captures| {

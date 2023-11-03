@@ -136,7 +136,10 @@ impl PublicHandle {
         if s.chars().all(|ch| ch.is_ascii_hexdigit()) {
             Ok(PublicHandle(String::from(s)))
         } else {
-            Err(anyhow!("Invalid clash handle '{}' (valid handles only contain characters 0-9 and a-f)", s))
+            Err(anyhow!(
+                "Invalid clash handle '{}' (valid handles only contain characters 0-9 and a-f)",
+                s
+            ))
         }
     }
 }
@@ -179,7 +182,8 @@ impl App {
     fn random_handle(&self) -> Result<PublicHandle> {
         let mut rng = rand::thread_rng();
         if let Ok(entry) = self.clashes()?.choose(&mut rng).expect("No clashes to choose from!") {
-            let filename = entry.file_name().into_string().expect("unable to convert OsString to String (?!?)");
+            let filename =
+                entry.file_name().into_string().expect("unable to convert OsString to String (?!?)");
             PublicHandle::new(match filename.strip_suffix(".json") {
                 Some(handle) => handle,
                 None => &filename,
@@ -275,7 +279,10 @@ impl App {
                         return Ok(handle)
                     }
                 }
-                Err(anyhow!(format!("Failed to find a clash with the required modes after {} attempts.", max_attemps)))
+                Err(anyhow!(format!(
+                    "Failed to find a clash with the required modes after {} attempts.",
+                    max_attemps
+                )))
             } else {
                 self.random_handle()
             }
@@ -307,8 +314,8 @@ impl App {
         let build_command = command_from_argument(args.get_one::<String>("build-command"))?;
         solution::build(build_command)?;
 
-        let run_command: Command =
-            command_from_argument(args.get_one::<String>("command"))?.expect("--command is required to run solution.");
+        let run_command: Command = command_from_argument(args.get_one::<String>("command"))?
+            .expect("--command is required to run solution.");
         let testcases = self.read_clash(&handle)?.testcases().to_owned();
         let num_tests = testcases.len();
         let suite_run = solution::run(testcases, run_command);
@@ -370,8 +377,10 @@ impl App {
     }
 
     fn generate_completions(&self, args: &ArgMatches) -> Result<()> {
-        let generator =
-            args.get_one::<clap_complete::Shell>("SHELL").copied().with_context(|| anyhow!("shell required"))?;
+        let generator = args
+            .get_one::<clap_complete::Shell>("SHELL")
+            .copied()
+            .with_context(|| anyhow!("shell required"))?;
         let mut cmd = cli();
         let name = String::from(cmd.get_name());
         eprintln!("Generating {generator} completions...");
@@ -382,7 +391,8 @@ impl App {
 
 fn main() -> Result<()> {
     // We look for the locally stored clashes here:
-    let project_dirs = ProjectDirs::from("com", "Clash CLI", "clash").expect("Unable to find project directory");
+    let project_dirs =
+        ProjectDirs::from("com", "Clash CLI", "clash").expect("Unable to find project directory");
 
     let app = App::new(project_dirs.data_dir());
 

@@ -41,7 +41,8 @@ impl SuiteRun {
             .expect("Failed to run --command");
 
         let mut stdin = run.stdin.as_mut().unwrap();
-        std::io::Write::write(&mut stdin, test.test_in.as_bytes()).expect("Fatal error: could not write to stdin.");
+        std::io::Write::write(&mut stdin, test.test_in.as_bytes())
+            .expect("Fatal error: could not write to stdin.");
 
         let output = run.wait_with_output().expect("Could not wait for program execution.");
         let stdout = String::from_utf8(output.stdout).unwrap_or_default();

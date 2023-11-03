@@ -69,7 +69,11 @@ pub fn print_failure(testcase: &TestCase, stdout: &str, stderr: &str, ostyle: &O
     print_diff(testcase, stdout, ostyle);
 
     if !stderr.is_empty() {
-        println!("{}\n{}", ostyle.secondary_title.paint("===== STDERR ====="), ostyle.stderr.paint(stderr.trim_end()));
+        println!(
+            "{}\n{}",
+            ostyle.secondary_title.paint("===== STDERR ====="),
+            ostyle.stderr.paint(stderr.trim_end())
+        );
     }
 }
 
