@@ -1,4 +1,5 @@
 mod parser;
+mod renderer;
 
 use parser::Parser;
 use crate::programming_language::ProgrammingLanguage;
@@ -20,10 +21,12 @@ pub fn generate(lang: ProgrammingLanguage, generator: &str) -> String {
         stub_parts.push(stub_part);
     }
 
-    format!("{:?}", stub_parts)
+    let output = renderer::render(lang, stub_parts.clone());
+
+    format!("{}\n{:?}", output, stub_parts)
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum VariableStub {
   Int { name: String },
   Float { name: String },
@@ -33,7 +36,7 @@ pub enum VariableStub {
   String { name: String, max_length: usize },
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Stub {
   Read(Vec<VariableStub>),
   Loop { count: String, command: Box<Stub> },

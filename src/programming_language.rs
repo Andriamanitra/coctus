@@ -13,14 +13,14 @@ pub enum VariableNameFormat {
 
 #[derive(Deserialize, Debug)]
 pub struct ProgrammingLanguage {
-    name: String,
-    variable_format: VariableNameFormat,
-    source_file_ext: String,
+    pub name: String,
+    pub variable_format: VariableNameFormat,
+    pub source_file_ext: String,
 }
 
 impl From<String> for ProgrammingLanguage {
     fn from(value: String) -> Self {
-        let language_config_filepath = format!("config/{}.toml", value);
+        let language_config_filepath = format!("config/stub_templates/{}/stub_config.toml", value);
         let config_file_content = fs::read_to_string(language_config_filepath)
             .expect(&format!("No stub configuration exists for {}", value));
 
