@@ -7,6 +7,7 @@ pub enum TestRunResult {
     Success,
     WrongOutput { stdout: String, stderr: String },
     RuntimeError { stdout: String, stderr: String },
+    Timeout { stdout: String, stderr: String },
 }
 
 #[derive(Clone)]
@@ -29,6 +30,7 @@ impl TestRun {
             TestRunResult::Success => self.expected(),
             TestRunResult::RuntimeError { stdout, .. } => stdout,
             TestRunResult::WrongOutput { stdout, .. } => stdout,
+            TestRunResult::Timeout { stdout, .. } => stdout,
         }
     }
 
@@ -50,6 +52,11 @@ impl TestRun {
 
             TestRunResult::RuntimeError { stdout, stderr } => {
                 println!("{} {}", style.error.paint("ERROR"), title);
+                print_failure(&self.testcase, stdout, stderr, style);
+            }
+
+            TestRunResult::Timeout { stdout, stderr } => {
+                println!("{} {}", style.error.paint("TIMEOUT"), title);
                 print_failure(&self.testcase, stdout, stderr, style);
             }
         }

@@ -1,4 +1,5 @@
 use std::process::Command;
+use std::time::Duration;
 
 use anyhow::{anyhow, Result};
 
@@ -8,8 +9,8 @@ use suite_run::SuiteRun;
 use crate::clash::TestCase;
 mod test_run;
 
-pub fn run(testcases: Vec<TestCase>, run_command: Command) -> SuiteRun {
-    SuiteRun::new(testcases, run_command)
+pub fn run(testcases: Vec<TestCase>, run_command: Command, timeout: Duration) -> SuiteRun {
+    SuiteRun::new(testcases, run_command, timeout)
 }
 
 pub fn build(build_command: Option<Command>) -> Result<()> {

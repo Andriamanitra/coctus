@@ -1,5 +1,8 @@
 use std::process::Command;
+use std::time::Duration;
 use std::vec::IntoIter;
+
+use wait_timeout::ChildExt;
 
 use super::test_run::{TestRun, TestRunResult};
 use crate::clash::TestCase;
@@ -7,6 +10,7 @@ use crate::clash::TestCase;
 pub struct SuiteRun {
     testcases: IntoIter<TestCase>,
     run_command: Command,
+    timeout: Duration,
 }
 
 impl Iterator for SuiteRun {
@@ -24,10 +28,11 @@ impl Iterator for SuiteRun {
 }
 
 impl SuiteRun {
-    pub fn new(testcases: Vec<TestCase>, run_command: Command) -> Self {
+    pub fn new(testcases: Vec<TestCase>, run_command: Command, timeout: Duration) -> Self {
         Self {
             testcases: testcases.into_iter(),
             run_command,
+            timeout,
         }
     }
 
@@ -44,12 +49,22 @@ impl SuiteRun {
         std::io::Write::write(&mut stdin, test.test_in.as_bytes())
             .expect("Fatal error: could not write to stdin.");
 
+        let timed_out = match run.wait_timeout(self.timeout).expect("Could not wait for program execution.") {
+            Some(_) => false,
+            None => {
+                run.kill().expect("Failed to kill test run");
+                true
+            }
+        };
+
         let output = run.wait_with_output().expect("Could not wait for program execution.");
         let stdout = String::from_utf8(output.stdout).unwrap_or_default();
         let stdout = stdout.replace("\r\n", "\n").trim_end().to_string();
         let stderr = String::from_utf8(output.stderr).unwrap_or_default();
         let result = if stdout == test.test_out.trim_end() {
             TestRunResult::Success
+        } else if timed_out {
+            TestRunResult::Timeout { stdout, stderr }
         } else if output.status.success() {
             TestRunResult::WrongOutput { stdout, stderr }
         } else {
