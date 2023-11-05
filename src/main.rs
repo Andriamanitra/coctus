@@ -88,8 +88,9 @@ fn cli() -> clap::Command {
                 .arg(arg!(--"build-command" <COMMAND> "command that compiles the solution"))
                 .arg(arg!(--"command" <COMMAND> "command that executes the solution").required(true))
                 .arg(
-                    arg!(--"timeout" <DURATION> "how many seconds before execution is timed out (0 for no timeout, default: 5)")
-                        .value_parser(value_parser!(u64))
+                    arg!(--"timeout" <SECONDS> "how many seconds before execution is timed out (0 for no timeout)")
+                        .value_parser(value_parser!(f64))
+                        .default_value("5")
                 )
                 .arg(arg!(--"auto-advance" "automatically move on to next clash if all test cases pass"))
                 .arg(arg!(--"ignore-failures" "run all tests despite failures"))
@@ -322,10 +323,13 @@ impl App {
         let run_command: Command = command_from_argument(args.get_one::<String>("command"))?
             .expect("--command is required to run solution.");
 
-        let timeout_seconds: u64 = *args.get_one::<u64>("timeout").unwrap_or(&5);
-        let timeout = std::time::Duration::from_secs(match timeout_seconds {
-            0 => u64::MAX,
-            x => x,
+        let timeout_seconds: f64 = *args.get_one::<f64>("timeout").unwrap_or(&5.0);
+
+        let timeout = std::time::Duration::from_micros(match timeout_seconds {
+            x if x.is_nan() => return Err(anyhow!("Timeout can't be NaN")),
+            x if x < 0.0 => return Err(anyhow!("Timeout can't be negative (use 0 for no timeout)")),
+            x if x == 0.0 => u64::MAX,
+            x => (1e6 * x) as u64,
         });
 
         let testcases = self.read_clash(&handle)?.testcases().to_owned();
