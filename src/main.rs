@@ -52,9 +52,10 @@ fn cli() -> clap::Command {
                 .about("Show clash")
                 .arg(arg!(--"no-color" "don't use ANSI colors in the output"))
                 .arg(
-                    arg!(--"show-whitespace" [BOOL] "render ¶ and • in place of newlines and spaces (default: true)")
+                    arg!(--"show-whitespace" [BOOL] "render ⏎ and • in place of newlines and spaces")
                         // This means show-whitespace=1 also works
                         .value_parser(clap::builder::BoolishValueParser::new())
+                        .default_value("true")
                         .default_missing_value("true")
                 )
                 .arg(arg!([PUBLIC_HANDLE] "hexadecimal handle of the clash"))

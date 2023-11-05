@@ -104,7 +104,7 @@ pub fn format_cg(text: &str, ostyle: &OutputStyle) -> String {
     result
 }
 
-/// Replaces spaces with "•" and newlines with "¶" and paints them with
+/// Replaces spaces with "•" and newlines with "⏎" and paints them with
 /// `ws_style`. Other characters are painted with `style`.
 pub fn show_whitespace(text: &str, style: &Style, ws_style: &Style) -> String {
     let newl = format!("{}\n", ws_style.paint("⏎"));
