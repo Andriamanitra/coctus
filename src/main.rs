@@ -423,23 +423,23 @@ impl App {
                 }
             }
 
-            let show_in = args.get_flag("in");
-            let show_out = args.get_flag("out");
+            let only_in = args.get_flag("in");
+            let only_out = args.get_flag("out");
 
             for idx in testcases_to_print {
                 let testcase = &clash.testcases()[(idx - 1) as usize];
-                if !show_in && !show_out {
+                if !(only_in || only_out) {
                     let styled_title = ostyle.title.paint(format!("#{} {}", idx, testcase.title));
                     println!("{styled_title}");
                     println!("{}", ostyle.secondary_title.paint("==== IN ====="));
                 }
-                if show_in || !show_out {
+                if !only_out {
                     println!("{}", testcase.styled_input(&ostyle));
                 }
-                if !show_in && !show_out {
+                if !(only_in || only_out) {
                     println!("{}", ostyle.secondary_title.paint("==== OUT ===="));
                 }
-                if show_out || !show_in {
+                if !only_in {
                     println!("{}", testcase.styled_output(&ostyle));
                 }
             }
