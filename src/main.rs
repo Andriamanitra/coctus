@@ -115,8 +115,8 @@ fn cli() -> clap::Command {
                 )
         )
         .subcommand(
-            Command::new("testcase")
-                .about("Print individual testcases or validators")
+            Command::new("showtests")
+                .about("Print testcases and validators of current clash")
                 .arg(arg!(--"no-color" "don't use ANSI colors in the output"))
                 .arg(
                     arg!(--"show-whitespace" [BOOL] "render ⏎ and • in place of newlines and spaces")
@@ -128,7 +128,7 @@ fn cli() -> clap::Command {
                 .arg(arg!(--"in" "only print the testcase input"))
                 .arg(arg!(--"out" "only print the testcase output").conflicts_with("in"))
                 .arg(
-                    arg!(<TESTCASE_INDEX> ... "index of the testcase to print")
+                    arg!([TESTCASE] ... "indices of the testcases to print (default: all)")
                         .value_parser(value_parser!(u64).range(1..99))
                         .value_delimiter(',')
                 )
@@ -389,9 +389,10 @@ impl App {
         }
     }
 
-    fn testcase(&self, args: &ArgMatches) -> Result<()> {
+    fn showtests(&self, args: &ArgMatches) -> Result<()> {
         let handle = self.current_handle()?;
         let clash = self.read_clash(&handle)?;
+        let all_testcases = clash.testcases();
 
         let mut ostyle = if args.get_flag("no-color") {
             OutputStyle::plain()
@@ -408,40 +409,36 @@ impl App {
             }
         }
 
-        if let Some(values) = args.get_many::<u64>("TESTCASE_INDEX") {
-            let testcases_to_print: Vec<u64> = values.cloned().collect();
+        let num_testcases = all_testcases.len();
+        let testcase_indices: Vec<u64> = match args.get_many::<u64>("TESTCASE") {
+            Some(nums) => nums.cloned().collect(),
+            None => (1u64..=num_testcases as u64).collect(),
+        };
 
-            if testcases_to_print.is_empty() {
-                return Err(anyhow!("lul"))
+        let only_in = args.get_flag("in");
+        let only_out = args.get_flag("out");
+
+        for idx in testcase_indices {
+            let testcase = match all_testcases.get((idx - 1) as usize) {
+                Some(x) => x,
+                None => return Err(anyhow!(
+                    "Invalid testcase index {idx} (the current clash only has {num_testcases} test cases)"
+                )),
+            };
+
+            if !(only_in || only_out) {
+                let styled_title = ostyle.title.paint(format!("#{} {}", idx, testcase.title));
+                println!("{styled_title}");
+                println!("{}", ostyle.secondary_title.paint("===== INPUT ======"));
             }
-
-            // Return an error if any index is out of bounds
-            let num_tests = clash.testcases().len() as u64;
-            for idx in testcases_to_print.iter() {
-                if *idx > num_tests {
-                    return Err(anyhow!("Invalid index {idx}. The clash only has {num_tests} test cases."))
-                }
+            if !only_out {
+                println!("{}", testcase.styled_input(&ostyle));
             }
-
-            let only_in = args.get_flag("in");
-            let only_out = args.get_flag("out");
-
-            for idx in testcases_to_print {
-                let testcase = &clash.testcases()[(idx - 1) as usize];
-                if !(only_in || only_out) {
-                    let styled_title = ostyle.title.paint(format!("#{} {}", idx, testcase.title));
-                    println!("{styled_title}");
-                    println!("{}", ostyle.secondary_title.paint("==== IN ====="));
-                }
-                if !only_out {
-                    println!("{}", testcase.styled_input(&ostyle));
-                }
-                if !(only_in || only_out) {
-                    println!("{}", ostyle.secondary_title.paint("==== OUT ===="));
-                }
-                if !only_in {
-                    println!("{}", testcase.styled_output(&ostyle));
-                }
+            if !(only_in || only_out) {
+                println!("{}", ostyle.secondary_title.paint("==== EXPECTED ===="));
+            }
+            if !only_in {
+                println!("{}", testcase.styled_output(&ostyle));
             }
         }
 
@@ -484,7 +481,7 @@ fn main() -> Result<()> {
         Some(("status", args)) => app.status(args),
         Some(("run", args)) => app.run(args),
         Some(("fetch", args)) => app.fetch(args),
-        Some(("testcase", args)) => app.testcase(args),
+        Some(("showtests", args)) => app.showtests(args),
         Some(("json", args)) => app.json(args),
         Some(("generate-shell-completion", args)) => app.generate_completions(args),
         _ => Err(anyhow!("unimplemented subcommand")),
