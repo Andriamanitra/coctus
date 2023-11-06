@@ -19,17 +19,34 @@ impl Stub {
     }
 }
 
-#[derive(Debug, Clone)]
-pub struct InputComment {
-    // variable: String,
-    // description: String,
-}
 
 #[derive(Debug, Clone, Serialize)]
 pub struct Var {
     pub name: String,
     pub t: T,
     pub max_length: usize,
+}
+
+#[derive(Debug, Clone)]
+pub struct InputComment {
+    variable: String,
+    description: String,
+}
+
+impl InputComment {
+    pub fn new(variable: String, description: String) -> Self {
+        Self { variable, description }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub enum VariableCommand {
+  Int { name: String },
+  Float { name: String },
+  Long { name: String },
+  Bool { name: String },
+  Word { name: String, max_length: usize },
+  String { name: String, max_length: usize },
 }
 
 impl Var {

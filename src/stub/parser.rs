@@ -140,15 +140,73 @@ impl<'a, I: Iterator<Item = &'a str>> Parser<I> {
         }
     }
 
-    fn parse_output_comment(&self) -> String {
-        todo!()
+    fn parse_output_comment(&mut self) -> String {
+        self.parse_text_block()
     }
 
-    fn parse_input_comment(&self) -> Vec<InputComment> {
-        todo!()
+    fn parse_input_comment(&mut self) -> Vec<InputComment> {
+        self.skip_to_next_line();
+        let mut comments = Vec::new();
+
+        while let Some(token) = self.stream.next() {
+            let comment = match token {
+                "\n" => break,
+                _ => {
+                    match token.strip_suffix(":") {
+                        Some(variable) => InputComment::new(String::from(variable), self.read_to_end_of_line()),
+                        None => { self.skip_to_next_line(); continue },
+                    }
+                },
+            };
+
+            comments.push(comment)
+        }
+
+        comments
     }
 
-    fn parse_statement(&self) -> String {
-        todo!()
+    fn parse_statement(&mut self) -> String {
+        self.skip_to_next_line();
+        self.parse_text_block()
     }
+
+    fn read_to_end_of_line(&mut self) -> String {
+        let mut output = Vec::new();
+
+        while let Some(token) = self.stream.next() { 
+            match token {
+                "\n" => break,
+                other => output.push(other),
+            }
+        }
+
+        output.join(" ")
+    }
+
+    fn skip_to_next_line(&mut self) {
+        while let Some(token) = self.stream.next() { 
+            if token == "\n" { break } 
+        }
+    }
+
+    fn parse_text_block(&mut self) -> String {
+        let mut output: Vec<String> = Vec::new();
+
+        while let Some(token) = self.stream.next() {
+            let next_token = match token { 
+                "\n" => {
+                    match self.stream.next() {
+                        Some("\n") | None => break,
+                        Some(str) => format!("\n{}", str),
+                    }
+                }
+                other => String::from(other),
+            };
+
+            output.push(next_token);
+        };
+
+        output.join(" ")
+    }
+
 }
