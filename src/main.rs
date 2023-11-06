@@ -59,11 +59,6 @@ fn cli() -> clap::Command {
                         .default_missing_value("true")
                 )
                 .arg(arg!([PUBLIC_HANDLE] "hexadecimal handle of the clash"))
-                .arg(
-                    arg!(-'t' --"testcases" [TESTCASE_NUM] "show the inputs of the testset (shows all if no extra args)")
-                        .action(clap::ArgAction::Append)
-                        .value_parser(value_parser!(usize))
-                )
                 .arg(arg!(-'r' --"reverse" "print the clash in reverse mode"))
         )
         .subcommand(
@@ -225,26 +220,6 @@ impl App {
                 ostyle.input_whitespace = None;
                 ostyle.output_whitespace = None;
             }
-        }
-
-        // -t / --testcase flags (temporary)
-        if let Some(values) = args.get_many::<usize>("testcases") {
-            let testcases_to_print: Vec<usize> = values.cloned().collect();
-
-            // Return an error if any index is out of bounds
-            let max_idx = clash.testcases().len() / 2;
-            if testcases_to_print.iter().any(|&x| x > max_idx) {
-                return Err(anyhow!("Invalid index. The clash only has {} tests.", max_idx))
-            }
-
-            // If the flag has no arguments, print everything
-            let selection = if testcases_to_print.is_empty() {
-                (0..clash.testcases().len()).collect::<Vec<usize>>()
-            } else {
-                testcases_to_print
-            };
-            clash.print_testcases(&ostyle, selection);
-            return Ok(())
         }
 
         // --reverse flag
