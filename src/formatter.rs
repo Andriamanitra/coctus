@@ -170,20 +170,21 @@ mod tests {
     fn trim_spaces_with_format() {
         let text = "hello  world";
 
-        assert_eq!(format_cg(text, &OutputStyle::default()), "hello world");
+        assert_eq!(format_trim_consecutive_spaces(text), "hello world");
     }
 
     #[test]
     fn does_not_trim_spaces_in_monospace() {
         let text = "`{\n    let x = 5;\n}`";
 
-        assert!(format_cg(text, &OutputStyle::default()).contains("{\n    let x = 5;\n}"));
+        assert!(format_trim_consecutive_spaces(text).contains("{\n    let x = 5;\n}"));
     }
 
     #[test]
+
     fn format_monospace() {
         let text = "To create a new variable use `let x = 5`";
-        let formatted_text = format_cg(text, &OutputStyle::default());
+        let formatted_text = format_paint_inner_blocks(text, &OutputStyle::default());
 
         assert!(!formatted_text.contains("`"));
     }
@@ -191,7 +192,7 @@ mod tests {
     #[test]
     fn format_monospace_adds_newline_if_there_is_none() {
         let text = "I have `no whitespace`";
-        let formatted_text = format_cg(text, &OutputStyle::default());
+        let formatted_text = format_edit_monospace(text, &OutputStyle::default());
 
         assert!(formatted_text.contains("\n"));
     }
@@ -199,7 +200,7 @@ mod tests {
     #[test]
     fn format_monospace_trims_trailing_spaces() {
         let text = "I have `no whitespace`        and more text";
-        let formatted_text = format_cg(text, &OutputStyle::default());
+        let formatted_text = format_edit_monospace(text, &OutputStyle::default());
 
         assert!(!formatted_text.contains("\n "));
     }
@@ -207,13 +208,22 @@ mod tests {
     #[test]
     fn format_monospace_does_not_add_additional_newlines() {
         let text = "I have \n\n`lots of whitespace`";
-        let formatted_text = format_cg(text, &OutputStyle::default());
+        let formatted_text = format_edit_monospace(text, &OutputStyle::default());
 
         assert!(!formatted_text.contains("\n\n\n"));
     }
 
     #[test]
-    fn format_nested() {
+    fn format_correctly_add_nested_tags() {
+        let text = "<<Next [[N]] {{3}} lines:>>";
+        let formatted_text = format_add_reverse_nester_tags(text);
+        let expected = "<<Next >>[[N]]<< >>{{3}}<< lines:>>";
+
+        assert_eq!(formatted_text, expected);
+    }
+
+    #[test]
+    fn format_correctly_paint_nested_tags() {
         let text = "<<Next [[N]] {{3}} lines:>>";
         let ostyle = &OutputStyle::default();
         let formatted_text = format_cg(text, ostyle);
