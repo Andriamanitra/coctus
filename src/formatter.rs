@@ -18,16 +18,26 @@ lazy_static! {
     static ref RE_NONWHITESPACE: Regex = Regex::new(r"[^\r\n ]+").unwrap();
 }
 
-/// Format Codingame statement that contains special formatting syntax
-/// [[VARIABLE]] - {{CONSTANT}} - <<BOLD>> - `MONOSPACE`
+/// NOTE: [[VARIABLE]] - {{CONSTANT}} - <<BOLD>> - `MONOSPACE`
 pub fn format_cg(text: &str, ostyle: &OutputStyle) -> String {
+    let mut text = format_edit_monospace(&text, ostyle);
+    text = format_trim_consecutive_spaces(&text);
+    text = format_add_reverse_nester_tags(&text);
+    format_paint_inner_blocks(&text, ostyle)
+}
+
+fn format_edit_monospace(text: &str, ostyle: &OutputStyle) -> String {
     // Fixes outdated backtick formatting ```text``` -> `test`
     // cf. https://www.codingame.com/contribute/view/25623694f80d8f747b3fa474a33a9920335ce
     //     https://www.codingame.com/contribute/view/7018d709bf39dcccec4ed9f97fb18105f64c
+
+    // Warning
     if RE_MONOSPACE_OLD.is_match(&text) {
         let msg = "Clash contains obsolete ``` formatting, consider fixing it in the website.";
         println!("{} {}\n", ostyle.failure.paint("WARNING"), msg);
     }
+
+    // Replace ```text``` -> `text`
     let mut result = RE_MONOSPACE_OLD
         .replace_all(&text, |caps: &regex::Captures| format!("`{}`", &caps[1]))
         .to_string();
@@ -37,9 +47,13 @@ pub fn format_cg(text: &str, ostyle: &OutputStyle) -> String {
         .replace_all(&result, |caps: &regex::Captures| format!("\n{}\n", &caps[1]))
         .to_string();
 
+    result
+}
+
+fn format_trim_consecutive_spaces(text: &str) -> String {
     // If it's not inside a Monospace block, trim consecutive spaces.
-    result = RE_BACKTICK
-        .replace_all(&result, |caps: &regex::Captures| {
+    RE_BACKTICK
+        .replace_all(&text, |caps: &regex::Captures| {
             if let Some(backtick_text) = caps.get(1) {
                 backtick_text.as_str().to_string()
             } else if let Some(non_backtick_text) = caps.get(2) {
@@ -48,16 +62,18 @@ pub fn format_cg(text: &str, ostyle: &OutputStyle) -> String {
                 "".to_string()
             }
         })
-        .to_string();
+        .to_string()
+}
 
-    // Nested tags (only some combinations).
-    // Hacky, Based upon the fact that only 1-level nesting makes sense.
-    // Add reverse nester brackets so that the replacement logic below will work
-    // i.e : <<Next [[N]] {{3}} lines:>> becomes <<Next >>[[N]]<< {{3}} lines:>>
+fn format_add_reverse_nester_tags(text: &str) -> String {
+    // Only some combinations.
+    // Hacky. Based upon the fact that only 1-level nesting makes sense.
+    //     <<Next   [[N]]   {{3}} lines:>>
+    // --> <<Next >>[[N]]<< {{3}} lines:>>
 
     // <<Next [[N]] {{3}} lines:>>
-    result = RE_BOLD
-        .replace_all(&result, |caps: &regex::Captures| {
+    let mut result = RE_BOLD
+        .replace_all(&text, |caps: &regex::Captures| {
             let escaped_vars = RE_VARIABLE
                 .replace_all(&caps[0], |inner_caps: &regex::Captures| format!(">>{}<<", &inner_caps[0]))
                 .to_string();
@@ -95,8 +111,12 @@ pub fn format_cg(text: &str, ostyle: &OutputStyle) -> String {
         })
         .to_string();
 
-    result = RE_VARIABLE
-        .replace_all(&result, |caps: &regex::Captures| ostyle.variable.paint(&caps[1]).to_string())
+    result
+}
+
+fn format_paint_inner_blocks(text: &str, ostyle: &OutputStyle) -> String {
+    let mut result = RE_VARIABLE
+        .replace_all(&text, |caps: &regex::Captures| ostyle.variable.paint(&caps[1]).to_string())
         .to_string();
 
     result = RE_CONSTANT
