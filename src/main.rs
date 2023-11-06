@@ -89,6 +89,11 @@ fn cli() -> clap::Command {
                 )
                 .arg(arg!(--"auto-advance" "automatically move on to next clash if all test cases pass"))
                 .arg(arg!(--"ignore-failures" "run all tests despite failures"))
+                .arg(
+                    arg!(--"testcases" <TESTCASE_INDICES> "indices of the testcases to run (separated by commas)")
+                        .value_parser(value_parser!(u64).range(1..99))
+                        .value_delimiter(',')
+                )
                 .arg(arg!([PUBLIC_HANDLE] "hexadecimal handle of the clash"))
                 .after_help(
                     "If a --build-command is specified, it will be executed once before running any of the test cases. \
@@ -326,7 +331,16 @@ impl App {
             x => (1e6 * x) as u64,
         });
 
-        let testcases = self.read_clash(&handle)?.testcases().to_owned();
+        let all_testcases = self.read_clash(&handle)?.testcases().to_owned();
+
+        let testcases: Vec<&clash::TestCase> = if let Some(testcase_indices) = args.get_many::<u64>("testcases") {
+            testcase_indices.map(|idx| 
+                &all_testcases[(idx - 1) as usize]
+            ).collect()
+        } else {
+            all_testcases.iter().collect()
+        };
+
         let num_tests = testcases.len();
         let suite_run = solution::run(testcases, run_command, timeout);
 
