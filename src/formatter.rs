@@ -10,6 +10,8 @@ lazy_static! {
     static ref RE_CONSTANT: Regex = Regex::new(r"\{\{((?s).*?)\}\}").unwrap();
     static ref RE_BOLD: Regex = Regex::new(r"<<((?s).*?)>>").unwrap();
     static ref RE_MONOSPACE: Regex = Regex::new(r"`([^`]*?)`").unwrap();
+    static ref RE_MONOSPACE_NL: Regex = Regex::new(r"`([^`]*?)\n`").unwrap();
+    static ref RE_MONOSPACE_OLD: Regex = Regex::new(r"```([^`]*?)```").unwrap();
     static ref RE_MONOSPACE_TRIM: Regex = Regex::new(r"\n? *(`[^`]*`) *").unwrap();
     static ref RE_BACKTICK: Regex = Regex::new(r"(`[^`]+`)|([^`]+)").unwrap();
     static ref RE_SPACES: Regex = Regex::new(r" +").unwrap();
@@ -19,10 +21,25 @@ lazy_static! {
 /// Format Codingame statement that contains special formatting syntax
 /// [[VARIABLE]] - {{CONSTANT}} - <<BOLD>> - `MONOSPACE`
 pub fn format_cg(text: &str, ostyle: &OutputStyle) -> String {
-    // Trim consecutive spaces (imitates html behaviour)
-    // But only if it's not in a Monospace block (between backticks ``)
-    let mut result = RE_BACKTICK
-        .replace_all(text, |caps: &regex::Captures| {
+    // Fixes outdated backtick formatting ```text``` -> `test`
+    // cf. https://www.codingame.com/contribute/view/25623694f80d8f747b3fa474a33a9920335ce
+    //     https://www.codingame.com/contribute/view/7018d709bf39dcccec4ed9f97fb18105f64c
+    if RE_MONOSPACE_OLD.is_match(&text) {
+        let msg = "Clash contains obsolete ``` formatting, consider fixing it in the website.";
+        println!("{} {}\n", ostyle.failure.paint("WARNING"), msg);
+    }
+    let mut result = RE_MONOSPACE_OLD
+        .replace_all(&text, |caps: &regex::Captures| format!("`{}`", &caps[1]))
+        .to_string();
+
+    // Put monospace blocks on their own line. Remove extra whitespace around them.
+    result = RE_MONOSPACE_TRIM
+        .replace_all(&result, |caps: &regex::Captures| format!("\n{}\n", &caps[1]))
+        .to_string();
+
+    // If it's not inside a Monospace block, trim consecutive spaces.
+    result = RE_BACKTICK
+        .replace_all(&result, |caps: &regex::Captures| {
             if let Some(backtick_text) = caps.get(1) {
                 backtick_text.as_str().to_string()
             } else if let Some(non_backtick_text) = caps.get(2) {
@@ -33,17 +50,10 @@ pub fn format_cg(text: &str, ostyle: &OutputStyle) -> String {
         })
         .to_string();
 
-    // Make sure monospace blocks are on their own line, and remove extra
-    // whitespace around them
-    result = RE_MONOSPACE_TRIM
-        .replace_all(&result, |caps: &regex::Captures| format!("\n{}\n", &caps[1]))
-        .to_string();
-
     // Nested tags (only some combinations).
-    // Hacky - it's based upon the fact that only 1-level nesting makes sense.
-    // Adds reverse nester brackets so that the following replacement logic will
-    // work. i.e : <<Next [[N]] {{3}} lines:>> becomes <<Next >>[[N]]<< {{3}}
-    // lines:>>
+    // Hacky, Based upon the fact that only 1-level nesting makes sense.
+    // Add reverse nester brackets so that the replacement logic below will work
+    // i.e : <<Next [[N]] {{3}} lines:>> becomes <<Next >>[[N]]<< {{3}} lines:>>
 
     // <<Next [[N]] {{3}} lines:>>
     result = RE_BOLD
