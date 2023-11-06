@@ -49,7 +49,7 @@ impl Default for OutputStyle {
             variable: Style::new().fg(Color::Yellow),
             constant: Style::new().fg(Color::Blue),
             bold: Style::new().bold(),
-            monospace: Style::default(),
+            monospace: Style::new().on(Color::RGB(43, 43, 43)),
             input: Style::new().fg(Color::White),
             input_whitespace: Some(Style::new().fg(Color::RGB(43, 43, 43))),
             output: Style::new().fg(Color::White),

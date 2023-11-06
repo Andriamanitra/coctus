@@ -108,7 +108,24 @@ pub fn format_cg(text: &str, ostyle: &OutputStyle) -> String {
         .to_string();
 
     result = RE_MONOSPACE
-        .replace_all(&result, |caps: &regex::Captures| ostyle.monospace.paint(&caps[1]).to_string())
+        .replace_all(&result, |caps: &regex::Captures| {
+            let lines: Vec<&str> = caps[1].split('\n').collect();
+            let padding = lines.iter().map(|line| line.len()).max().unwrap_or(0);
+
+            let formatted_lines: Vec<String> = lines
+                .iter()
+                .map(|&line| {
+                    if line.len() > 1 {
+                        let padded_line = format!("{:<width$}", line, width = padding);
+                        ostyle.monospace.paint(padded_line).to_string()
+                    } else {
+                        line.to_string()
+                    }
+                })
+                .collect();
+
+            formatted_lines.join("\n")
+        })
         .to_string();
 
     result
