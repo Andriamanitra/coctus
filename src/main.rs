@@ -421,9 +421,11 @@ impl App {
         for idx in testcase_indices {
             let testcase = match all_testcases.get((idx - 1) as usize) {
                 Some(x) => x,
-                None => return Err(anyhow!(
+                None => {
+                    return Err(anyhow!(
                     "Invalid testcase index {idx} (the current clash only has {num_testcases} test cases)"
-                )),
+                ))
+                }
             };
 
             if !(only_in || only_out) {
