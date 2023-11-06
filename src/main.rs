@@ -333,13 +333,12 @@ impl App {
 
         let all_testcases = self.read_clash(&handle)?.testcases().to_owned();
 
-        let testcases: Vec<&clash::TestCase> = if let Some(testcase_indices) = args.get_many::<u64>("testcases") {
-            testcase_indices.map(|idx| 
-                &all_testcases[(idx - 1) as usize]
-            ).collect()
-        } else {
-            all_testcases.iter().collect()
-        };
+        let testcases: Vec<&clash::TestCase> =
+            if let Some(testcase_indices) = args.get_many::<u64>("testcases") {
+                testcase_indices.map(|idx| &all_testcases[(idx - 1) as usize]).collect()
+            } else {
+                all_testcases.iter().collect()
+            };
 
         let num_tests = testcases.len();
         let suite_run = solution::run(testcases, run_command, timeout);
