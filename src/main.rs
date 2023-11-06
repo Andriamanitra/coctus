@@ -110,6 +110,25 @@ fn cli() -> clap::Command {
                 )
         )
         .subcommand(
+            Command::new("testcase")
+                .about("Print individual testcases or validators")
+                .arg(arg!(--"no-color" "don't use ANSI colors in the output"))
+                .arg(
+                    arg!(--"show-whitespace" [BOOL] "render ⏎ and • in place of newlines and spaces")
+                        // This means show-whitespace=1 also works
+                        .value_parser(clap::builder::BoolishValueParser::new())
+                        .default_value("false")
+                        .default_missing_value("true")
+                )
+                .arg(arg!(--"in" "only print the testcase input"))
+                .arg(arg!(--"out" "only print the testcase output").conflicts_with("in"))
+                .arg(
+                    arg!(<TESTCASE_INDEX> ... "index of the testcase to print")
+                        .value_parser(value_parser!(u64).range(1..99))
+                        .value_delimiter(',')
+                )
+        )
+        .subcommand(
             Command::new("json")
                 .about("Print the raw source JSON of a clash")
                 .arg(arg!([PUBLIC_HANDLE] "hexadecimal handle of the clash"))
@@ -357,6 +376,65 @@ impl App {
         }
     }
 
+    fn testcase(&self, args: &ArgMatches) -> Result<()> {
+        let handle = self.current_handle()?;
+        let clash = self.read_clash(&handle)?;
+
+        let mut ostyle = if args.get_flag("no-color") {
+            OutputStyle::plain()
+        } else {
+            OutputStyle::default()
+        };
+        if let Some(show_ws) = args.get_one::<bool>("show-whitespace") {
+            if *show_ws {
+                ostyle.input_whitespace = ostyle.input_whitespace.or(Some(ostyle.input));
+                ostyle.output_whitespace = ostyle.output_whitespace.or(Some(ostyle.output));
+            } else {
+                ostyle.input_whitespace = None;
+                ostyle.output_whitespace = None;
+            }
+        }
+
+        if let Some(values) = args.get_many::<u64>("TESTCASE_INDEX") {
+            let testcases_to_print: Vec<u64> = values.cloned().collect();
+
+            if testcases_to_print.is_empty() {
+                return Err(anyhow!("lul"))
+            }
+
+            // Return an error if any index is out of bounds
+            let num_tests = clash.testcases().len() as u64;
+            for idx in testcases_to_print.iter() {
+                if *idx > num_tests {
+                    return Err(anyhow!("Invalid index {idx}. The clash only has {num_tests} test cases."))
+                }
+            }
+
+            let show_in = args.get_flag("in");
+            let show_out = args.get_flag("out");
+
+            for idx in testcases_to_print {
+                let testcase = &clash.testcases()[(idx - 1) as usize];
+                if !show_in && !show_out {
+                    let styled_title = ostyle.title.paint(format!("#{} {}", idx, testcase.title));
+                    println!("{styled_title}");
+                    println!("{}", ostyle.secondary_title.paint("==== IN ====="));
+                }
+                if show_in || !show_out {
+                    println!("{}", testcase.styled_input(&ostyle));
+                }
+                if !show_in && !show_out {
+                    println!("{}", ostyle.secondary_title.paint("==== OUT ===="));
+                }
+                if show_out || !show_in {
+                    println!("{}", testcase.styled_output(&ostyle));
+                }
+            }
+        }
+
+        Ok(())
+    }
+
     fn json(&self, args: &ArgMatches) -> Result<()> {
         let handle = self.handle_from_args(args).or_else(|_| self.current_handle())?;
         let clash_file = self.clash_dir.join(format!("{}.json", handle));
@@ -393,6 +471,7 @@ fn main() -> Result<()> {
         Some(("status", args)) => app.status(args),
         Some(("run", args)) => app.run(args),
         Some(("fetch", args)) => app.fetch(args),
+        Some(("testcase", args)) => app.testcase(args),
         Some(("json", args)) => app.json(args),
         Some(("generate-shell-completion", args)) => app.generate_completions(args),
         _ => Err(anyhow!("unimplemented subcommand")),
