@@ -16,6 +16,7 @@ lazy_static! {
     static ref RE_BACKTICK: Regex = Regex::new(r"(`[^`]+`)|([^`]+)").unwrap();
     static ref RE_SPACES: Regex = Regex::new(r" +").unwrap();
     static ref RE_NONWHITESPACE: Regex = Regex::new(r"[^\r\n ]+").unwrap();
+    static ref RE_NEWLINES: Regex = Regex::new(r"\n\n\n+").unwrap();
 }
 
 /// NOTE: [[VARIABLE]] - {{CONSTANT}} - <<BOLD>> - `MONOSPACE`
@@ -23,7 +24,8 @@ pub fn format_cg(text: &str, ostyle: &OutputStyle) -> String {
     let mut text = format_edit_monospace(&text, ostyle);
     text = format_trim_consecutive_spaces(&text);
     text = format_add_reverse_nester_tags(&text);
-    format_paint_inner_blocks(&text, ostyle)
+    text = format_paint_inner_blocks(&text, ostyle);
+    format_remove_excessive_newlines(&text)
 }
 
 fn format_edit_monospace(text: &str, ostyle: &OutputStyle) -> String {
@@ -151,6 +153,13 @@ fn format_paint_inner_blocks(text: &str, ostyle: &OutputStyle) -> String {
     result
 }
 
+fn format_remove_excessive_newlines(text: &str) -> String {
+    RE_NEWLINES
+        .replace_all(&text, |_: &regex::Captures| "\n\n")
+        .trim_end()
+        .to_string()
+}
+
 /// Replaces spaces with "•" and newlines with "⏎" and paints them with
 /// `ws_style`. Other characters are painted with `style`.
 pub fn show_whitespace(text: &str, style: &Style, ws_style: &Style) -> String {
@@ -240,9 +249,18 @@ mod tests {
     }
 
     #[test]
-    fn matches_newlines_bold() {
+    fn format_matches_newlines_bold() {
         let text = "<<Bold text spread \n across two lines:>>";
 
         assert_eq!(RE_BOLD.is_match(&text), true);
+    }
+
+    #[test]
+    fn format_deals_with_newspaces() {
+        let text = "Text with many\n\n\n\n\nnewlines\n\n";
+        let formatted_text = format_remove_excessive_newlines(text);
+        let expected = "Text with many\n\nnewlines";
+
+        assert_eq!(formatted_text, expected);
     }
 }
