@@ -11,13 +11,13 @@ pub enum TestRunResult {
 }
 
 #[derive(Clone)]
-pub struct TestRun {
-    testcase: TestCase,
+pub struct TestRun<'a> {
+    testcase: &'a TestCase,
     result: TestRunResult,
 }
 
-impl TestRun {
-    pub fn new(testcase: TestCase, result: TestRunResult) -> Self {
+impl<'a> TestRun<'a> {
+    pub fn new(testcase: &'a TestCase, result: TestRunResult) -> Self {
         Self { testcase, result }
     }
 

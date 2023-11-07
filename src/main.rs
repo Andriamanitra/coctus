@@ -63,11 +63,6 @@ fn cli() -> clap::Command {
                     arg!([PUBLIC_HANDLE] "hexadecimal handle of the clash")
                         .value_parser(value_parser!(PublicHandle))
                 )
-                .arg(
-                    arg!(-'t' --"testcases" [TESTCASE_NUM] "show the inputs of the testset (shows all if no extra args)")
-                        .action(clap::ArgAction::Append)
-                        .value_parser(value_parser!(usize))
-                )
                 .arg(arg!(-'r' --"reverse" "print the clash in reverse mode"))
         )
         .subcommand(
@@ -100,6 +95,11 @@ fn cli() -> clap::Command {
                 .arg(arg!(--"auto-advance" "automatically move on to next clash if all test cases pass"))
                 .arg(arg!(--"ignore-failures" "run all tests despite failures"))
                 .arg(
+                    arg!(--"testcases" <TESTCASE_INDICES> "indices of the testcases to run (separated by commas)")
+                        .value_parser(value_parser!(u64).range(1..99))
+                        .value_delimiter(',')
+                )
+                .arg(
                     arg!([PUBLIC_HANDLE] "hexadecimal handle of the clash")
                         .value_parser(value_parser!(PublicHandle))
                 )
@@ -123,6 +123,25 @@ fn cli() -> clap::Command {
                     "The PUBLIC_HANDLE of a puzzle is the last part of the URL when viewing it on the contribution section on CodinGame (1).\
                     \nYou can fetch both clash of code and classic (in/out) puzzles.\
                     \n (1) https://www.codingame.com/contribute/community"
+                )
+        )
+        .subcommand(
+            Command::new("showtests")
+                .about("Print testcases and validators of current clash")
+                .arg(arg!(--"no-color" "don't use ANSI colors in the output"))
+                .arg(
+                    arg!(--"show-whitespace" [BOOL] "render ⏎ and • in place of newlines and spaces")
+                        // This means show-whitespace=1 also works
+                        .value_parser(clap::builder::BoolishValueParser::new())
+                        .default_value("false")
+                        .default_missing_value("true")
+                )
+                .arg(arg!(--"in" "only print the testcase input"))
+                .arg(arg!(--"out" "only print the testcase output").conflicts_with("in"))
+                .arg(
+                    arg!([TESTCASE] ... "indices of the testcases to print (default: all)")
+                        .value_parser(value_parser!(u64).range(1..99))
+                        .value_delimiter(',')
                 )
         )
         .subcommand(
@@ -255,26 +274,6 @@ impl App {
             }
         }
 
-        // -t / --testcase flags (temporary)
-        if let Some(values) = args.get_many::<usize>("testcases") {
-            let testcases_to_print: Vec<usize> = values.cloned().collect();
-
-            // Return an error if any index is out of bounds
-            let max_idx = clash.testcases().len() / 2;
-            if testcases_to_print.iter().any(|&x| x > max_idx) {
-                return Err(anyhow!("Invalid index. The clash only has {} tests.", max_idx))
-            }
-
-            // If the flag has no arguments, print everything
-            let selection = if testcases_to_print.is_empty() {
-                (0..clash.testcases().len()).collect::<Vec<usize>>()
-            } else {
-                testcases_to_print
-            };
-            clash.print_testcases(&ostyle, selection);
-            return Ok(())
-        }
-
         // --reverse flag
         if args.get_flag("reverse") {
             if clash.is_reverse() {
@@ -352,7 +351,15 @@ impl App {
             x => (1e6 * x) as u64,
         });
 
-        let testcases = self.read_clash(&handle)?.testcases().to_owned();
+        let all_testcases = self.read_clash(&handle)?.testcases().to_owned();
+
+        let testcases: Vec<&clash::TestCase> =
+            if let Some(testcase_indices) = args.get_many::<u64>("testcases") {
+                testcase_indices.map(|idx| &all_testcases[(idx - 1) as usize]).collect()
+            } else {
+                all_testcases.iter().collect()
+            };
+
         let num_tests = testcases.len();
         let suite_run = solution::run(testcases, run_command, timeout);
 
@@ -401,6 +408,64 @@ impl App {
         }
     }
 
+    fn showtests(&self, args: &ArgMatches) -> Result<()> {
+        let handle = self.current_handle()?;
+        let clash = self.read_clash(&handle)?;
+        let all_testcases = clash.testcases();
+
+        let mut ostyle = if args.get_flag("no-color") {
+            OutputStyle::plain()
+        } else {
+            OutputStyle::default()
+        };
+        if let Some(show_ws) = args.get_one::<bool>("show-whitespace") {
+            if *show_ws {
+                ostyle.input_whitespace = ostyle.input_whitespace.or(Some(ostyle.input));
+                ostyle.output_whitespace = ostyle.output_whitespace.or(Some(ostyle.output));
+            } else {
+                ostyle.input_whitespace = None;
+                ostyle.output_whitespace = None;
+            }
+        }
+
+        let num_testcases = all_testcases.len();
+        let testcase_indices: Vec<u64> = match args.get_many::<u64>("TESTCASE") {
+            Some(nums) => nums.cloned().collect(),
+            None => (1u64..=num_testcases as u64).collect(),
+        };
+
+        let only_in = args.get_flag("in");
+        let only_out = args.get_flag("out");
+
+        for idx in testcase_indices {
+            let testcase = match all_testcases.get((idx - 1) as usize) {
+                Some(x) => x,
+                None => {
+                    return Err(anyhow!(
+                    "Invalid testcase index {idx} (the current clash only has {num_testcases} test cases)"
+                ))
+                }
+            };
+
+            if !(only_in || only_out) {
+                let styled_title = ostyle.title.paint(format!("#{} {}", idx, testcase.title));
+                println!("{styled_title}");
+                println!("{}", ostyle.secondary_title.paint("===== INPUT ======"));
+            }
+            if !only_out {
+                println!("{}", testcase.styled_input(&ostyle));
+            }
+            if !(only_in || only_out) {
+                println!("{}", ostyle.secondary_title.paint("==== EXPECTED ===="));
+            }
+            if !only_in {
+                println!("{}", testcase.styled_output(&ostyle));
+            }
+        }
+
+        Ok(())
+    }
+
     fn json(&self, args: &ArgMatches) -> Result<()> {
         let handle = match args.get_one::<PublicHandle>("PUBLIC_HANDLE") {
             Some(h) => h.to_owned(),
@@ -440,6 +505,7 @@ fn main() -> Result<()> {
         Some(("status", args)) => app.status(args),
         Some(("run", args)) => app.run(args),
         Some(("fetch", args)) => app.fetch(args),
+        Some(("showtests", args)) => app.showtests(args),
         Some(("json", args)) => app.json(args),
         Some(("generate-shell-completion", args)) => app.generate_completions(args),
         _ => Err(anyhow!("unimplemented subcommand")),

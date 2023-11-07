@@ -7,14 +7,14 @@ use wait_timeout::ChildExt;
 use super::test_run::{TestRun, TestRunResult};
 use crate::clash::TestCase;
 
-pub struct SuiteRun {
-    testcases: IntoIter<TestCase>,
+pub struct SuiteRun<'a> {
+    testcases: IntoIter<&'a TestCase>,
     run_command: Command,
     timeout: Duration,
 }
 
-impl Iterator for SuiteRun {
-    type Item = TestRun;
+impl<'a> Iterator for SuiteRun<'a> {
+    type Item = TestRun<'a>;
 
     fn next(&mut self) -> Option<Self::Item> {
         let test = match self.testcases.next() {
@@ -27,8 +27,8 @@ impl Iterator for SuiteRun {
     }
 }
 
-impl SuiteRun {
-    pub fn new(testcases: Vec<TestCase>, run_command: Command, timeout: Duration) -> Self {
+impl<'a> SuiteRun<'a> {
+    pub fn new(testcases: Vec<&'a TestCase>, run_command: Command, timeout: Duration) -> Self {
         Self {
             testcases: testcases.into_iter(),
             run_command,
@@ -36,7 +36,7 @@ impl SuiteRun {
         }
     }
 
-    fn run_testcase(&mut self, test: TestCase) -> TestRun {
+    fn run_testcase(&mut self, test: &'a TestCase) -> TestRun<'a> {
         let mut run = self
             .run_command
             .stdin(std::process::Stdio::piped())
