@@ -10,9 +10,8 @@ lazy_static! {
     static ref RE_CONSTANT: Regex = Regex::new(r"\{\{((?s).*?)\}\}").unwrap();
     static ref RE_BOLD: Regex = Regex::new(r"<<((?s).*?)>>").unwrap();
     static ref RE_MONOSPACE: Regex = Regex::new(r"`([^`]*?)`").unwrap();
-    static ref RE_MONOSPACE_NL: Regex = Regex::new(r"`([^`]*?)\n`").unwrap();
     static ref RE_MONOSPACE_OLD: Regex = Regex::new(r"```([^`]*?)```").unwrap();
-    static ref RE_MONOSPACE_TRIM: Regex = Regex::new(r"\n? *(`[^`]*`) *").unwrap();
+    static ref RE_MONOSPACE_TRIM: Regex = Regex::new(r"\s*`\s*([^`]+?)\s*`\s*").unwrap();
     static ref RE_BACKTICK: Regex = Regex::new(r"(`[^`]+`)|([^`]+)").unwrap();
     static ref RE_SPACES: Regex = Regex::new(r" +").unwrap();
     static ref RE_NONWHITESPACE: Regex = Regex::new(r"[^\r\n ]+").unwrap();
@@ -39,14 +38,15 @@ fn format_edit_monospace(text: &str, ostyle: &OutputStyle) -> String {
         println!("{} {}\n", ostyle.failure.paint("WARNING"), msg);
     }
 
-    // Replace ```text``` -> `text`
-    let mut result = RE_MONOSPACE_OLD
-        .replace_all(&text, |caps: &regex::Captures| format!("`{}`", &caps[1]))
-        .to_string();
+    // Replace ```text``` -> `text` (no need for a regex)
+    let mut result = text.replace("```", "`");
 
-    // Put monospace blocks on their own line. Remove extra whitespace around them.
+    // Format whitespace around Monospace blocks.
+    //     https://www.codingame.com/contribute/view/1222536cec20519e1a630ecc8ada367dd708b
     result = RE_MONOSPACE_TRIM
-        .replace_all(&result, |caps: &regex::Captures| format!("\n{}\n", &caps[1]))
+        .replace_all(&result, |caps: &regex::Captures| {
+            format!("\n\n`{}`\n\n", &caps[1])
+        })
         .to_string();
 
     result
@@ -215,11 +215,39 @@ mod tests {
     }
 
     #[test]
-    fn format_monospace_does_not_add_additional_newlines() {
-        let text = "I have \n\n`lots of whitespace`";
-        let formatted_text = format_edit_monospace(text, &OutputStyle::default());
+    fn format_monospace_more_newlines_1() {
+        let text1: &str = "1text   `mono line` text";
+        let formatted_text = format_edit_monospace(text1, &OutputStyle::default());
+        let expected1 = "1text\n`mono line`\ntext";
 
-        assert!(!formatted_text.contains("\n\n\n"));
+        assert_eq!(formatted_text, expected1);
+    }
+
+    #[test]
+    fn format_monospace_more_newlines_2() {
+        let text1: &str = "2text   \n`mono line\nnew line`  \n  text";
+        let formatted_text = format_edit_monospace(text1, &OutputStyle::default());
+        let expected1 = "2text\n`mono line\nnew line`\ntext";
+
+        assert_eq!(formatted_text, expected1);
+    }
+
+    #[test]
+    fn format_monospace_more_newlines_3() {
+        let text1: &str = "3textspaces   \n   \n    `\n   \n  mono line\nnew line  \n   \n`   \n   \n   textspaces";
+        let formatted_text = format_edit_monospace(text1, &OutputStyle::default());
+        let expected1 = "3textspaces\n`mono line\nnew line`\ntextspaces";
+
+        assert_eq!(formatted_text, expected1);
+    }
+
+    #[test]
+    fn format_monospace_more_newlines_4() {
+        let text1: &str = "4text\n`mono line`\ntext";
+        let formatted_text = format_edit_monospace(text1, &OutputStyle::default());
+        let expected1 = "4text\n`mono line`\ntext";
+
+        assert_eq!(formatted_text, expected1);
     }
 
     #[test]
