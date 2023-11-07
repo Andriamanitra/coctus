@@ -197,7 +197,7 @@ mod tests {
 
     #[test]
 
-    fn format_monospace() {
+    fn format_monospace_coloring_removes_backticks() {
         let text = "To create a new variable use `let x = 5`";
         let formatted_text = format_paint_inner_blocks(text, &OutputStyle::default());
 
@@ -222,38 +222,38 @@ mod tests {
 
     #[test]
     fn format_monospace_more_newlines_1() {
-        let text1: &str = "1text   `mono line` text";
-        let formatted_text = format_edit_monospace(text1, &OutputStyle::default());
-        let expected1 = "1text\n`mono line`\ntext";
+        let text: &str = "1text   `mono line` text";
+        let formatted_text = format_edit_monospace(text, &OutputStyle::default());
+        let expected = "1text\n\n`mono line`\n\ntext";
 
-        assert_eq!(formatted_text, expected1);
+        assert_eq!(formatted_text, expected);
     }
 
     #[test]
     fn format_monospace_more_newlines_2() {
-        let text1: &str = "2text   \n`mono line\nnew line`  \n  text";
-        let formatted_text = format_edit_monospace(text1, &OutputStyle::default());
-        let expected1 = "2text\n`mono line\nnew line`\ntext";
+        let text: &str = "2text   \n\n`mono line\nnew line`  \n  text";
+        let formatted_text = format_edit_monospace(text, &OutputStyle::default());
+        let expected = "2text\n\n`mono line\nnew line`\n\ntext";
 
-        assert_eq!(formatted_text, expected1);
+        assert_eq!(formatted_text, expected);
     }
 
     #[test]
     fn format_monospace_more_newlines_3() {
-        let text1: &str = "3textspaces   \n   \n    `\n   \n  mono line\nnew line  \n   \n`   \n   \n   textspaces";
-        let formatted_text = format_edit_monospace(text1, &OutputStyle::default());
-        let expected1 = "3textspaces\n`mono line\nnew line`\ntextspaces";
+        let text: &str = "3textspaces   \n\n   \n    `\n   \n  mono line\nnew line  \n   \n`   \n   \n   textspaces";
+        let formatted_text = format_edit_monospace(text, &OutputStyle::default());
+        let expected = "3textspaces\n\n`mono line\nnew line`\n\ntextspaces";
 
-        assert_eq!(formatted_text, expected1);
+        assert_eq!(formatted_text, expected);
     }
 
     #[test]
     fn format_monospace_more_newlines_4() {
-        let text1: &str = "4text\n`mono line`\ntext";
-        let formatted_text = format_edit_monospace(text1, &OutputStyle::default());
-        let expected1 = "4text\n`mono line`\ntext";
+        let text: &str = "4text\n\n`mono line`\n\ntext";
+        let formatted_text = format_edit_monospace(text, &OutputStyle::default());
+        let expected = "4text\n\n`mono line`\n\ntext";
 
-        assert_eq!(formatted_text, expected1);
+        assert_eq!(formatted_text, expected);
     }
 
     #[test]
