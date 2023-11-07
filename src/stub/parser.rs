@@ -1,6 +1,6 @@
 use regex::Regex;
 
-use super::{VariableCommand, Command, Stub, InputComment};
+use super::{T, Cmd, Var, Stub, InputComment};
 
 
 pub fn parse_generator_stub(generator: String) -> Stub {
@@ -38,11 +38,11 @@ impl<'a, I: Iterator<Item = &'a str>> Parser<I> {
         stub
     }
 
-    fn parse_read(&mut self) -> Command {
-        Command::Read(self.parse_variable_list())
+    fn parse_read(&mut self) -> Cmd {
+        Cmd::Read(self.parse_variable_list())
     }
 
-    fn parse_write(&mut self) -> Command {
+    fn parse_write(&mut self) -> Cmd {
         let mut output: Vec<String> = Vec::new();
 
         while let Some(token) = self.stream.next() {
@@ -59,10 +59,10 @@ impl<'a, I: Iterator<Item = &'a str>> Parser<I> {
             output.push(next_token);
         };
 
-        Command::Write(output.join(" "))
+        Cmd::Write(output.join(" "))
     }
 
-    fn parse_loop(&mut self) -> Command {
+    fn parse_loop(&mut self) -> Cmd {
         let count = match self.stream.next() {
             Some("\n") | None => panic!("Loop stub not provided with loop count"),
             Some(other) => String::from(other),
@@ -70,10 +70,10 @@ impl<'a, I: Iterator<Item = &'a str>> Parser<I> {
 
         let command = Box::new(self.parse_read_or_write());
 
-        Command::Loop { count, command }
+        Cmd::Loop { count, command }
     }
 
-    fn parse_loopline(&mut self) -> Command {
+    fn parse_loopline(&mut self) -> Cmd {
         let object = match self.stream.next() {
             Some("\n") | None => panic!("Loopline stub not provided with identifier to loop through"),
             Some(other) => String::from(other),
@@ -81,43 +81,48 @@ impl<'a, I: Iterator<Item = &'a str>> Parser<I> {
 
         let variables = self.parse_variable_list();
 
-        Command::LoopLine { object, variables }
+        Cmd::LoopLine { object, variables }
     }
 
-    fn parse_variable(token: &str) -> VariableCommand {
+    fn parse_variable(token: &str) -> Var {
         let mut iter = token.split(":");
-        let identifier = String::from(iter.next().unwrap());
+        let name = String::from(iter.next().unwrap());
         let var_type = iter.next().expect("Error in stub generator: missing type");
         let length_regex = Regex::new(r"(word|string)\((\d+)\)").unwrap();
         let length_captures = length_regex.captures(var_type);
         match var_type {
-            "int" => VariableCommand::Int { name: identifier },
-            "float" => VariableCommand::Float { name: identifier },
-            "long" => VariableCommand::Long { name: identifier },
-            "bool" => VariableCommand::Bool { name: identifier },
+            "int" => Var::new(name, T::Int),
+            "float" => Var::new(name, T::Float),
+            "long" => Var::new(name, T::Long),
+            "bool" => Var::new(name, T::Bool),
             _ => {
-                let caps = length_captures.expect("Failed to parse variable type in stub generator");
+                let caps = length_captures
+                    .expect(format!(
+                        "Failed to parse variable type for token: {}", &token
+                    ).as_str());
                 let new_type = caps.get(1).unwrap().as_str();
-                let var_length: usize = caps.get(2).unwrap().as_str().parse().unwrap();
+                let max_length: usize = caps.get(2).unwrap().as_str().parse().unwrap();
                 match new_type {
-                    "word" => VariableCommand::Word { name: identifier, max_length: var_length },
-                    "string" => VariableCommand::String { name: identifier, max_length: var_length },
+                    "word" => Var::new_length(name, T::Word, max_length),
+                    "string" => Var::new_length(name, T::String, max_length),
                     _ => panic!("Unexpected error")
                 }
             }
         }
     }
 
-    fn parse_variable_list(&mut self) -> Vec<VariableCommand> {
+    fn parse_variable_list(&mut self) -> Vec<Var> {
         let mut vars = Vec::new();
 
         while let Some(token) = self.stream.next() {
-            let var: VariableCommand = match token {
+            let var: Var = match token {
                 _ if String::from(token).contains(":") => {
                     Self::parse_variable(token)
                 },
+                "" => continue, // "\n read N:int  \n"
                 "\n" => break,
-                unexp => panic!("Error in stub generator, found {unexp} while searching for stub variables"),
+                unexp => panic!(
+                    "Error in stub generator (parse_variable_list), found \"{unexp}\""),
             };
 
             vars.push(var);
@@ -126,7 +131,7 @@ impl<'a, I: Iterator<Item = &'a str>> Parser<I> {
         vars
     }
 
-    fn parse_read_or_write(&mut self) -> Command {
+    fn parse_read_or_write(&mut self) -> Cmd {
         match self.stream.next() {
             Some("read") => self.parse_read(),
             Some("write") => self.parse_write(),
