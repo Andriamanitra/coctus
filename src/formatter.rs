@@ -29,7 +29,7 @@ pub fn format_cg(text: &str, ostyle: &OutputStyle) -> String {
 /// 1. Throws a warning if it finds outdated formatting
 /// 2. Replaces ```text``` -> `text`
 /// 3. Format whitespace around Monospace blocks.
-/// 
+///
 /// Clashes with outdated formatting:
 ///     https://www.codingame.com/contribute/view/25623694f80d8f747b3fa474a33a9920335ce
 ///     https://www.codingame.com/contribute/view/7018d709bf39dcccec4ed9f97fb18105f64c
@@ -44,9 +44,7 @@ fn format_edit_monospace(text: &str, ostyle: &OutputStyle) -> String {
     let mut result = text.replace("```", "`");
 
     result = RE_MONOSPACE_TRIM
-        .replace_all(&result, |caps: &regex::Captures| {
-            format!("\n\n`{}`\n\n", &caps[1])
-        })
+        .replace_all(&result, |caps: &regex::Captures| format!("\n\n`{}`\n\n", &caps[1]))
         .to_string();
 
     result
@@ -116,11 +114,11 @@ fn format_add_reverse_nester_tags(text: &str) -> String {
 }
 
 /// NOTE: [[VARIABLE]] - {{CONSTANT}} - <<BOLD>> - `MONOSPACE`
-/// 
+///
 /// Removes formatting tags and paints the inner content accordingly:
 ///     [[VARIABLE]]
 ///  -> \u{1b}[33mVARIABLE\u{1b}[0m
-/// 
+///
 /// For painting interactions:
 ///     https://www.codingame.com/contribute/view/750741cba87bb6a6ac8daf5adbe2aa083e24
 ///     https://www.codingame.com/contribute/view/83316b323da5dba40730dbca5c72b46ccfc9
@@ -160,14 +158,11 @@ fn format_paint_inner_blocks(text: &str, ostyle: &OutputStyle) -> String {
 }
 
 fn format_remove_excessive_newlines(text: &str) -> String {
-    RE_NEWLINES
-        .replace_all(&text, |_: &regex::Captures| "\n\n")
-        .trim_end()
-        .to_string()
+    RE_NEWLINES.replace_all(&text, |_: &regex::Captures| "\n\n").trim_end().to_string()
 }
 
-/// 1. Replaces spaces with "•" and newlines with "⏎" and paints them with `ws_style`. 
-/// 2. Other characters are painted with `style`.
+/// 1. Replaces spaces with • and newlines with ⏎. Paints them with `ws_style`.
+/// 2. Paints the rest with `style`.
 pub fn show_whitespace(text: &str, style: &Style, ws_style: &Style) -> String {
     let newl = format!("{}\n", ws_style.paint("⏎"));
     let space = format!("{}", ws_style.paint("•"));
@@ -240,9 +235,9 @@ mod tests {
 
     #[test]
     fn format_monospace_more_newlines_3() {
-        let text: &str = "3textspaces   \n\n   \n    `\n   \n  mono line\nnew line  \n   \n`   \n   \n   textspaces";
+        let text: &str = "3text   \n\n   \n    `\n   \n  mono line\nnew line  \n   \n`   \n   \n   text";
         let formatted_text = format_edit_monospace(text, &OutputStyle::default());
-        let expected = "3textspaces\n\n`mono line\nnew line`\n\ntextspaces";
+        let expected = "3text\n\n`mono line\nnew line`\n\ntext";
 
         assert_eq!(formatted_text, expected);
     }
