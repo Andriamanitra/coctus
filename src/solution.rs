@@ -9,7 +9,7 @@ use suite_run::SuiteRun;
 use crate::clash::TestCase;
 mod test_run;
 
-pub fn run(testcases: Vec<TestCase>, run_command: Command, timeout: Duration) -> SuiteRun {
+pub fn run(testcases: Vec<&TestCase>, run_command: Command, timeout: Duration) -> SuiteRun {
     SuiteRun::new(testcases, run_command, timeout)
 }
 
