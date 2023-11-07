@@ -16,11 +16,14 @@ lazy_static! {
     static ref RE_SPACES: Regex = Regex::new(r" +").unwrap();
     static ref RE_NONWHITESPACE: Regex = Regex::new(r"[^\r\n ]+").unwrap();
     static ref RE_NEWLINES: Regex = Regex::new(r"\n\n\n+").unwrap();
+    static ref RE_ALL_BUT_MONOSPACE: Regex =
+        Regex::new(r"\[\[((?s).*?)\]\]|\{\{((?s).*?)\}\}|<<((?s).*?)>>").unwrap();
 }
 
 pub fn format_cg(text: &str, ostyle: &OutputStyle) -> String {
     let mut text = format_edit_monospace(&text, ostyle);
     text = format_trim_consecutive_spaces(&text);
+    text = format_monospace_padding(&text);
     text = format_add_reverse_nester_tags(&text);
     text = format_paint_inner_blocks(&text, ostyle);
     format_remove_excessive_newlines(&text)
@@ -61,6 +64,47 @@ fn format_trim_consecutive_spaces(text: &str) -> String {
             } else {
                 "".to_string()
             }
+        })
+        .to_string()
+}
+
+/// Adds padding to Monospace blocks.
+/// NOTE 1: Comes before the adding of reverse nester tags so that the Monospace
+///         block is not split into separate blocks and messes up the padding.
+/// NOTE 2: Needs to factor the fact that tags are going to be deleted later on.
+fn format_monospace_padding(text: &str) -> String {
+    RE_MONOSPACE
+        .replace_all(&text, |caps: &regex::Captures| {
+            let lines: Vec<&str> = caps[1].split('\n').collect();
+            let padding = lines.iter().map(|line| clean_line(line.to_string()).len()).max().unwrap_or(0);
+            let formatted_lines = lines
+                .iter()
+                .map(|&line| {
+                    let clean_line = clean_line(line.to_string());
+                    let offset = line.len() - clean_line.len();
+                    format!("{:<width$}", line, width = padding + offset)
+                })
+                .collect::<Vec<String>>()
+                .join("\n");
+            format!("`{}`", formatted_lines)
+        })
+        .to_string()
+}
+
+/// Returns a line without formatting tags. Used for computing the padding.
+fn clean_line(line: String) -> String {
+    RE_ALL_BUT_MONOSPACE
+        .replace_all(&line, |caps: &regex::Captures| {
+            if let Some(group) = caps.get(1) {
+                return group.as_str().to_string();
+            }
+            if let Some(group) = caps.get(2) {
+                return group.as_str().to_string();
+            }
+            if let Some(group) = caps.get(3) {
+                return group.as_str().to_string();
+            }
+            "".to_string()
         })
         .to_string()
 }
@@ -138,17 +182,9 @@ fn format_paint_inner_blocks(text: &str, ostyle: &OutputStyle) -> String {
     result = RE_MONOSPACE
         .replace_all(&result, |caps: &regex::Captures| {
             let lines: Vec<&str> = caps[1].split('\n').collect();
-            let padding = lines.iter().map(|line| line.len()).max().unwrap_or(0);
             lines
                 .iter()
-                .map(|&line| {
-                    if line.len() > 1 {
-                        let padded_line = format!("{:<width$}", line, width = padding);
-                        ostyle.monospace.paint(padded_line).to_string()
-                    } else {
-                        line.to_string()
-                    }
-                })
+                .map(|&line| ostyle.monospace.paint(line).to_string())
                 .collect::<Vec<String>>()
                 .join("\n")
         })
