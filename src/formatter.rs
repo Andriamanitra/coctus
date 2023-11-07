@@ -18,7 +18,6 @@ lazy_static! {
     static ref RE_NEWLINES: Regex = Regex::new(r"\n\n\n+").unwrap();
 }
 
-/// NOTE: [[VARIABLE]] - {{CONSTANT}} - <<BOLD>> - `MONOSPACE`
 pub fn format_cg(text: &str, ostyle: &OutputStyle) -> String {
     let mut text = format_edit_monospace(&text, ostyle);
     text = format_trim_consecutive_spaces(&text);
@@ -27,22 +26,23 @@ pub fn format_cg(text: &str, ostyle: &OutputStyle) -> String {
     format_remove_excessive_newlines(&text)
 }
 
+/// 1. Throws a warning if it finds outdated formatting
+/// 2. Replaces ```text``` -> `text`
+/// 3. Format whitespace around Monospace blocks.
+/// 
+/// Clashes with outdated formatting:
+///     https://www.codingame.com/contribute/view/25623694f80d8f747b3fa474a33a9920335ce
+///     https://www.codingame.com/contribute/view/7018d709bf39dcccec4ed9f97fb18105f64c
+/// Others:
+///     https://www.codingame.com/contribute/view/1222536cec20519e1a630ecc8ada367dd708b
 fn format_edit_monospace(text: &str, ostyle: &OutputStyle) -> String {
-    // Fixes outdated backtick formatting ```text``` -> `test`
-    // cf. https://www.codingame.com/contribute/view/25623694f80d8f747b3fa474a33a9920335ce
-    //     https://www.codingame.com/contribute/view/7018d709bf39dcccec4ed9f97fb18105f64c
-
-    // Warning
     if RE_MONOSPACE_OLD.is_match(&text) {
         let msg = "Clash contains obsolete ``` formatting, consider fixing it in the website.";
         println!("{} {}\n", ostyle.failure.paint("WARNING"), msg);
     }
 
-    // Replace ```text``` -> `text` (no need for a regex)
     let mut result = text.replace("```", "`");
 
-    // Format whitespace around Monospace blocks.
-    //     https://www.codingame.com/contribute/view/1222536cec20519e1a630ecc8ada367dd708b
     result = RE_MONOSPACE_TRIM
         .replace_all(&result, |caps: &regex::Captures| {
             format!("\n\n`{}`\n\n", &caps[1])
@@ -52,14 +52,14 @@ fn format_edit_monospace(text: &str, ostyle: &OutputStyle) -> String {
     result
 }
 
+/// If it's not inside a Monospace block, trim consecutive spaces.
 fn format_trim_consecutive_spaces(text: &str) -> String {
-    // If it's not inside a Monospace block, trim consecutive spaces.
     RE_BACKTICK
         .replace_all(&text, |caps: &regex::Captures| {
-            if let Some(backtick_text) = caps.get(1) {
-                backtick_text.as_str().to_string()
-            } else if let Some(non_backtick_text) = caps.get(2) {
-                RE_SPACES.replace_all(non_backtick_text.as_str(), " ").to_string()
+            if let Some(monospace_text) = caps.get(1) {
+                monospace_text.as_str().to_string()
+            } else if let Some(non_monospace_text) = caps.get(2) {
+                RE_SPACES.replace_all(non_monospace_text.as_str(), " ").to_string()
             } else {
                 "".to_string()
             }
@@ -67,12 +67,11 @@ fn format_trim_consecutive_spaces(text: &str) -> String {
         .to_string()
 }
 
+/// Only supports some combinations.
+/// Hacky. Based upon the fact that only 1-level nesting makes sense.
+///     <<Next   [[N]]   {{3}} lines:>>
+///  -> <<Next >>[[N]]<< {{3}} lines:>>
 fn format_add_reverse_nester_tags(text: &str) -> String {
-    // Only some combinations.
-    // Hacky. Based upon the fact that only 1-level nesting makes sense.
-    //     <<Next   [[N]]   {{3}} lines:>>
-    // --> <<Next >>[[N]]<< {{3}} lines:>>
-
     // <<Next [[N]] {{3}} lines:>>
     let mut result = RE_BOLD
         .replace_all(&text, |caps: &regex::Captures| {
@@ -116,6 +115,15 @@ fn format_add_reverse_nester_tags(text: &str) -> String {
     result
 }
 
+/// NOTE: [[VARIABLE]] - {{CONSTANT}} - <<BOLD>> - `MONOSPACE`
+/// 
+/// Removes formatting tags and paints the inner content accordingly:
+///     [[VARIABLE]]
+///  -> \u{1b}[33mVARIABLE\u{1b}[0m
+/// 
+/// For painting interactions:
+///     https://www.codingame.com/contribute/view/750741cba87bb6a6ac8daf5adbe2aa083e24
+///     https://www.codingame.com/contribute/view/83316b323da5dba40730dbca5c72b46ccfc9
 fn format_paint_inner_blocks(text: &str, ostyle: &OutputStyle) -> String {
     let mut result = RE_VARIABLE
         .replace_all(&text, |caps: &regex::Captures| ostyle.variable.paint(&caps[1]).to_string())
@@ -133,8 +141,7 @@ fn format_paint_inner_blocks(text: &str, ostyle: &OutputStyle) -> String {
         .replace_all(&result, |caps: &regex::Captures| {
             let lines: Vec<&str> = caps[1].split('\n').collect();
             let padding = lines.iter().map(|line| line.len()).max().unwrap_or(0);
-
-            let formatted_lines: Vec<String> = lines
+            lines
                 .iter()
                 .map(|&line| {
                     if line.len() > 1 {
@@ -144,9 +151,8 @@ fn format_paint_inner_blocks(text: &str, ostyle: &OutputStyle) -> String {
                         line.to_string()
                     }
                 })
-                .collect();
-
-            formatted_lines.join("\n")
+                .collect::<Vec<String>>()
+                .join("\n")
         })
         .to_string();
 
@@ -160,8 +166,8 @@ fn format_remove_excessive_newlines(text: &str) -> String {
         .to_string()
 }
 
-/// Replaces spaces with "•" and newlines with "⏎" and paints them with
-/// `ws_style`. Other characters are painted with `style`.
+/// 1. Replaces spaces with "•" and newlines with "⏎" and paints them with `ws_style`. 
+/// 2. Other characters are painted with `style`.
 pub fn show_whitespace(text: &str, style: &Style, ws_style: &Style) -> String {
     let newl = format!("{}\n", ws_style.paint("⏎"));
     let space = format!("{}", ws_style.paint("•"));
