@@ -6,7 +6,7 @@ use crate::outputstyle::OutputStyle;
 
 // use lazy_static! to make sure regexes are only compiled once
 lazy_static! {
-    // NOTE 
+    // NOTE
     // [[VARIABLE]] - {{CONSTANT}} - <<BOLD>> - `MONOSPACE`
     static ref RE_VARIABLE: Regex = Regex::new(r"\[\[((?s).*?)\]\]").unwrap();
     static ref RE_CONSTANT: Regex = Regex::new(r"\{\{((?s).*?)\}\}").unwrap();
@@ -101,7 +101,7 @@ fn format_monospace_padding(text: &str) -> String {
     padded_text
 }
 
-/// Returns the size of a line without formatting tags. 
+/// Returns the size of a line without formatting tags.
 /// Only used for computing the padding of Monospace blocks.
 fn clean_line_size(line: &str) -> usize {
     RE_ALL_BUT_MONOSPACE
