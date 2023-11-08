@@ -6,12 +6,14 @@ use crate::outputstyle::OutputStyle;
 
 // use lazy_static! to make sure regexes are only compiled once
 lazy_static! {
+    // NOTE 
+    // [[VARIABLE]] - {{CONSTANT}} - <<BOLD>> - `MONOSPACE`
     static ref RE_VARIABLE: Regex = Regex::new(r"\[\[((?s).*?)\]\]").unwrap();
     static ref RE_CONSTANT: Regex = Regex::new(r"\{\{((?s).*?)\}\}").unwrap();
     static ref RE_BOLD: Regex = Regex::new(r"<<((?s).*?)>>").unwrap();
     static ref RE_MONOSPACE: Regex = Regex::new(r"`([^`]*?)`").unwrap();
     static ref RE_MONOSPACE_OLD: Regex = Regex::new(r"```([^`]*?)```").unwrap();
-    static ref RE_MONOSPACE_TRIM: Regex = Regex::new(r"\s*`\s*([^`]+?)\s*`\s*").unwrap();
+    static ref RE_MONOSPACE_TRIM: Regex = Regex::new(r"\s*`(?: *\n)?([^`]+?)\s*`\s*").unwrap();
     static ref RE_BACKTICK: Regex = Regex::new(r"(`[^`]+`)|([^`]+)").unwrap();
     static ref RE_SPACES: Regex = Regex::new(r" +").unwrap();
     static ref RE_NONWHITESPACE: Regex = Regex::new(r"[^\r\n ]+").unwrap();
@@ -37,21 +39,15 @@ pub fn format_cg(text: &str, ostyle: &OutputStyle) -> String {
     format_remove_excessive_newlines(&text)
 }
 
-/// 1. Throws a warning if it finds outdated formatting
-/// 2. Replaces ```text``` -> `text`
-/// 3. Format whitespace around Monospace blocks.
-///
-/// Clashes with outdated formatting:
-///     https://www.codingame.com/contribute/view/25623694f80d8f747b3fa474a33a9920335ce
-///     https://www.codingame.com/contribute/view/7018d709bf39dcccec4ed9f97fb18105f64c
-/// Others:
-///     https://www.codingame.com/contribute/view/1222536cec20519e1a630ecc8ada367dd708b
-fn format_edit_monospace(text: &str, ostyle: &OutputStyle) -> String {
-    if RE_MONOSPACE_OLD.is_match(&text) {
-        let msg = "Clash contains obsolete ``` formatting, consider fixing it in the website.";
-        println!("{} {}\n", ostyle.failure.paint("WARNING"), msg);
-    }
+/// 1. Replaces ```text``` -> `text`
+/// 2. Format whitespace around Monospace blocks.
 
+// Clashes with outdated formatting:
+//     https://www.codingame.com/contribute/view/25623694f80d8f747b3fa474a33a9920335ce
+//     https://www.codingame.com/contribute/view/7018d709bf39dcccec4ed9f97fb18105f64c
+// Others:
+//     https://www.codingame.com/contribute/view/1222536cec20519e1a630ecc8ada367dd708b
+//     https://www.codingame.com/contribute/view/6357b99de3f556ffd3edff4a4d5995c924bb
 fn format_edit_monospace(text: &str) -> String {
     let mut result = text.replace("```", "`");
 
@@ -64,7 +60,7 @@ fn format_edit_monospace(text: &str) -> String {
 
 /// If it's not inside a Monospace block, trim consecutive spaces.
 fn format_trim_consecutive_spaces(text: &str) -> String {
-    RE_BACKTICK
+    let trimmed_text = RE_BACKTICK
         .replace_all(&text, |caps: &regex::Captures| {
             if let Some(monospace_text) = caps.get(1) {
                 monospace_text.as_str().to_string()
@@ -74,7 +70,9 @@ fn format_trim_consecutive_spaces(text: &str) -> String {
                 "".to_string()
             }
         })
-        .to_string()
+        .to_string();
+
+    trimmed_text
 }
 
 /// Adds padding to Monospace blocks.
@@ -173,15 +171,11 @@ fn format_add_reverse_nester_tags(text: &str) -> String {
     result
 }
 
-/// NOTE: [[VARIABLE]] - {{CONSTANT}} - <<BOLD>> - `MONOSPACE`
-///
-/// Removes formatting tags and paints the inner content accordingly:
-///     [[VARIABLE]]
-///  -> \u{1b}[33mVARIABLE\u{1b}[0m
-///
-/// For painting interactions:
-///     https://www.codingame.com/contribute/view/750741cba87bb6a6ac8daf5adbe2aa083e24
-///     https://www.codingame.com/contribute/view/83316b323da5dba40730dbca5c72b46ccfc9
+/// Removes formatting tags and paints the inner content accordingly.
+
+// For painting interactions:
+//     https://www.codingame.com/contribute/view/750741cba87bb6a6ac8daf5adbe2aa083e24
+//     https://www.codingame.com/contribute/view/83316b323da5dba40730dbca5c72b46ccfc9
 fn format_paint_inner_blocks(text: &str, ostyle: &OutputStyle) -> String {
     let mut result = RE_VARIABLE
         .replace_all(&text, |caps: &regex::Captures| ostyle.variable.paint(&caps[1]).to_string())
@@ -254,7 +248,7 @@ mod tests {
     #[test]
     fn format_monospace_adds_newline_if_there_is_none() {
         let text = "I have `no whitespace`";
-        let formatted_text = format_edit_monospace(text, &OutputStyle::default());
+        let formatted_text = format_edit_monospace(text);
 
         assert!(formatted_text.contains("\n"));
     }
@@ -262,7 +256,7 @@ mod tests {
     #[test]
     fn format_monospace_trims_trailing_spaces() {
         let text = "I have `no whitespace`        and more text";
-        let formatted_text = format_edit_monospace(text, &OutputStyle::default());
+        let formatted_text = format_edit_monospace(text);
 
         assert!(!formatted_text.contains("\n "));
     }
@@ -270,7 +264,7 @@ mod tests {
     #[test]
     fn format_monospace_more_newlines_1() {
         let text: &str = "1text   `mono line` text";
-        let formatted_text = format_edit_monospace(text, &OutputStyle::default());
+        let formatted_text = format_edit_monospace(text);
         let expected = "1text\n\n`mono line`\n\ntext";
 
         assert_eq!(formatted_text, expected);
@@ -279,7 +273,7 @@ mod tests {
     #[test]
     fn format_monospace_more_newlines_2() {
         let text: &str = "2text   \n\n`mono line\nnew line`  \n  text";
-        let formatted_text = format_edit_monospace(text, &OutputStyle::default());
+        let formatted_text = format_edit_monospace(text);
         let expected = "2text\n\n`mono line\nnew line`\n\ntext";
 
         assert_eq!(formatted_text, expected);
@@ -288,8 +282,8 @@ mod tests {
     #[test]
     fn format_monospace_more_newlines_3() {
         let text: &str = "3text   \n\n   \n    `\n   \n  mono line\nnew line  \n   \n`   \n   \n   text";
-        let formatted_text = format_edit_monospace(text, &OutputStyle::default());
-        let expected = "3text\n\n`mono line\nnew line`\n\ntext";
+        let formatted_text = format_edit_monospace(text);
+        let expected = "3text\n\n`   \n  mono line\nnew line`\n\ntext";
 
         assert_eq!(formatted_text, expected);
     }
@@ -297,7 +291,7 @@ mod tests {
     #[test]
     fn format_monospace_more_newlines_4() {
         let text: &str = "4text\n\n`mono line`\n\ntext";
-        let formatted_text = format_edit_monospace(text, &OutputStyle::default());
+        let formatted_text = format_edit_monospace(text);
         let expected = "4text\n\n`mono line`\n\ntext";
 
         assert_eq!(formatted_text, expected);
