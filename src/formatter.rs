@@ -21,7 +21,15 @@ lazy_static! {
 }
 
 pub fn format_cg(text: &str, ostyle: &OutputStyle) -> String {
-    let mut text = format_edit_monospace(&text, ostyle);
+    if RE_MONOSPACE_OLD.is_match(&text) {
+        println!(
+            "{} {}\n",
+            ostyle.failure.paint("WARNING"),
+            "Clash contains obsolete ``` formatting, consider fixing it in the website."
+        );
+    }
+
+    let mut text = format_edit_monospace(&text);
     text = format_trim_consecutive_spaces(&text);
     text = format_monospace_padding(&text);
     text = format_add_reverse_nester_tags(&text);
@@ -44,6 +52,7 @@ fn format_edit_monospace(text: &str, ostyle: &OutputStyle) -> String {
         println!("{} {}\n", ostyle.failure.paint("WARNING"), msg);
     }
 
+fn format_edit_monospace(text: &str) -> String {
     let mut result = text.replace("```", "`");
 
     result = RE_MONOSPACE_TRIM
