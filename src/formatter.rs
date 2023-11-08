@@ -78,30 +78,34 @@ fn format_trim_consecutive_spaces(text: &str) -> String {
 }
 
 /// Adds padding to Monospace blocks.
-/// NOTE 1: Comes before the adding of reverse nester tags so that the Monospace
-///         block is not split into separate blocks and messes up the padding.
-/// NOTE 2: Needs to factor the fact that tags are going to be deleted later on.
+
+// NOTE 1: Comes before the adding of reverse nester tags so that the Monospace
+//         block is not split into separate blocks and messes up the padding.
+// NOTE 2: Needs to factor the fact that tags are going to be deleted later on.
 fn format_monospace_padding(text: &str) -> String {
-    RE_MONOSPACE
+    let padded_text = RE_MONOSPACE
         .replace_all(&text, |caps: &regex::Captures| {
-            let lines: Vec<&str> = caps[1].split('\n').collect();
-            let padding = lines.iter().map(|line| clean_line(line.to_string()).len()).max().unwrap_or(0);
+            let lines: Vec<&str> = caps[1].split('\n').map(|line| line.trim_end()).collect();
+            let padding = lines.iter().map(|line| clean_line_size(line)).max().unwrap_or(0);
             let formatted_lines = lines
                 .iter()
                 .map(|&line| {
-                    let clean_line = clean_line(line.to_string());
-                    let offset = line.len() - clean_line.len();
+                    // Consider using .chars.count instead of .len
+                    let offset = line.len() - clean_line_size(line);
                     format!("{:<width$}", line, width = padding + offset)
                 })
                 .collect::<Vec<String>>()
                 .join("\n");
             format!("`{}`", formatted_lines)
         })
-        .to_string()
+        .to_string();
+
+    padded_text
 }
 
-/// Returns a line without formatting tags. Used for computing the padding.
-fn clean_line(line: String) -> String {
+/// Returns the size of a line without formatting tags. 
+/// Only used for computing the padding of Monospace blocks.
+fn clean_line_size(line: &str) -> usize {
     RE_ALL_BUT_MONOSPACE
         .replace_all(&line, |caps: &regex::Captures| {
             if let Some(group) = caps.get(1) {
@@ -115,7 +119,7 @@ fn clean_line(line: String) -> String {
             }
             "".to_string()
         })
-        .to_string()
+        .len()
 }
 
 /// Only supports some combinations.
