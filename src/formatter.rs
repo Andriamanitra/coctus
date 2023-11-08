@@ -104,13 +104,10 @@ fn format_monospace_padding(text: &str) -> String {
 /// Returns the size of a line without formatting tags.
 /// Only used for computing the padding of Monospace blocks.
 fn clean_line_size(line: &str) -> usize {
-    let amount_tag_blocks: usize = RE_ALL_BUT_MONOSPACE
-        .find_iter(&line)
-        .count();
+    let amount_tag_blocks: usize = RE_ALL_BUT_MONOSPACE.find_iter(&line).count();
 
     line.len() - 4 * amount_tag_blocks
 }
-
 
 /// Adds reverse nester tags
 /// ```
@@ -118,7 +115,7 @@ fn clean_line_size(line: &str) -> usize {
 ///  <<Next >>[[N]]<< >>{{3}}<< lines:>>
 /// ```
 /// NOTE: Only supports some combinations.
-/// 
+///
 /// NOTE: Hacky. Based upon the fact that only 1-level nesting makes sense.
 fn format_add_reverse_nester_tags(text: &str) -> String {
     // <<Next [[N]] {{3}} lines:>>
