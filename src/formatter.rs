@@ -39,7 +39,7 @@ pub fn format_cg(text: &str, ostyle: &OutputStyle) -> String {
     format_remove_excessive_newlines(&text)
 }
 
-/// 1. Replaces ```text``` -> `text`
+/// 1. Replaces \```text``` -> \`text`.
 /// 2. Format whitespace around Monospace blocks.
 
 // Clashes with outdated formatting:
@@ -104,26 +104,22 @@ fn format_monospace_padding(text: &str) -> String {
 /// Returns the size of a line without formatting tags.
 /// Only used for computing the padding of Monospace blocks.
 fn clean_line_size(line: &str) -> usize {
-    RE_ALL_BUT_MONOSPACE
-        .replace_all(&line, |caps: &regex::Captures| {
-            if let Some(group) = caps.get(1) {
-                return group.as_str().to_string();
-            }
-            if let Some(group) = caps.get(2) {
-                return group.as_str().to_string();
-            }
-            if let Some(group) = caps.get(3) {
-                return group.as_str().to_string();
-            }
-            "".to_string()
-        })
-        .len()
+    let amount_tag_blocks: usize = RE_ALL_BUT_MONOSPACE
+        .find_iter(&line)
+        .count();
+
+    line.len() - 4 * amount_tag_blocks
 }
 
-/// Only supports some combinations.
-/// Hacky. Based upon the fact that only 1-level nesting makes sense.
-///     <<Next   [[N]]   {{3}} lines:>>
-///  -> <<Next >>[[N]]<< {{3}} lines:>>
+
+/// Adds reverse nester tags
+/// ```
+///  <<Next   [[N]]     {{3}}<< lines:>>
+///  <<Next >>[[N]]<< >>{{3}}<< lines:>>
+/// ```
+/// NOTE: Only supports some combinations.
+/// 
+/// NOTE: Hacky. Based upon the fact that only 1-level nesting makes sense.
 fn format_add_reverse_nester_tags(text: &str) -> String {
     // <<Next [[N]] {{3}} lines:>>
     let mut result = RE_BOLD
