@@ -139,14 +139,17 @@ fn format_add_reverse_nester_tags(text: &str) -> String {
         })
         .to_string();
 
-    // `Next [[N]] {{3}} lines:`
+    // `Next [[N]] {{3}} <<B>> lines:`
     result = RE_MONOSPACE
         .replace_all(&result, |caps: &regex::Captures| {
             let escaped_vars = RE_VARIABLE
                 .replace_all(&caps[0], |inner_caps: &regex::Captures| format!("`{}`", &inner_caps[0]))
                 .to_string();
-            RE_CONSTANT
+            let escaped_cons = RE_CONSTANT
                 .replace_all(&escaped_vars, |inner_caps: &regex::Captures| format!("`{}`", &inner_caps[0]))
+                .to_string();
+            RE_BOLD
+                .replace_all(&escaped_cons, |inner_caps: &regex::Captures| format!("`{}`", &inner_caps[0]))
                 .to_string()
         })
         .to_string();
