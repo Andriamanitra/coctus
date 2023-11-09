@@ -67,7 +67,7 @@ pub fn merge_styles(style: &Style, other: &Style) -> Style {
     let mut merged_style = style.clone();
     let def = Style::default();
 
-    // If style has an attribute that is the same as the default one, 
+    // If style has an attribute that is the same as the default one,
     // then overwrite it with other's attribute.
     if style.foreground == def.foreground {
         merged_style.foreground = other.foreground

@@ -8,9 +8,6 @@ use crate::outputstyle::{merge_styles, OutputStyle};
 lazy_static! {
     // NOTE
     // [[VARIABLE]] - {{CONSTANT}} - <<BOLD>> - `MONOSPACE`
-    static ref RE_VARIABLE: Regex = Regex::new(r"\[\[((?s).*?)\]\]").unwrap();
-    static ref RE_CONSTANT: Regex = Regex::new(r"\{\{((?s).*?)\}\}").unwrap();
-    static ref RE_BOLD: Regex = Regex::new(r"<<((?s).*?)>>").unwrap();
     static ref RE_MONOSPACE: Regex = Regex::new(r"`([^`]*?)`").unwrap();
     static ref RE_MONOSPACE_OLD: Regex = Regex::new(r"```([^`]*?)```").unwrap();
     static ref RE_MONOSPACE_TRIM: Regex = Regex::new(r"\s*`(?: *\n)?([^`]+?)\s*`\s*").unwrap();
@@ -299,13 +296,6 @@ mod tests {
         let expected = "4text\n\n`mono line`\n\ntext";
 
         assert_eq!(formatted_text, expected);
-    }
-
-    #[test]
-    fn format_matches_newlines_bold() {
-        let text = "<<Bold text spread \n across two lines:>>";
-
-        assert_eq!(RE_BOLD.is_match(&text), true);
     }
 
     #[test]
