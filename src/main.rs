@@ -309,7 +309,7 @@ impl App {
                 }
             }
         };
-        println!("Changed clash to https://codingame.com/contribute/view/{}", next_handle);
+        println!(" Changed clash to https://codingame.com/contribute/view/{}", next_handle);
         println!(" Local file: {}/{}.json", &self.clash_dir.to_str().unwrap(), next_handle);
         std::fs::write(&self.current_clash_file, next_handle.to_string())?;
         Ok(())
