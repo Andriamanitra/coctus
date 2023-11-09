@@ -2,7 +2,7 @@ use ansi_term::Style;
 use lazy_static::lazy_static;
 use regex::Regex;
 
-use crate::outputstyle::OutputStyle;
+use crate::outputstyle::{merge_styles, OutputStyle};
 
 // use lazy_static! to make sure regexes are only compiled once
 lazy_static! {
@@ -15,11 +15,11 @@ lazy_static! {
     static ref RE_MONOSPACE_OLD: Regex = Regex::new(r"```([^`]*?)```").unwrap();
     static ref RE_MONOSPACE_TRIM: Regex = Regex::new(r"\s*`(?: *\n)?([^`]+?)\s*`\s*").unwrap();
     static ref RE_BACKTICK: Regex = Regex::new(r"(`[^`]+`)|([^`]+)").unwrap();
+    static ref RE_ALL_BUT_MONOSPACE: Regex =
+        Regex::new(r"\[\[((?s).*?)\]\]|\{\{((?s).*?)\}\}|<<((?s).*?)>>").unwrap();
     static ref RE_SPACES: Regex = Regex::new(r" +").unwrap();
     static ref RE_NONWHITESPACE: Regex = Regex::new(r"[^\r\n ]+").unwrap();
     static ref RE_NEWLINES: Regex = Regex::new(r"\n\n\n+").unwrap();
-    static ref RE_ALL_BUT_MONOSPACE: Regex =
-        Regex::new(r"\[\[((?s).*?)\]\]|\{\{((?s).*?)\}\}|<<((?s).*?)>>").unwrap();
 }
 
 pub fn format_cg(text: &str, ostyle: &OutputStyle) -> String {
@@ -34,8 +34,7 @@ pub fn format_cg(text: &str, ostyle: &OutputStyle) -> String {
     let mut text = format_edit_monospace(&text);
     text = format_trim_consecutive_spaces(&text);
     text = format_monospace_padding(&text);
-    text = format_add_reverse_nester_tags(&text);
-    text = format_paint_inner_blocks(&text, ostyle);
+    text = format_paint(&text, ostyle);
     format_remove_excessive_newlines(&text)
 }
 
@@ -109,89 +108,101 @@ fn clean_line_size(line: &str) -> usize {
     line.len() - 4 * amount_tag_blocks
 }
 
-/// Adds reverse nester tags
-/// ```
-///  <<Next   [[N]]     {{3}}<< lines:>>
-///  <<Next >>[[N]]<< >>{{3}}<< lines:>>
-/// ```
-/// NOTE: Only supports some combinations.
-///
-/// NOTE: Hacky. Based upon the fact that only 1-level nesting makes sense.
-fn format_add_reverse_nester_tags(text: &str) -> String {
-    // <<Next [[N]] {{3}} lines:>>
-    let mut result = RE_BOLD
+fn format_paint(text: &str, ostyle: &OutputStyle) -> String {
+    // FIX: https://www.codingame.com/contribute/view/1783dda5b69105636695dc5bf51de1baf5d0
+
+    // OTHERS
+    //      https://www.codingame.com/contribute/view/750741cba87bb6a6ac8daf5adbe2aa083e24
+    //      https://www.codingame.com/contribute/view/83316b323da5dba40730dbca5c72b46ccfc9
+
+    // Hack for all tags to be two chars long
+    let text = RE_MONOSPACE
         .replace_all(&text, |caps: &regex::Captures| {
-            let escaped_vars = RE_VARIABLE
-                .replace_all(&caps[0], |inner_caps: &regex::Captures| format!(">>{}<<", &inner_caps[0]))
-                .to_string();
-            RE_CONSTANT
-                .replace_all(&escaped_vars, |inner_caps: &regex::Captures| format!(">>{}<<", &inner_caps[0]))
-                .to_string()
+            // Another hack: Quickfix for padding
+            let hack_padding = &caps[1].replace('\n', "$$\n@@");
+            format!("@@{}$$", hack_padding)
         })
         .to_string();
 
-    // `Next [[N]] {{3}} <<B>> lines:`
-    result = RE_MONOSPACE
-        .replace_all(&result, |caps: &regex::Captures| {
-            let escaped_vars = RE_VARIABLE
-                .replace_all(&caps[0], |inner_caps: &regex::Captures| format!("`{}`", &inner_caps[0]))
-                .to_string();
-            let escaped_cons = RE_CONSTANT
-                .replace_all(&escaped_vars, |inner_caps: &regex::Captures| format!("`{}`", &inner_caps[0]))
-                .to_string();
-            RE_BOLD
-                .replace_all(&escaped_cons, |inner_caps: &regex::Captures| format!("`{}`", &inner_caps[0]))
-                .to_string()
-        })
-        .to_string();
+    let tag_pairs = vec![
+        (ostyle.monospace, "@@", "$$"),
+        (ostyle.variable, "[[", "]]"),
+        (ostyle.constant, "{{", "}}"),
+        (ostyle.bold, "<<", ">>"),
+    ];
 
-    // {{Next [[N]] `Mono \n and more` lines}}
-    result = RE_CONSTANT
-        .replace_all(&result, |caps: &regex::Captures| {
-            let escaped_cons = RE_VARIABLE
-                .replace_all(&caps[0], |inner_caps: &regex::Captures| {
-                    format!("{}{}{}", "}}", &inner_caps[0], "{{")
-                })
-                .to_string();
-            RE_MONOSPACE
-                .replace_all(&escaped_cons, |inner_caps: &regex::Captures| {
-                    format!("{}{}{}", "}}", &inner_caps[0], "{{")
-                })
-                .to_string()
-        })
-        .to_string();
+    let mut cur_style = Style::default();
+    let mut buffer = String::new();
+    let mut result = String::new();
+    let mut found = false;
+    let mut stack: Vec<(Style, &str)> = vec![]; // Stack of (pre_style, opening_tag)
 
-    result
-}
+    // Assumes no nesting <<a[[b>>c]] - should warn if it finds one ?
+    for (i, c) in text.char_indices() {
+        let slice = &text[i..];
+        // If found is not set true by the end of the iteration, we add the char to the
+        // buffer When found is true, we do nothing the next iteration since
+        // tags are two chars long
+        if found {
+            found = false;
+            continue;
+        }
 
-/// Removes formatting tags and paints the inner content accordingly.
+        for (style, tag_open, tag_close) in &tag_pairs {
+            // There's a chance of a tag starting here
+            if slice.starts_with(tag_open) {
+                // There's definitely a tag to be parsed (grouped non-lazily)
+                if slice.contains(tag_close) {
+                    // NOTE (CG RULES):
+                    // Tags can not nest themselves:
+                    // so if the current open was already in the stack - ignore
+                    // <<<<Prompt>>> => [<<Prompt]>>
+                    // Although OUR double parsing looks better imo
+                    // https://www.codingame.com/contribute/view/70888dd5bb12f2becdad5e6db3de8b40a77f
 
-// For painting interactions:
-//     https://www.codingame.com/contribute/view/750741cba87bb6a6ac8daf5adbe2aa083e24
-//     https://www.codingame.com/contribute/view/83316b323da5dba40730dbca5c72b46ccfc9
-fn format_paint_inner_blocks(text: &str, ostyle: &OutputStyle) -> String {
-    let mut result = RE_VARIABLE
-        .replace_all(&text, |caps: &regex::Captures| ostyle.variable.paint(&caps[1]).to_string())
-        .to_string();
-
-    result = RE_CONSTANT
-        .replace_all(&result, |caps: &regex::Captures| ostyle.constant.paint(&caps[1]).to_string())
-        .to_string();
-
-    result = RE_BOLD
-        .replace_all(&result, |caps: &regex::Captures| ostyle.bold.paint(&caps[1]).to_string())
-        .to_string();
-
-    result = RE_MONOSPACE
-        .replace_all(&result, |caps: &regex::Captures| {
-            let lines: Vec<&str> = caps[1].split('\n').collect();
-            lines
-                .iter()
-                .map(|&line| ostyle.monospace.paint(line).to_string())
-                .collect::<Vec<String>>()
-                .join("\n")
-        })
-        .to_string();
+                    // Paint the previous buffer with the previous colour
+                    // add it to the global "result" and then clear it
+                    result += &cur_style.paint(&buffer).to_string();
+                    buffer.clear();
+                    // push cur_style to the stack to go back to it later on
+                    // then update the color to paint the next buffer
+                    stack.push((cur_style.clone(), tag_open));
+                    cur_style = merge_styles(&cur_style, &style);
+                    // Found a tag, 2 turns skip
+                    found = true;
+                }
+            // There's a chance of a tag ending here
+            } else if slice.starts_with(tag_close) {
+                // Does this closing tag match the top of the stack?
+                match stack.clone().last() {
+                    // We did parse some opening tag before
+                    Some((st, op)) => {
+                        // They match, pop
+                        if op == tag_open {
+                            stack.pop();
+                            // Paint and go back to the previous style
+                            result += &cur_style.paint(&buffer).to_string();
+                            buffer.clear();
+                            cur_style = st.clone();
+                            found = true;
+                        } else {
+                            // They don't match <<a]]b>> treat ]] as string
+                            panic!("Nesting different tags is UNSUPPORTED")
+                        }
+                    }
+                    // No stack means to ignore, imagine a>>b
+                    _ => {}
+                }
+            }
+        }
+        if !found {
+            buffer += &c.to_string();
+        }
+    }
+    if buffer.len() > 0 {
+        result += &cur_style.paint(&buffer).to_string();
+        buffer.clear();
+    }
 
     result
 }
@@ -233,7 +244,7 @@ mod tests {
 
     fn format_monospace_coloring_removes_backticks() {
         let text = "To create a new variable use `let x = 5`";
-        let formatted_text = format_paint_inner_blocks(text, &OutputStyle::default());
+        let formatted_text = format_paint(text, &OutputStyle::default());
 
         assert!(!formatted_text.contains("`"));
     }
@@ -286,32 +297,6 @@ mod tests {
         let text: &str = "4text\n\n`mono line`\n\ntext";
         let formatted_text = format_edit_monospace(text);
         let expected = "4text\n\n`mono line`\n\ntext";
-
-        assert_eq!(formatted_text, expected);
-    }
-
-    #[test]
-    fn format_correctly_add_nested_tags() {
-        let text = "<<Next [[N]] {{3}} lines:>>";
-        let formatted_text = format_add_reverse_nester_tags(text);
-        let expected = "<<Next >>[[N]]<< >>{{3}}<< lines:>>";
-
-        assert_eq!(formatted_text, expected);
-    }
-
-    #[test]
-    fn format_correctly_paint_nested_tags() {
-        let text = "<<Next [[N]] {{3}} lines:>>";
-        let ostyle = &OutputStyle::default();
-        let formatted_text = format_cg(text, ostyle);
-        let expected = vec![
-            format_cg("<<Next >>", ostyle),
-            format_cg("[[N]]", ostyle),
-            format_cg("<< >>", ostyle),
-            format_cg("{{3}}", ostyle),
-            format_cg("<< lines:>>", ostyle),
-        ]
-        .join("");
 
         assert_eq!(formatted_text, expected);
     }
