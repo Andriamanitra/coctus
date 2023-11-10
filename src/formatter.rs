@@ -24,15 +24,14 @@ lazy_static! {
 /// [[VARIABLE]] - {{CONSTANT}} - <<BOLD>> - `MONOSPACE`
 /// ```
 pub fn format_cg(text: &str, ostyle: &OutputStyle) -> String {
-    if RE_MONOSPACE_OLD.is_match(&text) {
+    if RE_MONOSPACE_OLD.is_match(text) {
         eprintln!(
-            "{} {}\n",
+            "{} Clash contains obsolete ``` formatting, consider fixing it in the website.\n",
             ostyle.failure.paint("WARNING"),
-            "Clash contains obsolete ``` formatting, consider fixing it in the website."
         );
     }
 
-    let mut text = format_edit_monospace(&text);
+    let mut text = format_edit_monospace(text);
     text = format_trim_consecutive_spaces(&text);
     text = format_monospace_padding(&text);
     text = format_paint(&text, ostyle);
@@ -63,7 +62,7 @@ fn format_edit_monospace(text: &str) -> String {
 /// inside monospace blocks are left as-is.
 fn format_trim_consecutive_spaces(text: &str) -> String {
     RE_BACKTICK
-        .replace_all(&text, |caps: &regex::Captures| {
+        .replace_all(text, |caps: &regex::Captures| {
             if let Some(monospace_text) = caps.get(1) {
                 monospace_text.as_str().to_string()
             } else if let Some(non_monospace_text) = caps.get(2) {
@@ -79,8 +78,8 @@ fn format_trim_consecutive_spaces(text: &str) -> String {
 /// length. Attempts to factor in that formatting tags are going to be deleted.
 fn format_monospace_padding(text: &str) -> String {
     RE_MONOSPACE
-        .replace_all(&text, |caps: &regex::Captures| {
-            let lines: Vec<&str> = caps[1].split('\n').map(|line| line).collect();
+        .replace_all(text, |caps: &regex::Captures| {
+            let lines: Vec<&str> = caps[1].split('\n').collect();
             let padding = lines.iter().map(|line| clean_line_size(line)).max().unwrap_or(0);
             let formatted_lines = lines
                 .iter()
@@ -99,7 +98,7 @@ fn format_monospace_padding(text: &str) -> String {
 /// Calculate the length of a string (in bytes) without CodinGame's formatting
 /// tags.
 fn clean_line_size(line: &str) -> usize {
-    let amount_tag_blocks: usize = RE_ALL_BUT_MONOSPACE.find_iter(&line).count();
+    let amount_tag_blocks: usize = RE_ALL_BUT_MONOSPACE.find_iter(line).count();
 
     line.len() - 4 * amount_tag_blocks
 }
@@ -129,7 +128,7 @@ fn paint_parts<'a>(text: &'a str, style_tag_pairs: &[(Style, &str, &str)]) -> Ve
                         // Paint and go back to the previous style
                         parts.push(cur_style.paint(buffer.to_string()));
                         buffer.clear();
-                        cur_style = style.clone();
+                        cur_style = *style;
 
                         // Found a valid tag, skip it
                         skip_until = i + tag_close.len();
@@ -166,8 +165,8 @@ fn paint_parts<'a>(text: &'a str, style_tag_pairs: &[(Style, &str, &str)]) -> Ve
                     buffer.clear();
                     // push cur_style to the stack to go back to it later on
                     // then update the color to paint the next buffer
-                    stack.push((cur_style.clone(), tag_open));
-                    cur_style = nested_style(&style, &cur_style);
+                    stack.push((cur_style, tag_open));
+                    cur_style = nested_style(style, &cur_style);
 
                     // Found a valid tag, skip it
                     skip_until = i + tag_open.len();
@@ -203,9 +202,8 @@ fn paint_parts<'a>(text: &'a str, style_tag_pairs: &[(Style, &str, &str)]) -> Ve
         num_warnings += 1;
     }
 
-    if buffer.len() > 0 {
+    if !buffer.is_empty() {
         parts.push(cur_style.paint(buffer.to_string()));
-        buffer.clear();
     }
 
     parts
@@ -224,7 +222,7 @@ fn format_paint(text: &str, ostyle: &OutputStyle) -> String {
 }
 
 fn format_remove_excessive_newlines(text: &str) -> String {
-    RE_NEWLINES.replace_all(&text, |_: &regex::Captures| "\n\n").trim_end().to_string()
+    RE_NEWLINES.replace_all(text, |_: &regex::Captures| "\n\n").trim_end().to_string()
 }
 
 /// 1. Replaces spaces with • and newlines with ⏎. Paints them with `ws_style`.
