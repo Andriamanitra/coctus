@@ -49,7 +49,7 @@ fn format_edit_monospace(text: &str) -> String {
 
 /// If it's not inside a Monospace block, trim consecutive spaces.
 fn format_trim_consecutive_spaces(text: &str) -> String {
-    let trimmed_text = RE_BACKTICK
+    RE_BACKTICK
         .replace_all(&text, |caps: &regex::Captures| {
             if let Some(monospace_text) = caps.get(1) {
                 monospace_text.as_str().to_string()
@@ -59,15 +59,13 @@ fn format_trim_consecutive_spaces(text: &str) -> String {
                 "".to_string()
             }
         })
-        .to_string();
-
-    trimmed_text
+        .to_string()
 }
 
 /// Adds padding to Monospace blocks.
 /// Factors in that formatting tags are going to be deleted.
 fn format_monospace_padding(text: &str) -> String {
-    let padded_text = RE_MONOSPACE
+    RE_MONOSPACE
         .replace_all(&text, |caps: &regex::Captures| {
             let lines: Vec<&str> = caps[1].split('\n').map(|line| line).collect();
             let padding = lines.iter().map(|line| clean_line_size(line)).max().unwrap_or(0);
@@ -76,15 +74,13 @@ fn format_monospace_padding(text: &str) -> String {
                 .map(|&line| {
                     // Consider using .chars.count instead of .len
                     let offset = line.len() - clean_line_size(line);
-                    format!("{:<width$}", line, width = padding + offset)
+                    format!("`{:<width$}`", line, width = padding + offset)
                 })
                 .collect::<Vec<String>>()
                 .join("\n");
-            format!("`{}`", formatted_lines)
+            formatted_lines
         })
-        .to_string();
-
-    padded_text
+        .to_string()
 }
 
 /// Returns the size of a line without formatting tags.
@@ -96,17 +92,8 @@ fn clean_line_size(line: &str) -> usize {
 }
 
 fn format_paint(text: &str, ostyle: &OutputStyle) -> String {
-    // Replace ` with `` to make all tags to be two chars long.
-    // Add reverse Monospace tags around newlines for prettier painting.
-    let text = RE_MONOSPACE
-        .replace_all(&text, |caps: &regex::Captures| {
-            let with_extra_tags = caps[1].replace('\n', "``\n``");
-            format!("``{}``", &with_extra_tags)
-        })
-        .to_string();
-
     let tag_pairs = vec![
-        (ostyle.monospace, "``", "``"),
+        (ostyle.monospace, "`", "`"),
         (ostyle.variable, "[[", "]]"),
         (ostyle.constant, "{{", "}}"),
         (ostyle.bold, "<<", ">>"),
@@ -115,19 +102,17 @@ fn format_paint(text: &str, ostyle: &OutputStyle) -> String {
     let mut cur_style = Style::default();
     let mut buffer = String::new();
     let mut result = String::new();
-    let mut skip = false;
+    let mut skip_until = 0;
     let mut stack: Vec<(Style, &str)> = vec![]; // Stack of (pre_style, opening_tag)
     let mut warnings: Vec<String> = vec![];
 
     for (i, c) in text.char_indices() {
-        let slice = &text[i..];
         // Skip formatting tags by not adding them to the buffer.
-        // Since all tags are two chars long, we must skip two iterations.
-        if skip {
-            skip = false;
+        if i < skip_until {
             continue;
         }
 
+        let slice = &text[i..];
         for (style, tag_open, tag_close) in &tag_pairs {
             // There's a chance of a tag ending here.
             if slice.starts_with(tag_close) {
@@ -153,7 +138,9 @@ fn format_paint(text: &str, ostyle: &OutputStyle) -> String {
                     result += &cur_style.paint(&buffer).to_string();
                     buffer.clear();
                     cur_style = style.clone();
-                    skip = true;
+
+                    // Found a valid tag, skip it
+                    skip_until = i + tag_close.len();
                     break;
                 }
             }
@@ -174,13 +161,14 @@ fn format_paint(text: &str, ostyle: &OutputStyle) -> String {
                     // then update the color to paint the next buffer
                     stack.push((cur_style.clone(), tag_open));
                     cur_style = nested_style(&style, &cur_style);
-                    // Found a tag, 2 turns skip
-                    skip = true;
+
+                    // Found a valid tag, skip it
+                    skip_until = i + tag_open.len();
                     break;
                 }
             }
         }
-        if !skip {
+        if i >= skip_until {
             buffer += &c.to_string();
         }
     }
