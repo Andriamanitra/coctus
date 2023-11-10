@@ -104,7 +104,6 @@ fn clean_line_size(line: &str) -> usize {
     line.len() - 4 * amount_tag_blocks
 }
 
-
 fn paint_parts<'a>(text: &'a str, style_tag_pairs: &[(Style, &str, &str)]) -> Vec<ansi_term::ANSIString<'a>> {
     let mut parts = Vec::<ansi_term::ANSIString<'a>>::new();
 
@@ -326,7 +325,7 @@ mod tests {
     }
 
     #[test]
-    fn paint() {
+    fn parts_are_painted_correctly() {
         let red = Style::default().fg(ansi_term::Color::Red);
         let blue = Style::default().fg(ansi_term::Color::Blue);
 
