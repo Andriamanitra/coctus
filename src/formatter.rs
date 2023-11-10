@@ -37,13 +37,6 @@ pub fn format_cg(text: &str, ostyle: &OutputStyle) -> String {
 
 /// 1. Replaces \```text``` -> \`text`.
 /// 2. Format whitespace around Monospace blocks.
-
-// Clashes with outdated formatting:
-//     https://www.codingame.com/contribute/view/25623694f80d8f747b3fa474a33a9920335ce
-//     https://www.codingame.com/contribute/view/7018d709bf39dcccec4ed9f97fb18105f64c
-// Others:
-//     https://www.codingame.com/contribute/view/1222536cec20519e1a630ecc8ada367dd708b
-//     https://www.codingame.com/contribute/view/6357b99de3f556ffd3edff4a4d5995c924bb
 fn format_edit_monospace(text: &str) -> String {
     let mut result = text.replace("```", "`");
 
@@ -72,14 +65,11 @@ fn format_trim_consecutive_spaces(text: &str) -> String {
 }
 
 /// Adds padding to Monospace blocks.
-
-// NOTE 1: Comes before the adding of reverse nester tags so that the Monospace
-//         block is not split into separate blocks and messes up the padding.
-// NOTE 2: Needs to factor the fact that tags are going to be deleted later on.
+/// Factors in that formatting tags are going to be deleted.
 fn format_monospace_padding(text: &str) -> String {
     let padded_text = RE_MONOSPACE
         .replace_all(&text, |caps: &regex::Captures| {
-            let lines: Vec<&str> = caps[1].split('\n').map(|line| line.trim_end()).collect();
+            let lines: Vec<&str> = caps[1].split('\n').map(|line| line).collect();
             let padding = lines.iter().map(|line| clean_line_size(line)).max().unwrap_or(0);
             let formatted_lines = lines
                 .iter()
