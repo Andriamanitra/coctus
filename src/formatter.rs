@@ -110,8 +110,8 @@ fn paint_parts<'a>(text: &'a str, style_tag_pairs: &[(Style, &str, &str)]) -> Ve
     let mut cur_style = Style::default();
     let mut buffer = String::new();
     let mut skip_until = 0;
+    let mut num_warnings = 0;
     let mut stack: Vec<(Style, &str)> = vec![]; // Stack of (pre_style, opening_tag)
-    let mut warnings: Vec<String> = vec![];
 
     for (i, c) in text.char_indices() {
         // Skip formatting tags by not adding them to the buffer.
@@ -121,37 +121,37 @@ fn paint_parts<'a>(text: &'a str, style_tag_pairs: &[(Style, &str, &str)]) -> Ve
 
         let slice = &text[i..];
         for (style, tag_open, tag_close) in style_tag_pairs {
-            // There's a chance of a tag ending here.
             if slice.starts_with(tag_close) {
                 // Does this opening tag match the top of the stack?
                 if let Some((style, opening)) = stack.to_owned().last() {
-                    // They don't match: imagine `a\n>>b` (ok), or <<a[[b>>c]] (unsupported).
-                    if opening != tag_open {
-                        // Treat it as a normal character. Possible nesting is not supported.
-                        let actual_opening = opening.replace("``", "`");
-                        let warning = format!(
-                            "{} {} {}",
-                            Style::new().on(ansi_term::Color::Red).paint("WARNING"),
-                            "Possible nesting of different tags is unsupported.",
-                            format!("Found {} after {}.", tag_close, actual_opening)
-                        );
-                        if !warnings.contains(&warning) {
-                            warnings.push(warning);
-                        }
-                        break
-                    }
-                    stack.pop();
-                    // Paint and go back to the previous style
-                    parts.push(cur_style.paint(buffer.to_string()));
-                    buffer.clear();
-                    cur_style = style.clone();
+                    if opening == tag_open {
+                        stack.pop();
+                        // Paint and go back to the previous style
+                        parts.push(cur_style.paint(buffer.to_string()));
+                        buffer.clear();
+                        cur_style = style.clone();
 
-                    // Found a valid tag, skip it
-                    skip_until = i + tag_close.len();
-                    break;
+                        // Found a valid tag, skip it
+                        skip_until = i + tag_close.len();
+                        break
+                    } else {
+                        // Closing tag doesn't match the opening tag: ignore it and treat it as a normal
+                        // character
+                        // For example: `a\n>>b` (ok), or <<a[[b>>c]] (invalid).
+
+                        if num_warnings == 0 {
+                            eprintln!(
+                                "{} Bad formatting: tried to close {:?} with {:?}",
+                                Style::new().on(ansi_term::Color::Red).paint("WARNING"),
+                                opening,
+                                tag_close,
+                            );
+                        }
+                        num_warnings += 1;
+                    }
                 }
             }
-            // There's a chance of a tag starting here
+
             if slice.starts_with(tag_open) {
                 // There's definitely a tag to be parsed (grouped non-lazily)
                 if slice.contains(tag_close) {
@@ -171,21 +171,41 @@ fn paint_parts<'a>(text: &'a str, style_tag_pairs: &[(Style, &str, &str)]) -> Ve
 
                     // Found a valid tag, skip it
                     skip_until = i + tag_open.len();
-                    break;
+                } else {
+                    // Opening tag that is never closed: ignore it and treat it as a normal
+                    // character
+                    if num_warnings == 0 {
+                        eprintln!(
+                            "{} Bad formatting: ignoring {:?} that is never closed",
+                            Style::new().on(ansi_term::Color::Red).paint("WARNING"),
+                            tag_open
+                        );
+                    }
+                    num_warnings += 1;
                 }
+                break
             }
         }
         if i >= skip_until {
             buffer.push(c);
         }
     }
+
+    for (_, tag_open) in stack {
+        // Opening tag was never closed
+        if num_warnings == 0 {
+            eprintln!(
+                "{} Bad formatting: {:?} was never closed",
+                Style::new().on(ansi_term::Color::Red).paint("WARNING"),
+                tag_open
+            );
+        }
+        num_warnings += 1;
+    }
+
     if buffer.len() > 0 {
         parts.push(cur_style.paint(buffer.to_string()));
         buffer.clear();
-    }
-
-    for warning in warnings {
-        eprintln!("{}", warning);
     }
 
     parts
@@ -340,7 +360,7 @@ mod tests {
         ];
 
         let parts = paint_parts("vv<<RED>>ww`GREEN`xx[[BLUE]]yy{{DEFAULT}}zz", &tag_pairs);
-        println!("{}", ansi_term::ANSIStrings(&parts));
+        println!("\n{}", ansi_term::ANSIStrings(&parts));
         assert_eq!(parts[0], ansi_term::ANSIString::from("vv"));
         assert_eq!(parts[1], red.paint("RED"));
         assert_eq!(parts[2], ansi_term::ANSIString::from("ww"));
@@ -362,12 +382,35 @@ mod tests {
         let tag_pairs = vec![(outer_style, "`", "`"), (inner_style, "<<", ">>")];
 
         let parts = paint_parts("AA`BB<<CC>>DD`EE", &tag_pairs);
-        println!("{}", ansi_term::ANSIStrings(&parts));
+        println!("\n{}", ansi_term::ANSIStrings(&parts));
         assert_eq!(parts[0], ansi_term::ANSIString::from("AA"));
         assert_eq!(parts[1], outer_style.paint("BB"));
         assert_eq!(parts[2], inner_style.on(Blue).paint("CC"));
         assert_eq!(parts[3], outer_style.paint("DD"));
         assert_eq!(parts[4], ansi_term::ANSIString::from("EE"));
         assert_eq!(parts.len(), 5);
+    }
+
+    #[test]
+    /// Test formatting that really shouldn't exist – it doesn't really matter
+    /// what the output is (since the formatting is not well-defined anyway)
+    /// as long as we don't crash
+    fn painting_weird_and_invalid() {
+        let ostyle = OutputStyle::default();
+        println!("\nInvalid formatting tests:");
+        let examples = vec![
+            "<<AA[[BB>>CC]]",
+            "```",
+            "XX```YY",
+            "<<]]",
+            "[[[[AA]]",
+            "[[[[AA]]]]",
+            "<<[[AA>>]]>>",
+        ];
+
+        for (idx, original) in examples.iter().enumerate() {
+            let formatted = format_paint(original, &ostyle);
+            println!(" {}. {:?} becomes \"{}\"", idx + 1, original, formatted);
+        }
     }
 }

@@ -16,7 +16,7 @@ test:
 
 # Run painting tests
 test-painting:
-    cargo test --quiet painting -- --nocapture
+    cargo test --quiet painting -- --nocapture --test-threads=1
 
 # Print unformatted statement (requires clash & jq)
 raw-statement HANDLE:
