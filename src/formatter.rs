@@ -325,25 +325,49 @@ mod tests {
     }
 
     #[test]
-    fn parts_are_painted_correctly() {
-        let red = Style::default().fg(ansi_term::Color::Red);
-        let blue = Style::default().fg(ansi_term::Color::Blue);
+    fn painting_simple() {
+        use ansi_term::Color::*;
+
+        let red = Style::default().fg(Red);
+        let green = Style::default().fg(Green);
+        let blue = Style::default().fg(Blue);
 
         let tag_pairs = vec![
-            (Style::default(), "[[", "]]"),
             (Style::default(), "{{", "}}"),
+            (blue, "[[", "]]"),
             (red, "<<", ">>"),
-            (blue, "`", "`"),
+            (green, "`", "`"),
         ];
 
-        let parts = paint_parts("AA<<BB>>CC`DD`EE[[FF]]GG", &tag_pairs);
+        let parts = paint_parts("vv<<RED>>ww`GREEN`xx[[BLUE]]yy{{DEFAULT}}zz", &tag_pairs);
+        println!("{}", ansi_term::ANSIStrings(&parts));
+        assert_eq!(parts[0], ansi_term::ANSIString::from("vv"));
+        assert_eq!(parts[1], red.paint("RED"));
+        assert_eq!(parts[2], ansi_term::ANSIString::from("ww"));
+        assert_eq!(parts[3], green.paint("GREEN"));
+        assert_eq!(parts[4], ansi_term::ANSIString::from("xx"));
+        assert_eq!(parts[5], blue.paint("BLUE"));
+        assert_eq!(parts[6], ansi_term::ANSIString::from("yy"));
+        assert_eq!(parts[7], ansi_term::ANSIString::from("DEFAULT"));
+        assert_eq!(parts[8], ansi_term::ANSIString::from("zz"));
+        assert_eq!(parts.len(), 9);
+    }
+
+    #[test]
+    fn painting_nested() {
+        use ansi_term::Color::{Blue, Red};
+        let inner_style = Style::default().fg(Red);
+        let outer_style = Style::default().on(Blue);
+
+        let tag_pairs = vec![(outer_style, "`", "`"), (inner_style, "<<", ">>")];
+
+        let parts = paint_parts("AA`BB<<CC>>DD`EE", &tag_pairs);
+        println!("{}", ansi_term::ANSIStrings(&parts));
         assert_eq!(parts[0], ansi_term::ANSIString::from("AA"));
-        assert_eq!(parts[1], red.paint("BB"));
-        assert_eq!(parts[2], ansi_term::ANSIString::from("CC"));
-        assert_eq!(parts[3], blue.paint("DD"));
+        assert_eq!(parts[1], outer_style.paint("BB"));
+        assert_eq!(parts[2], inner_style.on(Blue).paint("CC"));
+        assert_eq!(parts[3], outer_style.paint("DD"));
         assert_eq!(parts[4], ansi_term::ANSIString::from("EE"));
-        assert_eq!(parts[5], ansi_term::ANSIString::from("FF"));
-        assert_eq!(parts[6], ansi_term::ANSIString::from("GG"));
-        assert_eq!(parts.len(), 7);
+        assert_eq!(parts.len(), 5);
     }
 }
