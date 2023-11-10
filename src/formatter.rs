@@ -104,17 +104,12 @@ fn clean_line_size(line: &str) -> usize {
     line.len() - 4 * amount_tag_blocks
 }
 
-fn format_paint(text: &str, ostyle: &OutputStyle) -> String {
-    let tag_pairs = vec![
-        (ostyle.monospace, "`", "`"),
-        (ostyle.variable, "[[", "]]"),
-        (ostyle.constant, "{{", "}}"),
-        (ostyle.bold, "<<", ">>"),
-    ];
+
+fn paint_parts<'a>(text: &'a str, style_tag_pairs: &[(Style, &str, &str)]) -> Vec<ansi_term::ANSIString<'a>> {
+    let mut parts = Vec::<ansi_term::ANSIString<'a>>::new();
 
     let mut cur_style = Style::default();
     let mut buffer = String::new();
-    let mut result = String::new();
     let mut skip_until = 0;
     let mut stack: Vec<(Style, &str)> = vec![]; // Stack of (pre_style, opening_tag)
     let mut warnings: Vec<String> = vec![];
@@ -126,7 +121,7 @@ fn format_paint(text: &str, ostyle: &OutputStyle) -> String {
         }
 
         let slice = &text[i..];
-        for (style, tag_open, tag_close) in &tag_pairs {
+        for (style, tag_open, tag_close) in style_tag_pairs {
             // There's a chance of a tag ending here.
             if slice.starts_with(tag_close) {
                 // Does this opening tag match the top of the stack?
@@ -137,7 +132,7 @@ fn format_paint(text: &str, ostyle: &OutputStyle) -> String {
                         let actual_opening = opening.replace("``", "`");
                         let warning = format!(
                             "{} {} {}",
-                            ostyle.failure.paint("WARNING"),
+                            Style::new().on(ansi_term::Color::Red).paint("WARNING"),
                             "Possible nesting of different tags is unsupported.",
                             format!("Found {} after {}.", tag_close, actual_opening)
                         );
@@ -148,7 +143,7 @@ fn format_paint(text: &str, ostyle: &OutputStyle) -> String {
                     }
                     stack.pop();
                     // Paint and go back to the previous style
-                    result += &cur_style.paint(&buffer).to_string();
+                    parts.push(cur_style.paint(buffer.to_string()));
                     buffer.clear();
                     cur_style = style.clone();
 
@@ -168,7 +163,7 @@ fn format_paint(text: &str, ostyle: &OutputStyle) -> String {
 
                     // Paint the previous buffer with the previous colour
                     // add it to the global "result" and then clear it
-                    result += &cur_style.paint(&buffer).to_string();
+                    parts.push(cur_style.paint(buffer.to_owned()));
                     buffer.clear();
                     // push cur_style to the stack to go back to it later on
                     // then update the color to paint the next buffer
@@ -182,11 +177,11 @@ fn format_paint(text: &str, ostyle: &OutputStyle) -> String {
             }
         }
         if i >= skip_until {
-            buffer += &c.to_string();
+            buffer.push(c);
         }
     }
     if buffer.len() > 0 {
-        result += &cur_style.paint(&buffer).to_string();
+        parts.push(cur_style.paint(buffer.to_string()));
         buffer.clear();
     }
 
@@ -194,7 +189,19 @@ fn format_paint(text: &str, ostyle: &OutputStyle) -> String {
         eprintln!("{}", warning);
     }
 
-    result
+    parts
+}
+
+fn format_paint(text: &str, ostyle: &OutputStyle) -> String {
+    let tag_pairs = vec![
+        (ostyle.monospace, "`", "`"),
+        (ostyle.variable, "[[", "]]"),
+        (ostyle.constant, "{{", "}}"),
+        (ostyle.bold, "<<", ">>"),
+    ];
+
+    let parts = paint_parts(text, &tag_pairs);
+    ansi_term::ANSIStrings(&parts).to_string()
 }
 
 fn format_remove_excessive_newlines(text: &str) -> String {
@@ -316,5 +323,28 @@ mod tests {
         let expected = "Text with many\n\nnewlines";
 
         assert_eq!(formatted_text, expected);
+    }
+
+    #[test]
+    fn paint() {
+        let red = Style::default().fg(ansi_term::Color::Red);
+        let blue = Style::default().fg(ansi_term::Color::Blue);
+
+        let tag_pairs = vec![
+            (Style::default(), "[[", "]]"),
+            (Style::default(), "{{", "}}"),
+            (red, "<<", ">>"),
+            (blue, "`", "`"),
+        ];
+
+        let parts = paint_parts("AA<<BB>>CC`DD`EE[[FF]]GG", &tag_pairs);
+        assert_eq!(parts[0], ansi_term::ANSIString::from("AA"));
+        assert_eq!(parts[1], red.paint("BB"));
+        assert_eq!(parts[2], ansi_term::ANSIString::from("CC"));
+        assert_eq!(parts[3], blue.paint("DD"));
+        assert_eq!(parts[4], ansi_term::ANSIString::from("EE"));
+        assert_eq!(parts[5], ansi_term::ANSIString::from("FF"));
+        assert_eq!(parts[6], ansi_term::ANSIString::from("GG"));
+        assert_eq!(parts.len(), 7);
     }
 }
