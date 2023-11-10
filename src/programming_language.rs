@@ -1,6 +1,6 @@
 use std::fs;
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use toml;
 
 #[derive(Deserialize, Debug)]
@@ -16,6 +16,17 @@ pub struct ProgrammingLanguage {
     pub name: String,
     pub variable_format: VariableNameFormat,
     pub source_file_ext: String,
+    pub type_tokens: TypeTokens,
+}
+
+#[derive(Deserialize, Serialize, Debug)]
+pub struct TypeTokens {
+    pub int: Option<String>,
+    pub float: Option<String>,
+    pub long: Option<String>,
+    pub bool: Option<String>,
+    pub word: Option<String>,
+    pub string: Option<String>,
 }
 
 impl From<String> for ProgrammingLanguage {

@@ -3,11 +3,11 @@
 {%- set one_type = uniques | length == 1 -%}
 {%- set many_types = uniques | length > 1 -%}
 {%- set unique_type = uniques | map(attribute="var_type") | first -%}
-{{- vars | map(attribute="name") | join(sep=", ") }} = gets{% if len > 1 %}.split{% if one_type and unique_type != "Word" %}.map(&:{{ unique_type }}){% endif %}{% endif %}
+{{- vars | map(attribute="name") | join(sep=", ") }} = gets{% if len > 1 %}.split{% if one_type and unique_type != "Word" %}.map(&:{% set key = unique_type | lower %}{{ type_tokens[key] }}){% endif %}{% endif %}
 {%- if many_types -%}
 {%- for var in vars -%}
 {%- if var.var_type != "String" and var.var_type != "Word" %}
-{{var.name}} = {{var.name}}.{{var.var_type}}
+{{var.name}} = {{var.name}}.{% set key = var.var_type | lower %}{{ type_tokens[key] }}
 {%- endif -%}
 {%- endfor -%}
 {%- endif -%}

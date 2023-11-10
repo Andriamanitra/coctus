@@ -62,6 +62,7 @@ impl Renderer {
         let read_data: Vec<ReadData> = vars.into_iter().map(|var_cmd| ReadData::from(var_cmd)).collect();
         let mut context = Context::new();
         context.insert("vars", &read_data);
+        context.insert("type_tokens", &self.lang.type_tokens);
         self.tera.render(&self.template_path("read"), &context)
             .expect("Could not find read template").trim_end().to_owned()
     }
