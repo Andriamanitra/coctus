@@ -6,8 +6,6 @@ use crate::outputstyle::OutputStyle;
 
 // use lazy_static! to make sure regexes are only compiled once
 lazy_static! {
-    // NOTE
-    // [[VARIABLE]] - {{CONSTANT}} - <<BOLD>> - `MONOSPACE`
     static ref RE_MONOSPACE: Regex = Regex::new(r"`([^`]*?)`").unwrap();
     static ref RE_MONOSPACE_OLD: Regex = Regex::new(r"```([^`]*?)```").unwrap();
     static ref RE_MONOSPACE_TRIM: Regex = Regex::new(r"\s*`(?: *\n)?([^`]+?)\n?`\s*").unwrap();
@@ -19,6 +17,12 @@ lazy_static! {
     static ref RE_NEWLINES: Regex = Regex::new(r"\n\n\n+").unwrap();
 }
 
+/// Formats `text` that contains CodinGame formatting into a string
+/// styled with ANSI terminal escape sequences. The supported formatting
+/// directives are:
+/// ```text
+/// [[VARIABLE]] - {{CONSTANT}} - <<BOLD>> - `MONOSPACE`
+/// ```
 pub fn format_cg(text: &str, ostyle: &OutputStyle) -> String {
     if RE_MONOSPACE_OLD.is_match(&text) {
         eprintln!(
@@ -35,8 +39,16 @@ pub fn format_cg(text: &str, ostyle: &OutputStyle) -> String {
     format_remove_excessive_newlines(&text)
 }
 
-/// 1. Replaces \```text``` -> \`text`.
-/// 2. Format whitespace around Monospace blocks.
+/// Replaces triple quoted monospace blocks with single quoted ones
+/// (\`\`\`text\`\`\` -> \`text\`) and adds newlines around them. As of 2023
+/// CodinGame does not actually support triple quoted monospace but clash
+/// authors occasionally use them anyway in which case CodinGame renders
+/// something like
+/// ```html
+/// <pre></pre>
+/// <pre>text</pre>
+/// <pre></pre>
+/// ```
 fn format_edit_monospace(text: &str) -> String {
     let mut result = text.replace("```", "`");
 
@@ -47,7 +59,8 @@ fn format_edit_monospace(text: &str) -> String {
     result
 }
 
-/// If it's not inside a Monospace block, trim consecutive spaces.
+/// Replaces multiple consecutive spaces with just one space. Consecutive spaces
+/// inside monospace blocks are left as-is.
 fn format_trim_consecutive_spaces(text: &str) -> String {
     RE_BACKTICK
         .replace_all(&text, |caps: &regex::Captures| {
@@ -62,8 +75,8 @@ fn format_trim_consecutive_spaces(text: &str) -> String {
         .to_string()
 }
 
-/// Adds padding to Monospace blocks.
-/// Factors in that formatting tags are going to be deleted.
+/// Pads lines in multiline monospace blocks with spaces to make them the same
+/// length. Attempts to factor in that formatting tags are going to be deleted.
 fn format_monospace_padding(text: &str) -> String {
     RE_MONOSPACE
         .replace_all(&text, |caps: &regex::Captures| {
@@ -83,8 +96,8 @@ fn format_monospace_padding(text: &str) -> String {
         .to_string()
 }
 
-/// Returns the size of a line without formatting tags.
-/// Only used for computing the padding of Monospace blocks.
+/// Calculate the length of a string (in bytes) without CodinGame's formatting
+/// tags.
 fn clean_line_size(line: &str) -> usize {
     let amount_tag_blocks: usize = RE_ALL_BUT_MONOSPACE.find_iter(&line).count();
 
