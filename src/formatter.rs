@@ -106,23 +106,17 @@ fn clean_line_size(line: &str) -> usize {
 }
 
 fn format_paint(text: &str, ostyle: &OutputStyle) -> String {
-    // FIX: https://www.codingame.com/contribute/view/1783dda5b69105636695dc5bf51de1baf5d0
-
-    // OTHERS
-    //      https://www.codingame.com/contribute/view/750741cba87bb6a6ac8daf5adbe2aa083e24
-    //      https://www.codingame.com/contribute/view/83316b323da5dba40730dbca5c72b46ccfc9
-
-    // Hack for all tags to be two chars long
+    // Replace ` with `` to make all tags to be two chars long.
+    // Add reverse Monospace tags around newlines for prettier painting.
     let text = RE_MONOSPACE
         .replace_all(&text, |caps: &regex::Captures| {
-            // Another hack: Quickfix for padding
-            let hack_padding = &caps[1].replace('\n', "$$\n@@");
-            format!("@@{}$$", hack_padding)
+            let with_extra_tags = caps[1].replace('\n', "``\n``");
+            format!("``{}``", &with_extra_tags)
         })
         .to_string();
 
     let tag_pairs = vec![
-        (ostyle.monospace, "@@", "$$"),
+        (ostyle.monospace, "``", "``"),
         (ostyle.variable, "[[", "]]"),
         (ostyle.constant, "{{", "}}"),
         (ostyle.bold, "<<", ">>"),
@@ -131,31 +125,56 @@ fn format_paint(text: &str, ostyle: &OutputStyle) -> String {
     let mut cur_style = Style::default();
     let mut buffer = String::new();
     let mut result = String::new();
-    let mut found = false;
+    let mut skip = false;
     let mut stack: Vec<(Style, &str)> = vec![]; // Stack of (pre_style, opening_tag)
+    let mut warnings: Vec<String> = vec![];
 
-    // Assumes no nesting <<a[[b>>c]] - should warn if it finds one ?
     for (i, c) in text.char_indices() {
         let slice = &text[i..];
-        // If found is not set true by the end of the iteration, we add the char to the
-        // buffer When found is true, we do nothing the next iteration since
-        // tags are two chars long
-        if found {
-            found = false;
+        // Skip formatting tags by not adding them to the buffer.
+        // Since all tags are two chars long, we must skip two iterations.
+        if skip {
+            skip = false;
             continue;
         }
 
         for (style, tag_open, tag_close) in &tag_pairs {
+            // There's a chance of a tag ending here.
+            if slice.starts_with(tag_close) {
+                // Does this opening tag match the top of the stack?
+                if let Some((style, opening)) = stack.to_owned().last() {
+                    // They don't match: imagine `a\n>>b` (ok), or <<a[[b>>c]] (unsupported).
+                    if opening != tag_open {
+                        // Treat it as a normal character. Possible nesting is not supported.
+                        let actual_opening = opening.replace("``", "`");
+                        let warning = format!(
+                            "{} {} {}",
+                            ostyle.failure.paint("WARNING"),
+                            "Possible nesting of different tags is unsupported.",
+                            format!("Found {} after {}.", tag_close, actual_opening)
+                        );
+                        if !warnings.contains(&warning) {
+                            warnings.push(warning);
+                        }
+                        break
+                    }
+                    stack.pop();
+                    // Paint and go back to the previous style
+                    result += &cur_style.paint(&buffer).to_string();
+                    buffer.clear();
+                    cur_style = style.clone();
+                    skip = true;
+                    break;
+                }
+            }
             // There's a chance of a tag starting here
             if slice.starts_with(tag_open) {
                 // There's definitely a tag to be parsed (grouped non-lazily)
                 if slice.contains(tag_close) {
                     // NOTE (CG RULES):
                     // Tags can not nest themselves:
-                    // so if the current open was already in the stack - ignore
-                    // <<<<Prompt>>> => [<<Prompt]>>
-                    // Although OUR double parsing looks better imo
-                    // https://www.codingame.com/contribute/view/70888dd5bb12f2becdad5e6db3de8b40a77f
+                    //     <<<<Prompt>>> => [<<Prompt]>>
+                    // So if the current open was already in the stack: ignore.
 
                     // Paint the previous buffer with the previous colour
                     // add it to the global "result" and then clear it
@@ -166,39 +185,22 @@ fn format_paint(text: &str, ostyle: &OutputStyle) -> String {
                     stack.push((cur_style.clone(), tag_open));
                     cur_style = merge_styles(&cur_style, &style);
                     // Found a tag, 2 turns skip
-                    found = true;
-                }
-            // There's a chance of a tag ending here
-            } else if slice.starts_with(tag_close) {
-                // Does this closing tag match the top of the stack?
-                match stack.clone().last() {
-                    // We did parse some opening tag before
-                    Some((st, op)) => {
-                        // They match, pop
-                        if op == tag_open {
-                            stack.pop();
-                            // Paint and go back to the previous style
-                            result += &cur_style.paint(&buffer).to_string();
-                            buffer.clear();
-                            cur_style = st.clone();
-                            found = true;
-                        } else {
-                            // They don't match <<a]]b>> treat ]] as string
-                            panic!("Nesting different tags is UNSUPPORTED")
-                        }
-                    }
-                    // No stack means to ignore, imagine a>>b
-                    _ => {}
+                    skip = true;
+                    break;
                 }
             }
         }
-        if !found {
+        if !skip {
             buffer += &c.to_string();
         }
     }
     if buffer.len() > 0 {
         result += &cur_style.paint(&buffer).to_string();
         buffer.clear();
+    }
+
+    for warning in warnings {
+        eprintln!("{}", warning);
     }
 
     result
