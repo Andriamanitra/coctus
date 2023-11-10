@@ -2,7 +2,7 @@ use ansi_term::Style;
 use lazy_static::lazy_static;
 use regex::Regex;
 
-use crate::outputstyle::{merge_styles, OutputStyle};
+use crate::outputstyle::OutputStyle;
 
 // use lazy_static! to make sure regexes are only compiled once
 lazy_static! {
@@ -173,7 +173,7 @@ fn format_paint(text: &str, ostyle: &OutputStyle) -> String {
                     // push cur_style to the stack to go back to it later on
                     // then update the color to paint the next buffer
                     stack.push((cur_style.clone(), tag_open));
-                    cur_style = merge_styles(&cur_style, &style);
+                    cur_style = nested_style(&style, &cur_style);
                     // Found a tag, 2 turns skip
                     skip = true;
                     break;
@@ -209,6 +209,24 @@ pub fn show_whitespace(text: &str, style: &Style, ws_style: &Style) -> String {
         .replace_all(text, |caps: &regex::Captures| style.paint(&caps[0]).to_string())
         .to_string();
     fmt_non_ws.replace('\n', &newl).replace(' ', &space)
+}
+
+/// Construct a new style that is the combination of `inner` and `outer` style.
+/// The new style keeps all attributes from `inner` and adds ones from `outer`
+/// if the corresponding attribute in `inner` is the default for that attribute.
+pub fn nested_style(inner: &Style, outer: &Style) -> Style {
+    Style {
+        foreground: inner.foreground.or(outer.foreground),
+        background: inner.background.or(outer.background),
+        is_bold: inner.is_bold || outer.is_bold,
+        is_italic: inner.is_italic || outer.is_italic,
+        is_underline: inner.is_underline || outer.is_underline,
+        is_blink: inner.is_blink || outer.is_blink,
+        is_dimmed: inner.is_dimmed || outer.is_dimmed,
+        is_reverse: inner.is_reverse || outer.is_reverse,
+        is_hidden: inner.is_hidden || outer.is_hidden,
+        is_strikethrough: inner.is_strikethrough || outer.is_strikethrough,
+    }
 }
 
 #[cfg(test)]
