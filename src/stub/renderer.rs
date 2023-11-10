@@ -1,7 +1,10 @@
 use tera::{Tera, Context};
 
 use crate::programming_language::ProgrammingLanguage;
-use super::{Cmd, Stub, Var, T};
+use super::parser::{Cmd, Stub, Var, T};
+
+mod types;
+use types::ReadData;
 
 pub fn render_stub(lang: ProgrammingLanguage, stub: Stub) -> String {
     let rend = Renderer::new(lang, stub);

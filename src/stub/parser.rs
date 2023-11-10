@@ -1,6 +1,7 @@
 use regex::Regex;
 
-use super::{T, Cmd, Var, Stub, InputComment};
+mod types;
+pub use types::{T, Cmd, Var, Stub, InputComment};
 
 
 pub fn parse_generator_stub(generator: String) -> Stub {

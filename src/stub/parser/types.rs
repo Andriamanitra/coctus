@@ -19,7 +19,6 @@ impl Stub {
     }
 }
 
-
 #[derive(Debug, Clone, Serialize)]
 pub struct Var {
     pub name: String,
