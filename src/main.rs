@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 use std::process::Command;
+use std::str::FromStr;
 
 use anyhow::{anyhow, Context, Result};
 use clap::ArgMatches;
@@ -58,7 +59,10 @@ fn cli() -> clap::Command {
                         .default_value("true")
                         .default_missing_value("true")
                 )
-                .arg(arg!([PUBLIC_HANDLE] "hexadecimal handle of the clash"))
+                .arg(
+                    arg!([PUBLIC_HANDLE] "hexadecimal handle of the clash")
+                        .value_parser(value_parser!(PublicHandle))
+                )
                 .arg(arg!(-'r' --"reverse" "print the clash in reverse mode"))
         )
         .subcommand(
@@ -66,6 +70,7 @@ fn cli() -> clap::Command {
                 .about("Select next clash")
                 .arg(
                     arg!([PUBLIC_HANDLE] "hexadecimal handle of the clash")
+                        .value_parser(value_parser!(PublicHandle))
                         .exclusive(true)
                 )
                 .arg(arg!(-'r' --"reverse" "pick a random clash that has reverse mode"))
@@ -94,7 +99,10 @@ fn cli() -> clap::Command {
                         .value_parser(value_parser!(u64).range(1..99))
                         .value_delimiter(',')
                 )
-                .arg(arg!([PUBLIC_HANDLE] "hexadecimal handle of the clash"))
+                .arg(
+                    arg!([PUBLIC_HANDLE] "hexadecimal handle of the clash")
+                        .value_parser(value_parser!(PublicHandle))
+                )
                 .after_help(
                     "If a --build-command is specified, it will be executed once before running any of the test cases. \
                     The --command is required and will be executed once per test case.\
@@ -107,7 +115,10 @@ fn cli() -> clap::Command {
         .subcommand(
             Command::new("fetch")
                 .about("Fetch a clash from codingame.com and save it locally")
-                .arg(arg!(<PUBLIC_HANDLE> ... "hexadecimal handle of the clash"))
+                .arg(
+                    arg!(<PUBLIC_HANDLE> ... "hexadecimal handle of the clash")
+                        .value_parser(value_parser!(PublicHandle))
+                )
                 .after_help(
                     "The PUBLIC_HANDLE of a puzzle is the last part of the URL when viewing it on the contribution section on CodinGame (1).\
                     \nYou can fetch both clash of code and classic (in/out) puzzles.\
@@ -136,7 +147,10 @@ fn cli() -> clap::Command {
         .subcommand(
             Command::new("json")
                 .about("Print the raw source JSON of a clash")
-                .arg(arg!([PUBLIC_HANDLE] "hexadecimal handle of the clash"))
+                .arg(
+                    arg!([PUBLIC_HANDLE] "hexadecimal handle of the clash")
+                        .value_parser(value_parser!(PublicHandle))
+                )
         )
         .subcommand(
             Command::new("generate-shell-completion")
@@ -156,18 +170,18 @@ fn cli() -> clap::Command {
 
 #[derive(Debug, Clone)]
 struct PublicHandle(String);
-impl PublicHandle {
-    fn new(s: &str) -> Result<PublicHandle> {
+
+impl FromStr for PublicHandle {
+    type Err = anyhow::Error;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
         if s.chars().all(|ch| ch.is_ascii_hexdigit()) {
             Ok(PublicHandle(String::from(s)))
         } else {
-            Err(anyhow!(
-                "Invalid clash handle '{}' (valid handles only contain characters 0-9 and a-f)",
-                s
-            ))
+            Err(anyhow!("valid handles only contain characters 0-9 and a-f"))
         }
     }
 }
+
 impl std::fmt::Display for PublicHandle {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "{}", self.0)
@@ -190,14 +204,7 @@ impl App {
     fn current_handle(&self) -> Result<PublicHandle> {
         let content = std::fs::read_to_string(&self.current_clash_file)
             .with_context(|| format!("Unable to read {:?}", &self.current_clash_file))?;
-        PublicHandle::new(&content)
-    }
-
-    fn handle_from_args(&self, args: &ArgMatches) -> Result<PublicHandle> {
-        match args.get_one::<String>("PUBLIC_HANDLE") {
-            Some(s) => PublicHandle::new(s),
-            None => Err(anyhow!("No clash handle given")),
-        }
+        PublicHandle::from_str(&content)
     }
 
     fn clashes(&self) -> Result<std::fs::ReadDir> {
@@ -209,13 +216,31 @@ impl App {
         if let Ok(entry) = self.clashes()?.choose(&mut rng).expect("No clashes to choose from!") {
             let filename =
                 entry.file_name().into_string().expect("unable to convert OsString to String (?!?)");
-            PublicHandle::new(match filename.strip_suffix(".json") {
+            PublicHandle::from_str(match filename.strip_suffix(".json") {
                 Some(handle) => handle,
                 None => &filename,
             })
         } else {
             Err(anyhow!("Unable to randomize next clash"))
         }
+    }
+
+    fn random_handle_with_modes(&self, fastest: bool, shortest: bool, reverse: bool) -> Result<PublicHandle> {
+        let max_attemps = 100;
+        for _ in 0..max_attemps {
+            let handle = self.random_handle()?;
+            let clash = self.read_clash(&handle)?;
+            if (!reverse || clash.is_reverse())
+                && (!fastest || clash.is_fastest())
+                && (!shortest || clash.is_shortest())
+            {
+                return Ok(handle)
+            }
+        }
+        return Err(anyhow!(format!(
+            "Failed to find a clash with the required modes after {} attempts.",
+            max_attemps
+        )))
     }
 
     fn read_clash(&self, handle: &PublicHandle) -> Result<Clash> {
@@ -228,7 +253,10 @@ impl App {
     }
 
     fn show(&self, args: &ArgMatches) -> Result<()> {
-        let handle = self.handle_from_args(args).or_else(|_| self.current_handle())?;
+        let handle = match args.get_one::<PublicHandle>("PUBLIC_HANDLE") {
+            Some(h) => h.to_owned(),
+            None => self.current_handle()?,
+        };
         let clash = self.read_clash(&handle)?;
 
         let mut ostyle = if args.get_flag("no-color") {
@@ -268,31 +296,20 @@ impl App {
     }
 
     fn next(&self, args: &ArgMatches) -> Result<()> {
-        let next_handle = self.handle_from_args(args).or_else(|_| {
-            let reverse = args.get_flag("reverse");
-            let fastest = args.get_flag("fastest");
-            let shortest = args.get_flag("shortest");
-            if reverse || fastest || shortest {
-                let max_attemps = 100;
-                for _i in 0..max_attemps {
-                    let handle = self.random_handle()?;
-                    let clash = self.read_clash(&handle)?;
-                    if (!reverse || clash.is_reverse())
-                        && (!fastest || clash.is_fastest())
-                        && (!shortest || clash.is_shortest())
-                    {
-                        return Ok(handle)
-                    }
+        let next_handle = match args.get_one::<PublicHandle>("PUBLIC_HANDLE") {
+            Some(h) => h.to_owned(),
+            None => {
+                let fastest = args.get_flag("fastest");
+                let shortest = args.get_flag("shortest");
+                let reverse = args.get_flag("reverse");
+                if reverse || fastest || shortest {
+                    self.random_handle_with_modes(fastest, shortest, reverse)?
+                } else {
+                    self.random_handle()?
                 }
-                Err(anyhow!(format!(
-                    "Failed to find a clash with the required modes after {} attempts.",
-                    max_attemps
-                )))
-            } else {
-                self.random_handle()
             }
-        })?;
-        println!("Changed clash to https://codingame.com/contribute/view/{}", next_handle);
+        };
+        println!(" Changed clash to https://codingame.com/contribute/view/{}", next_handle);
         println!(" Local file: {}/{}.json", &self.clash_dir.to_str().unwrap(), next_handle);
         std::fs::write(&self.current_clash_file, next_handle.to_string())?;
         Ok(())
@@ -314,7 +331,10 @@ impl App {
     }
 
     fn run(&self, args: &ArgMatches) -> Result<()> {
-        let handle = self.handle_from_args(args).or_else(|_| self.current_handle())?;
+        let handle = match args.get_one::<PublicHandle>("PUBLIC_HANDLE") {
+            Some(h) => h.to_owned(),
+            None => self.current_handle()?,
+        };
 
         let build_command = command_from_argument(args.get_one::<String>("build-command"))?;
         solution::build(build_command)?;
@@ -369,9 +389,8 @@ impl App {
     }
 
     fn fetch(&self, args: &ArgMatches) -> Result<()> {
-        if let Some(handles) = args.get_many::<String>("PUBLIC_HANDLE") {
+        if let Some(handles) = args.get_many::<PublicHandle>("PUBLIC_HANDLE") {
             for handle in handles {
-                let handle = PublicHandle::new(handle)?;
                 let http = reqwest::blocking::Client::new();
                 let res = http
                     .post("https://www.codingame.com/services/Contribution/findContribution")
@@ -448,7 +467,10 @@ impl App {
     }
 
     fn json(&self, args: &ArgMatches) -> Result<()> {
-        let handle = self.handle_from_args(args).or_else(|_| self.current_handle())?;
+        let handle = match args.get_one::<PublicHandle>("PUBLIC_HANDLE") {
+            Some(h) => h.to_owned(),
+            None => self.current_handle()?,
+        };
         let clash_file = self.clash_dir.join(format!("{}.json", handle));
         let contents = std::fs::read_to_string(clash_file)
             .with_context(|| format!("Unable to find clash with handle {}", handle))?;
