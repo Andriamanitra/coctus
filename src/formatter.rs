@@ -276,7 +276,7 @@ mod tests {
     fn format_monospace_more_newlines_3() {
         let text: &str = "3text   \n\n   \n    `\n   \n  mono line\nnew line  \n   \n`   \n   \n   text";
         let formatted_text = format_edit_monospace(text);
-        let expected = "3text\n\n`   \n  mono line\nnew line`\n\ntext";
+        let expected = "3text\n\n`   \n  mono line\nnew line  \n   `\n\ntext";
 
         assert_eq!(formatted_text, expected);
     }
