@@ -10,7 +10,7 @@ lazy_static! {
     // [[VARIABLE]] - {{CONSTANT}} - <<BOLD>> - `MONOSPACE`
     static ref RE_MONOSPACE: Regex = Regex::new(r"`([^`]*?)`").unwrap();
     static ref RE_MONOSPACE_OLD: Regex = Regex::new(r"```([^`]*?)```").unwrap();
-    static ref RE_MONOSPACE_TRIM: Regex = Regex::new(r"\s*`(?: *\n)?([^`]+?)\s*`\s*").unwrap();
+    static ref RE_MONOSPACE_TRIM: Regex = Regex::new(r"\s*`(?: *\n)?([^`]+?)\n?`\s*").unwrap();
     static ref RE_BACKTICK: Regex = Regex::new(r"(`[^`]+`)|([^`]+)").unwrap();
     static ref RE_ALL_BUT_MONOSPACE: Regex =
         Regex::new(r"\[\[((?s).*?)\]\]|\{\{((?s).*?)\}\}|<<((?s).*?)>>").unwrap();
@@ -21,7 +21,7 @@ lazy_static! {
 
 pub fn format_cg(text: &str, ostyle: &OutputStyle) -> String {
     if RE_MONOSPACE_OLD.is_match(&text) {
-        println!(
+        eprintln!(
             "{} {}\n",
             ostyle.failure.paint("WARNING"),
             "Clash contains obsolete ``` formatting, consider fixing it in the website."
