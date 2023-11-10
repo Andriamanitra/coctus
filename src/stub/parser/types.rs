@@ -19,13 +19,6 @@ impl Stub {
     }
 }
 
-#[derive(Debug, Clone, Serialize)]
-pub struct Var {
-    pub name: String,
-    pub t: T,
-    pub max_length: usize,
-}
-
 #[derive(Debug, Clone)]
 pub struct InputComment {
     variable: String,
@@ -38,40 +31,20 @@ impl InputComment {
     }
 }
 
-#[derive(Debug, Clone)]
-pub enum VariableCommand {
-  Int { name: String },
-  Float { name: String },
-  Long { name: String },
-  Bool { name: String },
-  Word { name: String, max_length: usize },
-  String { name: String, max_length: usize },
-}
-
-impl Var {
-    pub fn new(name: String, t: T) -> Var {
-        Var { name, t, max_length: 0 }
-    }
-
-    pub fn new_length(name: String, t: T, max_length: usize) -> Var {
-        Var { name, t, max_length}
-    }
-}
-
 #[derive(Debug, Clone, Serialize)]
-pub enum T {
-    Int,
-    Float,
-    Long,
-    Bool,
-    Word,
-    String,
+pub enum VariableCommand {
+    Int { name: String },
+    Float { name: String },
+    Long { name: String },
+    Bool { name: String },
+    Word { name: String, max_length: usize },
+    String { name: String, max_length: usize },
 }
 
 #[derive(Debug, Clone, Serialize)]
 pub enum Cmd {
-  Read(Vec<Var>),
-  Loop { count: String, command: Box<Cmd> },
-  LoopLine { object: String, variables: Vec<Var> },
-  Write(String),
+    Read(Vec<VariableCommand>),
+    Loop { count: String, command: Box<Cmd> },
+    LoopLine { object: String, variables: Vec<VariableCommand> },
+    Write(String),
 }

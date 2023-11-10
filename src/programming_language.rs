@@ -30,6 +30,6 @@ impl From<String> for ProgrammingLanguage {
 
 impl ProgrammingLanguage {
     pub fn template_glob(&self) -> String {
-        format!("config/stub_templates/{}/*.{}", self.name, self.source_file_ext)
+        format!("config/stub_templates/{}/*.{}.jinja", self.name, self.source_file_ext)
     }
 }
