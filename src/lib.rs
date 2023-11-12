@@ -1,4 +1,4 @@
 pub mod clash;
-pub mod formatter;
+mod formatter;
 pub mod outputstyle;
 pub mod solution;

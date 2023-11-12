@@ -63,7 +63,7 @@ impl<'a> TestRun<'a> {
     }
 }
 
-pub fn print_failure(testcase: &TestCase, stdout: &str, stderr: &str, ostyle: &OutputStyle) {
+fn print_failure(testcase: &TestCase, stdout: &str, stderr: &str, ostyle: &OutputStyle) {
     println!(
         "{}\n{}\n{}\n{}",
         ostyle.secondary_title.paint("===== INPUT ======"),
@@ -85,7 +85,7 @@ pub fn print_failure(testcase: &TestCase, stdout: &str, stderr: &str, ostyle: &O
 }
 
 // https://stackoverflow.com/a/40457615/5465108
-pub struct LinesWithEndings<'a> {
+struct LinesWithEndings<'a> {
     input: &'a str,
 }
 
@@ -110,7 +110,7 @@ impl<'a> Iterator for LinesWithEndings<'a> {
     }
 }
 
-pub fn print_diff(testcase: &TestCase, stdout: &str, ostyle: &OutputStyle) {
+fn print_diff(testcase: &TestCase, stdout: &str, ostyle: &OutputStyle) {
     use dissimilar::Chunk::*;
     use itertools::EitherOrBoth::{Both, Left, Right};
     use itertools::Itertools;
