@@ -1,8 +1,12 @@
+use std::fs;
+use std::fs::File;
+use std::io::prelude::*;
 use std::path::PathBuf;
 use std::process::Command;
 use std::str::FromStr;
 
 use anyhow::{anyhow, Context, Result};
+use chrono::prelude::*;
 use clap::ArgMatches;
 use directories::ProjectDirs;
 use rand::seq::IteratorRandom;
@@ -107,6 +111,13 @@ fn cli() -> clap::Command {
                     "If a --build-command is specified, it will be executed once before running any of the test cases. \
                     The --command is required and will be executed once per test case.\
                     \nIMPORTANT: The commands you provide will be executed without any sandboxing. Only run code you trust!"
+                )
+        )
+        .subcommand(
+            Command::new("save")
+                .about("Store the current solution located in root")
+                .arg(arg!([FILE_NAME] "ex: a.rb")
+                    .required(true) // TODO: default to save the last submission
                 )
         )
         .subcommand(
@@ -250,6 +261,37 @@ impl App {
         let clash: Clash = serde_json::from_str(&contents)
             .with_context(|| format!("Unable to deserialize clash from {:?}", &clash_file))?;
         Ok(clash)
+    }
+
+    fn save(&self, args: &ArgMatches) -> Result<()> {
+        // Create dir
+        let content = std::fs::read_to_string(&self.current_clash_file)?;
+        let handle = PathBuf::from(content);
+        let base_path = PathBuf::from("solutions");
+        let clash_path = base_path.join(&handle);
+        dbg!(&handle);
+        fs::create_dir_all(&clash_path)?;
+
+        // Fetch contents & extension of the given file
+        let file_name = match args.get_one::<String>("FILE_NAME") {
+            Some(h) => h.to_owned(),
+            None => todo!(), // Here default to last submission
+        };
+        let extension = file_name.split('.').last().map(|ext| ext.to_string()).unwrap();
+        let mut clash_file = File::open(PathBuf::from(file_name))?;
+        let mut contents = String::new();
+        clash_file.read_to_string(&mut contents)?;
+
+        // Timestamp & writing
+        let local: DateTime<Local> = Local::now();
+        let timestamp = local.format("%Y-%m-%d-%H-%M-%S").to_string();
+        let saved_file_name = format!("{}.{}", &timestamp, &extension);
+        let path = clash_path.join(PathBuf::from(saved_file_name));
+        let mut file = File::create(&path)?;
+        file.write_all(contents.as_bytes())?;
+
+        println!("File successfully saved at:\n{}.", path.to_str().unwrap());
+        Ok(())
     }
 
     fn show(&self, args: &ArgMatches) -> Result<()> {
@@ -505,6 +547,7 @@ fn main() -> Result<()> {
         Some(("status", args)) => app.status(args),
         Some(("run", args)) => app.run(args),
         Some(("fetch", args)) => app.fetch(args),
+        Some(("save", args)) => app.save(args),
         Some(("showtests", args)) => app.showtests(args),
         Some(("json", args)) => app.json(args),
         Some(("generate-shell-completion", args)) => app.generate_completions(args),
