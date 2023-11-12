@@ -239,7 +239,7 @@ pub fn show_whitespace(text: &str, style: &Style, ws_style: &Style) -> String {
 /// Construct a new style that is the combination of `inner` and `outer` style.
 /// The new style keeps all attributes from `inner` and adds ones from `outer`
 /// if the corresponding attribute in `inner` is the default for that attribute.
-pub fn nested_style(inner: &Style, outer: &Style) -> Style {
+fn nested_style(inner: &Style, outer: &Style) -> Style {
     Style {
         foreground: inner.foreground.or(outer.foreground),
         background: inner.background.or(outer.background),
