@@ -4,16 +4,11 @@ use std::str::FromStr;
 
 use anyhow::{anyhow, Context, Result};
 use clap::ArgMatches;
+use clashlib::clash::{Clash, TestCase};
+use clashlib::outputstyle::OutputStyle;
+use clashlib::solution;
 use directories::ProjectDirs;
 use rand::seq::IteratorRandom;
-
-pub mod clash;
-pub mod formatter;
-pub mod outputstyle;
-pub mod solution;
-
-use clash::Clash;
-use outputstyle::OutputStyle;
 
 #[derive(Clone)]
 pub enum OutputStyleOption {
@@ -353,12 +348,11 @@ impl App {
 
         let all_testcases = self.read_clash(&handle)?.testcases().to_owned();
 
-        let testcases: Vec<&clash::TestCase> =
-            if let Some(testcase_indices) = args.get_many::<u64>("testcases") {
-                testcase_indices.map(|idx| &all_testcases[(idx - 1) as usize]).collect()
-            } else {
-                all_testcases.iter().collect()
-            };
+        let testcases: Vec<&TestCase> = if let Some(testcase_indices) = args.get_many::<u64>("testcases") {
+            testcase_indices.map(|idx| &all_testcases[(idx - 1) as usize]).collect()
+        } else {
+            all_testcases.iter().collect()
+        };
 
         let num_tests = testcases.len();
         let suite_run = solution::run(testcases, run_command, timeout);
