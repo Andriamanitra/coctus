@@ -40,24 +40,32 @@ Use `clash help` and `clash <SUBCOMMAND> --help` to show all available options.
 We recommend using a program such as [entr](https://github.com/eradman/entr) or [nodemon](https://www.npmjs.com/package/nodemon) to refresh the statement when the current clash changes and/or automatically run tests when a file is saved.
 Combining `clash` with one of these tools allows you to never need to leave your text editor while clashing.
 
-#### Example 1 (Linux only): Automatically show the new problem when it changes:
+#### Example 1: Automatically show the new problem when it changes:
 
-This example uses `entr` to detect changes to the file `~/.local/share/clash/current` and run the command `clash show`.
-The `-c` flag means to clear the terminal when the changes happen.
+This example uses `entr` (or `nodemon`) to detect changes to the file that keeps track of the current clash and run the command `clash show`.
+The `-c` flag to `entr` clears the terminal before running the command.
 Press Ctrl-c to stop.
 
 ```
+# Option 1: using entr (Linux only)
 ls ~/.local/share/clash/current | entr -c clash show
+
+# Option 2: using nodemon (PowerShell on Windows only)
+nodemon --watch "$env:APPDATA\Clash CLI\clash\data\current" --exec clash show
 ```
 
-#### Example 2 (Linux only): Automatically run code when a file is saved
+#### Example 2: Automatically run code when a file is saved
 
-This example uses `entr` to watch over .py files in the current directory and run `python3 sol.py` when any of them are saved to disk.
+This example uses `entr` (or `nodemon`) to watch over .py files in the current directory and run `python3 sol.py` when any of them are saved to disk.
 The `--auto-advance` flag automatically does the equivalent of `clash next` when you pass all the test cases.
 Press Ctrl-c to stop.
 
 ```
+# Option 1: using entr (Linux only)
 ls *.py | entr clash run --auto-advance --command "python3 sol.py"
+
+# Option 2: using nodemon (works on both Linux and Windows)
+nodemon --ext py --exec clash -- run --auto-advance --command "python3 sol.py"
 ```
 
 
