@@ -39,7 +39,7 @@ impl<'a> TestRun<'a> {
     }
 
     pub fn print_result(&self, style: &OutputStyle) {
-        let title = style.title.paint(&self.testcase.title);
+        let title = self.testcase.styled_title(style);
         match &self.result {
             TestRunResult::Success => {
                 println!("{} {}", style.success.paint("PASS"), title);

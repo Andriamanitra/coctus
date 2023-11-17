@@ -4,6 +4,7 @@ use crate::formatter::format_cg;
 use crate::outputstyle::OutputStyle;
 
 mod test_case;
+use test_case::deserialize_testcases;
 pub use test_case::TestCase;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -50,8 +51,11 @@ struct ClashData {
     shortest: bool,
 
     statement: String,
+
     #[serde(rename = "testCases")]
+    #[serde(deserialize_with = "deserialize_testcases")]
     testcases: Vec<TestCase>,
+
     constraints: Option<String>,
     #[serde(rename = "stubGenerator")]
     stub_generator: Option<String>,
@@ -138,10 +142,9 @@ impl Clash {
         // test (skipping validator 1)
         for (idx, testcase) in self.testcases().iter().filter(|t| !t.is_validator).enumerate() {
             if selection.contains(&idx) {
-                let styled_title = ostyle.title.paint(format!("#{} {}", idx, testcase.title));
                 println!(
                     "{}\n{}\n\n{}\n",
-                    styled_title,
+                    testcase.styled_title(ostyle),
                     testcase.styled_input(ostyle),
                     testcase.styled_output(ostyle),
                 );
