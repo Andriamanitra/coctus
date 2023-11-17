@@ -232,7 +232,7 @@ impl App {
                 return Ok(handle)
             }
         }
-        return Err(anyhow!(format!(
+        Err(anyhow!(format!(
             "Failed to find a clash with the required modes after {} attempts.",
             max_attemps
         )))

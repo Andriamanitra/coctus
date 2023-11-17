@@ -278,7 +278,7 @@ mod tests {
         let text = "To create a new variable use `let x = 5`";
         let formatted_text = format_paint(text, &OutputStyle::default());
 
-        assert!(!formatted_text.contains("`"));
+        assert!(!formatted_text.contains('`'));
     }
 
     #[test]
@@ -286,7 +286,7 @@ mod tests {
         let text = "I have `no whitespace`";
         let formatted_text = format_edit_monospace(text);
 
-        assert!(formatted_text.contains("\n"));
+        assert!(formatted_text.contains('\n'));
     }
 
     #[test]
@@ -396,7 +396,7 @@ mod tests {
     fn painting_weird_and_invalid() {
         let ostyle = OutputStyle::default();
         println!("\nInvalid formatting tests:");
-        let examples = vec![
+        let examples = [
             "<<AA[[BB>>CC]]",
             "```",
             "XX```YY",

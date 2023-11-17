@@ -47,17 +47,17 @@ impl<'a> TestRun<'a> {
 
             TestRunResult::WrongOutput { stdout, stderr } => {
                 println!("{} {}", style.failure.paint("FAIL"), title);
-                print_failure(&self.testcase, stdout, stderr, style);
+                print_failure(self.testcase, stdout, stderr, style);
             }
 
             TestRunResult::RuntimeError { stdout, stderr } => {
                 println!("{} {}", style.error.paint("ERROR"), title);
-                print_failure(&self.testcase, stdout, stderr, style);
+                print_failure(self.testcase, stdout, stderr, style);
             }
 
             TestRunResult::Timeout { stdout, stderr } => {
                 println!("{} {}", style.error.paint("TIMEOUT"), title);
-                print_failure(&self.testcase, stdout, stderr, style);
+                print_failure(self.testcase, stdout, stderr, style);
             }
         }
     }
