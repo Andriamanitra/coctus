@@ -3,8 +3,10 @@ use serde::{Deserialize, Deserializer, Serialize};
 use crate::formatter::show_whitespace;
 use crate::outputstyle::OutputStyle;
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct TestCase {
+    #[serde(skip_serializing, skip_deserializing)]
+    index: usize,
     #[serde(deserialize_with = "deserialize_testcase_title")]
     pub title: String,
     #[serde(rename = "testIn")]
@@ -13,6 +15,16 @@ pub struct TestCase {
     pub test_out: String,
     #[serde(rename = "isValidator")]
     pub is_validator: bool,
+}
+
+pub fn deserialize_testcases<'de, D: Deserializer<'de>>(de: D) -> Result<Vec<TestCase>, D::Error> {
+    let mut testcases = Vec::<TestCase>::deserialize(de)?;
+
+    for (i, testcase) in testcases.iter_mut().enumerate() {
+        testcase.index = i + 1;
+    }
+
+    Ok(testcases)
 }
 
 // Workaround for some old clashes which have testcase title as
@@ -35,6 +47,10 @@ fn deserialize_testcase_title<'de, D: Deserializer<'de>>(de: D) -> Result<String
 }
 
 impl TestCase {
+    pub fn styled_title(&self, ostyle: &OutputStyle) -> String {
+        ostyle.title.paint(format!("#{} {}", self.index, self.title)).to_string()
+    }
+
     pub fn styled_input(&self, ostyle: &OutputStyle) -> String {
         match ostyle.input_whitespace {
             Some(ws_style) => show_whitespace(&self.test_in, &ostyle.input, &ws_style),
