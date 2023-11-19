@@ -3,9 +3,9 @@ use serde::{Deserialize, Deserializer, Serialize};
 use crate::formatter::show_whitespace;
 use crate::outputstyle::OutputStyle;
 
-#[derive(Debug, Serialize, Clone)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct TestCase {
-    #[serde(skip_serializing)]
+    #[serde(skip_serializing, skip_deserializing)]
     index: usize,
     #[serde(deserialize_with = "deserialize_testcase_title")]
     pub title: String,
@@ -18,31 +18,13 @@ pub struct TestCase {
 }
 
 pub fn deserialize_testcases<'de, D: Deserializer<'de>>(de: D) -> Result<Vec<TestCase>, D::Error> {
-    type TempTestCaseVec = Vec<TempTestCase>;
+    type TempTestCaseVec = Vec<TestCase>;
 
-    #[derive(Deserialize)]
-    struct TempTestCase {
-        #[serde(deserialize_with = "deserialize_testcase_title")]
-        pub title: String,
-        #[serde(rename = "testIn")]
-        pub test_in: String,
-        #[serde(rename = "testOut")]
-        pub test_out: String,
-        #[serde(rename = "isValidator")]
-        pub is_validator: bool,
+    let mut testcases = TempTestCaseVec::deserialize(de)?;
+    for (i, testcase) in testcases.iter_mut().enumerate() {
+        testcase.index = i + 1;
     }
 
-    let testcases = TempTestCaseVec::deserialize(de)?
-        .into_iter()
-        .enumerate()
-        .map(|(i, t)| TestCase {
-            index: i + 1,
-            title: t.title,
-            test_in: t.test_in,
-            test_out: t.test_out,
-            is_validator: t.is_validator,
-        })
-        .collect();
     Ok(testcases)
 }
 
