@@ -18,9 +18,8 @@ pub struct TestCase {
 }
 
 pub fn deserialize_testcases<'de, D: Deserializer<'de>>(de: D) -> Result<Vec<TestCase>, D::Error> {
-    type TempTestCaseVec = Vec<TestCase>;
+    let mut testcases = Vec::<TestCase>::deserialize(de)?;
 
-    let mut testcases = TempTestCaseVec::deserialize(de)?;
     for (i, testcase) in testcases.iter_mut().enumerate() {
         testcase.index = i + 1;
     }
