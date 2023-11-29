@@ -27,6 +27,7 @@ impl Renderer {
     fn render(&self) -> String {
         let mut context = Context::new();
 
+        let statement_str = self.render_statement();
         // Transform self.stub.commands into successive strings
         let commands: Vec<String> = self.stub.commands.iter().map(|cmd| {
             let cmd_str = self.render_command(cmd);
@@ -34,10 +35,19 @@ impl Renderer {
             format!("{}\n", cmd_str.as_str()).replace("\n\n", "\n").replace("\n\n", "\n")
         }).collect();
 
+        context.insert("statement", &statement_str);
         context.insert("commands", &commands);
 
         self.tera.render(&format!("main.{}.jinja", self.lang.source_file_ext), &context)
             .expect("Failed to render template for stub")
+    }
+
+    fn render_statement(&self) -> String {
+        let statement_lines: Vec<&str> = self.stub.statement.lines().collect();
+        let mut context = Context::new();
+        context.insert("statement_lines", &statement_lines);
+        self.tera.render(&self.template_path("statement"), &context)
+            .expect("Could not find statement template")
     }
 
     fn render_command(&self, cmd: &Cmd) -> String {

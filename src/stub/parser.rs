@@ -3,7 +3,6 @@ use regex::Regex;
 pub mod types;
 pub use types::{Cmd, Stub, InputComment, VariableCommand};
 
-
 pub fn parse_generator_stub(generator: String) -> Stub {
     let generator = generator.replace("\n", " \n ").replace("\n  \n", "\n \n");
     let stream = generator.split(" ");
