@@ -1,7 +1,7 @@
 use tera::{Tera, Context};
 
 use crate::programming_language::ProgrammingLanguage;
-use super::parser::{Cmd, Stub, VariableCommand};
+use super::parser::{Cmd, Stub, VariableCommand, InputComment};
 
 mod types;
 use types::ReadData;
@@ -67,19 +67,43 @@ impl Renderer {
     }
 
     fn render_read(&self, vars: &Vec<VariableCommand>) -> String {
+        match vars.len() {
+            1 => self.render_read_one(vars.first().unwrap()),
+            _ => self.render_read_many(vars),
+        }
+    }
+
+    fn render_read_one(&self, var: &VariableCommand) -> String {
+        let mut context = Context::new();
+        let comment: Option<&InputComment> = self.stub.input_comments
+            .iter().find(|comment| var.name() == &comment.variable);
+
+        context.insert("comment", &comment);
+        context.insert("var", &ReadData::from(var));
+        context.insert("type_tokens", &self.lang.type_tokens);
+
+        self.tera.render(&self.template_path("read_one"), &context)
+            .expect("Could not find read template").trim_end().to_owned()
+    }
+
+    fn render_read_many(&self, vars: &Vec<VariableCommand>) -> String {
         let read_data: Vec<ReadData> = vars.into_iter().map(|var_cmd| ReadData::from(var_cmd)).collect();
         let mut context = Context::new();
+        let relevant_comments: Vec<&InputComment> = self.stub.input_comments.iter().filter(|comment| 
+            vars.iter().any(|var_cmd| var_cmd.name() == &comment.variable)
+        ).collect();
+        context.insert("comments", &relevant_comments);
         context.insert("vars", &read_data);
         context.insert("type_tokens", &self.lang.type_tokens);
-        self.tera.render(&self.template_path("read"), &context)
+        self.tera.render(&self.template_path("read_many"), &context)
             .expect("Could not find read template").trim_end().to_owned()
     }
 
     fn render_loop(&self, count: &String, cmd: &Box<Cmd>) -> String {
         let mut context = Context::new();
-        let rendered_cmd: Vec<String> = self.render_command(&cmd).lines().map(|s|s.to_owned()).collect();
+        let inner_text = self.render_command(&cmd);
         context.insert("count", &count);
-        context.insert("inner", &rendered_cmd);
+        context.insert("inner", &inner_text.lines().collect::<Vec<&str>>());
         self.tera.render(&self.template_path("loop"), &context)
             .expect("Could not find loop template")
     }

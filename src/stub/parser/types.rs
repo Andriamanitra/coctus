@@ -19,10 +19,10 @@ impl Stub {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct InputComment {
-    variable: String,
-    description: String,
+    pub variable: String,
+    pub description: String,
 }
 
 impl InputComment {
@@ -39,6 +39,19 @@ pub enum VariableCommand {
     Bool { name: String },
     Word { name: String, max_length: usize },
     String { name: String, max_length: usize },
+}
+
+impl VariableCommand {
+    pub fn name(&self) -> &String {
+        match self {
+            Self::Int { name } |
+            Self::Float { name } |
+            Self::Long { name } |
+            Self::Bool { name } |
+            Self::Word { name, .. } |
+            Self::String { name, .. } => name
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize)]
