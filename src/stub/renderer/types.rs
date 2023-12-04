@@ -2,7 +2,7 @@ use serde::Serialize;
 
 use crate::stub::parser::types::VariableCommand;
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Hash, PartialEq)]
 pub enum VariableType {
     Int,
     Float,
@@ -10,6 +10,10 @@ pub enum VariableType {
     Bool,
     Word,
     String,
+}
+
+impl Eq for VariableType {
+    fn assert_receiver_is_total_eq(&self) {}
 }
 
 #[derive(Debug, Clone, Serialize)]

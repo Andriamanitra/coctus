@@ -1,3 +1,4 @@
+use itertools::Itertools;
 use tera::{Tera, Context};
 
 use crate::programming_language::ProgrammingLanguage;
@@ -87,14 +88,24 @@ impl Renderer {
     }
 
     fn render_read_many(&self, vars: &Vec<VariableCommand>) -> String {
-        let read_data: Vec<ReadData> = vars.into_iter().map(|var_cmd| ReadData::from(var_cmd)).collect();
         let mut context = Context::new();
+
+        let read_data: Vec<ReadData> = vars.into_iter().map(|var_cmd| ReadData::from(var_cmd)).collect();
+
         let relevant_comments: Vec<&InputComment> = self.stub.input_comments.iter().filter(|comment| 
             vars.iter().any(|var_cmd| var_cmd.name() == &comment.variable)
         ).collect();
+
+        let single_type: bool  = read_data.iter().unique_by(|r| &r.var_type).count() == 1;
+
+        if single_type {
+            context.insert("single_type", &read_data.first().unwrap().type_token_key);
+        }
+
         context.insert("comments", &relevant_comments);
         context.insert("vars", &read_data);
         context.insert("type_tokens", &self.lang.type_tokens);
+
         self.tera.render(&self.template_path("read_many"), &context)
             .expect("Could not find read template").trim_end().to_owned()
     }

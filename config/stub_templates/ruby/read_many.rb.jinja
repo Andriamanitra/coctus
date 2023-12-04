@@ -3,15 +3,18 @@
 {% endfor -%}
 
 {{- vars | map(attribute="name") | join(sep=", ") }} = gets.split
-{%- if vars | unique(attribute="var_type") | length == 1 -%}
-  {%- set var = vars | first -%}
-  {%- if var.var_type != "Word" -%}
-.map(&:{{ type_tokens[var.type_token_key] }})
+{%- if single_type -%}
+
+  {%- if single_type != "word" -%}
+.map(&:{{ type_tokens[single_type] }})
   {%- endif -%}
+
 {% else %}
+
   {%- for var in vars -%}
-    {%- if var.var_type != "String" and var.var_type != "Word" %}
+    {%- if var.var_type != "Word" %}
 {{var.name}} = {{var.name}}.{{ type_tokens[var.type_token_key] }}
     {%- endif -%}
   {%- endfor -%}
+
 {% endif %}
