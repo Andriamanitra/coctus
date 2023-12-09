@@ -2,7 +2,7 @@ use itertools::Itertools;
 use tera::{Tera, Context};
 
 use crate::programming_language::ProgrammingLanguage;
-use super::parser::{Cmd, Stub, VariableCommand, InputComment};
+use super::parser::{Cmd, Stub, VariableCommand, InputComment, JoinTerm};
 
 mod types;
 use types::ReadData;
@@ -55,9 +55,9 @@ impl Renderer {
         match cmd {
             Cmd::Read(vars) => self.render_read(vars),
             Cmd::Write(message) => self.render_write(message),
+            Cmd::WriteJoin(join_terms) => self.render_write_join(join_terms),
             Cmd::Loop { count, command } => self.render_loop(count, command),
             Cmd::LoopLine { object, variables } => self.render_loopline(object, variables),
-            Cmd::WriteJoin(join_terms) => String::from(""),
         }
     }
 
@@ -66,6 +66,14 @@ impl Renderer {
         context.insert("messages", &message.lines().collect::<Vec<&str>>());
         self.tera.render(&self.template_path("write"), &context)
             .expect("Could not find write template")
+    }
+
+    fn render_write_join(&self, terms: &Vec<JoinTerm>)  -> String {
+        let mut context = Context::new();
+        context.insert("terms", terms);
+        self.tera.render(&self.template_path("write_join"), &context)
+            .expect("Could not find write template")
+
     }
 
     fn render_read(&self, vars: &Vec<VariableCommand>) -> String {
