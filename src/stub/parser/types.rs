@@ -54,10 +54,29 @@ impl VariableCommand {
     }
 }
 
+#[derive(Serialize, Clone, Debug)]
+pub enum JoinTermType {
+    Literal,
+    Variable,
+}
+
+#[derive(Serialize, Clone, Debug)]
+pub struct JoinTerm {
+    name: String,
+    term_type: JoinTermType,
+}
+
+impl JoinTerm {
+    pub fn new(name: String, term_type: JoinTermType) -> Self {
+        Self { name, term_type }
+    }
+}
+
 #[derive(Debug, Clone, Serialize)]
 pub enum Cmd {
     Read(Vec<VariableCommand>),
     Loop { count: String, command: Box<Cmd> },
     LoopLine { object: String, variables: Vec<VariableCommand> },
     Write(String),
+    WriteJoin(Vec<JoinTerm>)
 }

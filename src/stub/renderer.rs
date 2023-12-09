@@ -57,6 +57,7 @@ impl Renderer {
             Cmd::Write(message) => self.render_write(message),
             Cmd::Loop { count, command } => self.render_loop(count, command),
             Cmd::LoopLine { object, variables } => self.render_loopline(object, variables),
+            Cmd::WriteJoin(join_terms) => String::from(""),
         }
     }
 

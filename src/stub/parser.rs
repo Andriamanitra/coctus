@@ -1,7 +1,7 @@
 use regex::Regex;
 
 pub mod types;
-pub use types::{Cmd, Stub, InputComment, VariableCommand};
+pub use types::{Cmd, Stub, InputComment, VariableCommand, JoinTerm, JoinTermType};
 
 pub fn parse_generator_stub(generator: String) -> Stub {
     let generator = generator.replace("\n", " \n ").replace("\n  \n", "\n \n");
@@ -33,6 +33,7 @@ impl<'a, I: Iterator<Item = &'a str>> Parser<I> {
                         Some(str) => format!("\n{}", str),
                     }
                 }
+                join if join.contains("join(") => return self.parse_write_join(join),
                 other => String::from(other),
             };
 
@@ -40,6 +41,37 @@ impl<'a, I: Iterator<Item = &'a str>> Parser<I> {
         };
 
         Cmd::Write(output.join(" "))
+    }
+
+    fn parse_write_join(&mut self, start: &str) -> Cmd {
+        let mut raw_string = String::from(start);
+
+        while let Some(token) = self.stream.next() {
+            match token {
+                "\n" => panic!("'join(' never closed"),
+                last_term if last_term.contains(")") => { 
+                    raw_string.push_str(last_term); 
+                    break; 
+                },
+                regular_term => raw_string.push_str(regular_term),
+            }
+        };
+
+        self.skip_to_next_line();
+
+        let terms_finder = Regex::new(r"join\((.+)\)").unwrap();
+        let terms_string = terms_finder.captures(&raw_string).unwrap().get(1).unwrap().as_str();
+        let term_splitter = Regex::new(r"\s*,\s*").unwrap();
+        let terms: Vec<JoinTerm> = term_splitter.split(&terms_string).map(|term_str| {
+            let literal_matcher = Regex::new("^\\\"(.+)\\\"$").unwrap();
+            if let Some(mtch) = literal_matcher.captures(term_str) {
+                JoinTerm::new(mtch.get(1).unwrap().as_str().to_owned(), JoinTermType::Literal)
+            } else {
+                JoinTerm::new(term_str.to_owned(), JoinTermType::Variable)
+            }
+        }).collect();
+
+        Cmd::WriteJoin(terms)
     }
 
     fn parse_loop(&mut self) -> Cmd {
