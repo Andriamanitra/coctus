@@ -2,6 +2,8 @@ use serde::Serialize;
 
 use crate::stub::parser::types::VariableCommand;
 
+use super::language::VariableNameFormat;
+
 #[derive(Debug, Clone, Serialize, Hash, PartialEq, Eq)]
 pub enum VariableType {
     Int,
@@ -19,8 +21,8 @@ pub struct ReadData {
     pub max_length: Option<usize>,
 }
 
-impl From<&VariableCommand> for ReadData {
-    fn from(value: &VariableCommand) -> Self {
+impl ReadData {
+    pub fn new(value: &VariableCommand, name_format: &VariableNameFormat) -> Self {
         let (name, var_type, max_length) = match value {
             VariableCommand::Int { name } => (name, VariableType::Int,  None),
             VariableCommand::Float { name } => (name, VariableType::Float,  None),
@@ -30,6 +32,6 @@ impl From<&VariableCommand> for ReadData {
             VariableCommand::String { name, max_length } => (name, VariableType::String, Some(*max_length)),
         };
 
-        Self { name: name.clone(), var_type, max_length }
+        Self { name: name_format.convert(name), var_type, max_length }
     }
 }

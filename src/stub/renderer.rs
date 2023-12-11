@@ -89,7 +89,7 @@ impl Renderer {
 
     fn render_read_one(&self, var: &VariableCommand) -> String {
         let mut context = Context::new();
-        let var_data = &ReadData::from(var);
+        let var_data = &ReadData::new(var, &self.lang.variable_format);
         let comment: Option<&InputComment> = self.stub.input_comments
             .iter().find(|comment| var_data.name == comment.variable);
 
@@ -104,7 +104,7 @@ impl Renderer {
     fn render_read_many(&self, vars: &Vec<VariableCommand>) -> String {
         let mut context = Context::new();
 
-        let read_data: Vec<ReadData> = vars.into_iter().map(|var_cmd| ReadData::from(var_cmd)).collect();
+        let read_data: Vec<ReadData> = vars.into_iter().map(|var_cmd| ReadData::new(var_cmd, &self.lang.variable_format)).collect();
 
         let comments: Vec<&InputComment> = self.stub.input_comments.iter().filter(|comment| 
             read_data.iter().any(|var_data| var_data.name == comment.variable)
@@ -136,7 +136,7 @@ impl Renderer {
     }
 
     fn render_loopline(&self, object: &str, vars: &Vec<VariableCommand>) -> String {
-        let read_data: Vec<ReadData> = vars.into_iter().map(|var_cmd| ReadData::from(var_cmd)).collect();
+        let read_data: Vec<ReadData> = vars.into_iter().map(|var_cmd| ReadData::new(var_cmd, &self.lang.variable_format)).collect();
         let mut context = Context::new();
         context.insert("object", &object);
         context.insert("vars", &read_data);
