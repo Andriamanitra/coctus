@@ -20,6 +20,7 @@ pub struct Language {
 }
 
 #[derive(Deserialize, Serialize, Debug)]
+#[serde(rename_all = "PascalCase")]
 pub struct TypeTokens {
     pub int: Option<String>,
     pub float: Option<String>,

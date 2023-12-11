@@ -1,2 +1,2 @@
-{{ var.name }} = gets{% if var.var_type != "String" %}.{{ type_tokens[var.type_token_key] }}{% else %}.chomp{% endif %}
+{{ var.name }} = gets{% if var.var_type != "String" %}.{{ type_tokens[var.var_type] }}{% else %}.chomp{% endif %}
 {%- if comment %} # {{ comment.description }}{% endif %}

@@ -41,19 +41,6 @@ pub enum VariableCommand {
     String { name: String, max_length: usize },
 }
 
-impl VariableCommand {
-    pub fn name(&self) -> &String {
-        match self {
-            Self::Int { name } |
-            Self::Float { name } |
-            Self::Long { name } |
-            Self::Bool { name } |
-            Self::Word { name, .. } |
-            Self::String { name, .. } => name
-        }
-    }
-}
-
 #[derive(Serialize, Clone, Debug)]
 pub enum JoinTermType {
     Literal,

@@ -4,6 +4,8 @@ use itertools::Itertools;
 use tera::{Tera, Context};
 
 use language::Language;
+use self::types::VariableType;
+
 use super::parser::{Cmd, Stub, VariableCommand, InputComment, JoinTerm};
 
 mod types;
@@ -32,11 +34,11 @@ impl Renderer {
 
         let statement = self.render_statement();
 
-        let code: Vec<String> = self.stub.commands.iter()
-            .map(|cmd| format!("{}\n", &self.render_command(cmd)).replace("\n\n", "\n")).collect();
+        let code: String = self.stub.commands.iter()
+            .map(|cmd| format!("{}\n", &self.render_command(cmd)))
+            .collect::<String>().replace("\n\n", "\n");
 
-        let code_lines: Vec<&str> = code.iter()
-            .flat_map(|cmd_str| cmd_str.lines()).collect();
+        let code_lines: Vec<&str> = code.lines().collect();
 
         context.insert("statement", &statement);
         context.insert("code_lines", &code_lines);
@@ -79,19 +81,20 @@ impl Renderer {
     }
 
     fn render_read(&self, vars: &Vec<VariableCommand>) -> String {
-        match vars.len() {
-            1 => self.render_read_one(vars.first().unwrap()),
+        match vars.as_slice() {
+            [var] => self.render_read_one(var),
             _ => self.render_read_many(vars),
         }
     }
 
     fn render_read_one(&self, var: &VariableCommand) -> String {
         let mut context = Context::new();
+        let var_data = &ReadData::from(var);
         let comment: Option<&InputComment> = self.stub.input_comments
-            .iter().find(|comment| var.name() == &comment.variable);
+            .iter().find(|comment| var_data.name == comment.variable);
 
         context.insert("comment", &comment);
-        context.insert("var", &ReadData::from(var));
+        context.insert("var", var_data);
         context.insert("type_tokens", &self.lang.type_tokens);
 
         self.tera.render(&self.template_path("read_one"), &context)
@@ -103,17 +106,19 @@ impl Renderer {
 
         let read_data: Vec<ReadData> = vars.into_iter().map(|var_cmd| ReadData::from(var_cmd)).collect();
 
-        let relevant_comments: Vec<&InputComment> = self.stub.input_comments.iter().filter(|comment| 
-            vars.iter().any(|var_cmd| var_cmd.name() == &comment.variable)
+        let comments: Vec<&InputComment> = self.stub.input_comments.iter().filter(|comment| 
+            read_data.iter().any(|var_data| var_data.name == comment.variable)
         ).collect();
 
-        let single_type: bool  = read_data.iter().unique_by(|r| &r.var_type).count() == 1;
+        let types: Vec<&VariableType> = read_data.iter()
+            .map(|r| &r.var_type).unique().collect();
 
-        if single_type {
-            context.insert("single_type", &read_data.first().unwrap().type_token_key);
+        match types.as_slice() {
+            [single_type] => context.insert("single_type", single_type),
+            _ => context.insert("single_type", &false),
         }
 
-        context.insert("comments", &relevant_comments);
+        context.insert("comments", &comments);
         context.insert("vars", &read_data);
         context.insert("type_tokens", &self.lang.type_tokens);
 
@@ -144,7 +149,4 @@ impl Renderer {
         format!("{template_name}.{}.jinja", self.lang.source_file_ext)
     }
 }
-
-
-
 

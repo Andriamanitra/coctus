@@ -6,7 +6,7 @@
 
 {%- if single_type -%}
 
-  {%- if single_type != "word" -%}
+  {%- if single_type != "Word" -%}
     .map(&:{{ type_tokens[single_type] }})
   {%- endif -%}
 
@@ -14,7 +14,7 @@
 
   {%- for var in vars -%}
     {%- if var.var_type != "Word" %}
-{{var.name}} = {{var.name}}.{{ type_tokens[var.type_token_key] }}
+{{var.name}} = {{var.name}}.{{ type_tokens[var.var_type] }}
     {%- endif -%}
   {%- endfor -%}
 

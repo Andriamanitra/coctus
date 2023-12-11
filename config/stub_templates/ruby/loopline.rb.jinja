@@ -2,7 +2,7 @@
 {{ object }}.split.each{% if vars | length > 1 %}_slice({{ vars | length }}){% endif %} do |{{ vars | map(attribute="name") | join(sep=", ") }}|
 {%- for var in vars -%}
 {%- if var.var_type != "Word" %}
-  {{var.name}} = {{var.name}}.{{type_tokens[var.type_token_key]-}}
+  {{var.name}} = {{var.name}}.{{type_tokens[var.var_type]-}}
 {% endif -%}
 {%- endfor %}
 end
