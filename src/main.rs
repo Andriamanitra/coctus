@@ -8,7 +8,6 @@ use clashlib::clash::{Clash, TestCase};
 use clashlib::outputstyle::OutputStyle;
 use clashlib::solution;
 use clashlib::stub;
-use clashlib::programming_language::ProgrammingLanguage;
 use directories::ProjectDirs;
 use rand::seq::IteratorRandom;
 
@@ -218,9 +217,9 @@ impl App {
         PublicHandle::from_str(&content)
     }
 
-    fn programming_language_from_args(&self, args: &ArgMatches) -> Result<ProgrammingLanguage> {
+    fn programming_language_from_args(&self, args: &ArgMatches) -> Result<String> {
         match args.get_one::<String>("PROGRAMMING_LANGUAGE") {
-            Some(s) => Ok(ProgrammingLanguage::from(s.to_owned())),
+            Some(s) => Ok(s.to_owned()),
             None => Err(anyhow!("No programming language given")),
         }
     }
@@ -490,7 +489,7 @@ impl App {
         let stub_generator = clash.stub_generator()
             .expect("Clash provides no input stub generator");
         let language = self.programming_language_from_args(args)
-            .expect("Could not find programming language");
+            .expect("Programming language not provided");
 
         let stub = stub::generate(language, stub_generator);
 

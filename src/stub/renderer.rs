@@ -1,25 +1,27 @@
+mod language;
+
 use itertools::Itertools;
 use tera::{Tera, Context};
 
-use crate::programming_language::ProgrammingLanguage;
+use language::Language;
 use super::parser::{Cmd, Stub, VariableCommand, InputComment, JoinTerm};
 
 mod types;
 use types::ReadData;
 
-pub fn render_stub(lang: ProgrammingLanguage, stub: Stub) -> String {
-    let rend = Renderer::new(lang, stub);
-    rend.render()
+pub fn render_stub(lang: String, stub: Stub) -> String {
+    Renderer::new(lang, stub).render()
 }
 
 struct Renderer {
     tera: Tera,
-    lang: ProgrammingLanguage,
+    lang: Language,
     stub: Stub,
 }
 
 impl Renderer {
-    fn new(lang: ProgrammingLanguage, stub: Stub) -> Self {
+    fn new(lang_name: String, stub: Stub) -> Self {
+        let lang = Language::from(lang_name);
         let tera = Tera::new(&lang.template_glob())
             .expect("There are no templates for this language");
         Self { lang, tera, stub }

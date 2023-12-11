@@ -12,7 +12,7 @@ pub enum VariableNameFormat {
 }
 
 #[derive(Deserialize, Debug)]
-pub struct ProgrammingLanguage {
+pub struct Language {
     pub name: String,
     pub variable_format: VariableNameFormat,
     pub source_file_ext: String,
@@ -29,7 +29,7 @@ pub struct TypeTokens {
     pub string: Option<String>,
 }
 
-impl From<String> for ProgrammingLanguage {
+impl From<String> for Language {
     fn from(value: String) -> Self {
         let language_config_filepath = format!("config/stub_templates/{}/stub_config.toml", value);
         let config_file_content = fs::read_to_string(language_config_filepath)
@@ -39,7 +39,7 @@ impl From<String> for ProgrammingLanguage {
     }
 }
 
-impl ProgrammingLanguage {
+impl Language {
     pub fn template_glob(&self) -> String {
         format!("config/stub_templates/{}/*.{}.jinja", self.name, self.source_file_ext)
     }
