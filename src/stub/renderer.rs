@@ -28,24 +28,24 @@ impl Renderer {
     fn render(&self) -> String {
         let mut context = Context::new();
 
-        let statement_str = self.render_statement();
-        // Transform self.stub.commands into successive strings
-        let commands: Vec<String> = self.stub.commands.iter().map(|cmd| {
-            let cmd_str = self.render_command(cmd);
-            // TODO: Make this less stupid
-            format!("{}\n", cmd_str.as_str()).replace("\n\n", "\n").replace("\n\n", "\n")
-        }).collect();
+        let statement = self.render_statement();
 
-        context.insert("statement", &statement_str);
-        context.insert("commands", &commands);
+        let code: Vec<String> = self.stub.commands.iter()
+            .map(|cmd| format!("{}\n", &self.render_command(cmd)).replace("\n\n", "\n")).collect();
 
-        self.tera.render(&format!("main.{}.jinja", self.lang.source_file_ext), &context)
+        let code_lines: Vec<&str> = code.iter()
+            .flat_map(|cmd_str| cmd_str.lines()).collect();
+
+        context.insert("statement", &statement);
+        context.insert("code_lines", &code_lines);
+
+        self.tera.render(&self.template_path("main"), &context)
             .expect("Failed to render template for stub")
     }
 
     fn render_statement(&self) -> String {
-        let statement_lines: Vec<&str> = self.stub.statement.lines().collect();
         let mut context = Context::new();
+        let statement_lines: Vec<&str> = self.stub.statement.lines().collect();
         context.insert("statement_lines", &statement_lines);
         self.tera.render(&self.template_path("statement"), &context)
             .expect("Could not find statement template")
@@ -128,10 +128,6 @@ impl Renderer {
             .expect("Could not find loop template")
     }
 
-    fn template_path(&self, template_name: &str) -> String {
-        format!("{template_name}.{}.jinja", self.lang.source_file_ext)
-    }
-
     fn render_loopline(&self, object: &str, vars: &Vec<VariableCommand>) -> String {
         let read_data: Vec<ReadData> = vars.into_iter().map(|var_cmd| ReadData::from(var_cmd)).collect();
         let mut context = Context::new();
@@ -140,6 +136,10 @@ impl Renderer {
         context.insert("type_tokens", &self.lang.type_tokens);
         self.tera.render(&self.template_path("loopline"), &context)
             .expect("Could not find read template")
+    }
+
+    fn template_path(&self, template_name: &str) -> String {
+        format!("{template_name}.{}.jinja", self.lang.source_file_ext)
     }
 }
 

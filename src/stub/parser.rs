@@ -5,8 +5,7 @@ pub use types::{Cmd, Stub, InputComment, VariableCommand, JoinTerm, JoinTermType
 
 pub fn parse_generator_stub(generator: String) -> Stub {
     let generator = generator.replace("\n", " \n ").replace("\n  \n", "\n \n");
-    let stream = generator.split(" ");
-    Parser::new(stream).parse()
+    Parser::new(generator.split(" ")).parse()
 }
 
 struct Parser<StreamType: Iterator> {

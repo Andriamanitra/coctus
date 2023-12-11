@@ -1,3 +1,5 @@
 # This is a prelude
 {{ statement }}
-{% for line in commands %}{{ line }}{% endfor %}
+{% for line in code_lines %}
+{{ line }}
+{%- endfor %}

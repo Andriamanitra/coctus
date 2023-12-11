@@ -1,10 +1,9 @@
 
-{% set var_count = vars | length -%}
-{{ object }}.split.each{% if var_count > 1 %}_slice({{ var_count }}){% endif %} do |{{- vars | map(attribute="name") | join(sep=", ") -}}|
+{{ object }}.split.each{% if vars | length > 1 %}_slice({{ vars | length }}){% endif %} do |{{ vars | map(attribute="name") | join(sep=", ") }}|
 {%- for var in vars -%}
-{%- if var.var_type != "Word" and var.var_type != "String" -%}
-{%- set key = var.var_type | lower %}
-  {{var.name}} = {{var.name}}.{{type_tokens[key]-}}
+{%- if var.var_type != "Word" %}
+  {{var.name}} = {{var.name}}.{{type_tokens[var.type_token_key]-}}
 {% endif -%}
 {%- endfor %}
 end
+

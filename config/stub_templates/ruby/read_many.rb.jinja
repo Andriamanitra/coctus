@@ -1,12 +1,13 @@
-{%- for cmt in comments -%}
+{% for cmt in comments -%}
 # {{ cmt.variable }}: {{cmt.description}}
 {% endfor -%}
 
 {{- vars | map(attribute="name") | join(sep=", ") }} = gets.split
+
 {%- if single_type -%}
 
   {%- if single_type != "word" -%}
-.map(&:{{ type_tokens[single_type] }})
+    .map(&:{{ type_tokens[single_type] }})
   {%- endif -%}
 
 {% else %}
