@@ -7,4 +7,3 @@ pub fn generate(lang: String, generator: &str) -> String {
 
     format!("{}\n{:?}", output, stub)
 }
-

@@ -1,7 +1,7 @@
 use regex::Regex;
 
 pub mod types;
-pub use types::{Cmd, Stub, InputComment, VariableCommand, JoinTerm, JoinTermType};
+pub use types::{Cmd, InputComment, JoinTerm, JoinTermType, Stub, VariableCommand};
 
 pub fn parse_generator_stub(generator: String) -> Stub {
     let generator = generator.replace("\n", " \n ").replace("\n  \n", "\n \n");
@@ -25,19 +25,17 @@ impl<'a, I: Iterator<Item = &'a str>> Parser<I> {
         let mut output: Vec<String> = Vec::new();
 
         while let Some(token) = self.stream.next() {
-            let next_token = match token { 
-                "\n" => {
-                    match self.stream.next() {
-                        Some("\n") | None => break,
-                        Some(str) => format!("\n{}", str),
-                    }
-                }
+            let next_token = match token {
+                "\n" => match self.stream.next() {
+                    Some("\n") | None => break,
+                    Some(str) => format!("\n{}", str),
+                },
                 join if join.contains("join(") => return self.parse_write_join(join),
                 other => String::from(other),
             };
 
             output.push(next_token);
-        };
+        }
 
         Cmd::Write(output.join(" "))
     }
@@ -48,27 +46,30 @@ impl<'a, I: Iterator<Item = &'a str>> Parser<I> {
         while let Some(token) = self.stream.next() {
             match token {
                 "\n" => panic!("'join(' never closed"),
-                last_term if last_term.contains(")") => { 
-                    raw_string.push_str(last_term); 
-                    break; 
-                },
+                last_term if last_term.contains(")") => {
+                    raw_string.push_str(last_term);
+                    break;
+                }
                 regular_term => raw_string.push_str(regular_term),
             }
-        };
+        }
 
         self.skip_to_next_line();
 
         let terms_finder = Regex::new(r"join\((.+)\)").unwrap();
         let terms_string = terms_finder.captures(&raw_string).unwrap().get(1).unwrap().as_str();
         let term_splitter = Regex::new(r"\s*,\s*").unwrap();
-        let terms: Vec<JoinTerm> = term_splitter.split(&terms_string).map(|term_str| {
-            let literal_matcher = Regex::new("^\\\"(.+)\\\"$").unwrap();
-            if let Some(mtch) = literal_matcher.captures(term_str) {
-                JoinTerm::new(mtch.get(1).unwrap().as_str().to_owned(), JoinTermType::Literal)
-            } else {
-                JoinTerm::new(term_str.to_owned(), JoinTermType::Variable)
-            }
-        }).collect();
+        let terms: Vec<JoinTerm> = term_splitter
+            .split(&terms_string)
+            .map(|term_str| {
+                let literal_matcher = Regex::new("^\\\"(.+)\\\"$").unwrap();
+                if let Some(mtch) = literal_matcher.captures(term_str) {
+                    JoinTerm::new(mtch.get(1).unwrap().as_str().to_owned(), JoinTermType::Literal)
+                } else {
+                    JoinTerm::new(term_str.to_owned(), JoinTermType::Variable)
+                }
+            })
+            .collect();
 
         Cmd::WriteJoin(terms)
     }
@@ -111,9 +112,15 @@ impl<'a, I: Iterator<Item = &'a str>> Parser<I> {
                 let new_type = caps.get(1).unwrap().as_str();
                 let var_length: usize = caps.get(2).unwrap().as_str().parse().unwrap();
                 match new_type {
-                    "word" => VariableCommand::Word { name: identifier, max_length: var_length },
-                    "string" => VariableCommand::String { name: identifier, max_length: var_length },
-                    _ => panic!("Unexpected error")
+                    "word" => VariableCommand::Word {
+                        name: identifier,
+                        max_length: var_length,
+                    },
+                    "string" => VariableCommand::String {
+                        name: identifier,
+                        max_length: var_length,
+                    },
+                    _ => panic!("Unexpected error"),
                 }
             }
         }
@@ -124,15 +131,13 @@ impl<'a, I: Iterator<Item = &'a str>> Parser<I> {
 
         while let Some(token) = self.stream.next() {
             let var: VariableCommand = match token {
-                _ if String::from(token).contains(":") => {
-                    Self::parse_variable(token)
-                },
+                _ if String::from(token).contains(":") => Self::parse_variable(token),
                 "\n" => break,
                 unexp => panic!("Error in stub generator, found {unexp} while searching for stub variables"),
             };
 
             vars.push(var);
-        };
+        }
 
         vars
     }
@@ -177,10 +182,11 @@ impl<'a, I: Iterator<Item = &'a str>> Parser<I> {
         while let Some(token) = self.stream.next() {
             let comment = match token {
                 "\n" => break,
-                _ => {
-                    match token.strip_suffix(":") {
-                        Some(variable) => InputComment::new(String::from(variable), self.read_to_end_of_line()),
-                        None => { self.skip_to_next_line(); continue },
+                _ => match token.strip_suffix(":") {
+                    Some(variable) => InputComment::new(String::from(variable), self.read_to_end_of_line()),
+                    None => {
+                        self.skip_to_next_line();
+                        continue
                     }
                 },
             };
@@ -199,7 +205,7 @@ impl<'a, I: Iterator<Item = &'a str>> Parser<I> {
     fn read_to_end_of_line(&mut self) -> String {
         let mut output = Vec::new();
 
-        while let Some(token) = self.stream.next() { 
+        while let Some(token) = self.stream.next() {
             match token {
                 "\n" => break,
                 other => output.push(other),
@@ -210,8 +216,10 @@ impl<'a, I: Iterator<Item = &'a str>> Parser<I> {
     }
 
     fn skip_to_next_line(&mut self) {
-        while let Some(token) = self.stream.next() { 
-            if token == "\n" { break } 
+        while let Some(token) = self.stream.next() {
+            if token == "\n" {
+                break
+            }
         }
     }
 
@@ -219,20 +227,17 @@ impl<'a, I: Iterator<Item = &'a str>> Parser<I> {
         let mut output: Vec<String> = Vec::new();
 
         while let Some(token) = self.stream.next() {
-            let next_token = match token { 
-                "\n" => {
-                    match self.stream.next() {
-                        Some("\n") | None => break,
-                        Some(str) => format!("\n{}", str),
-                    }
-                }
+            let next_token = match token {
+                "\n" => match self.stream.next() {
+                    Some("\n") | None => break,
+                    Some(str) => format!("\n{}", str),
+                },
                 other => String::from(other),
             };
 
             output.push(next_token);
-        };
+        }
 
         output.join(" ")
     }
-
 }

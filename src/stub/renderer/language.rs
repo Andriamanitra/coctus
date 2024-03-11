@@ -23,9 +23,12 @@ impl VariableNameFormat {
 
     fn convert_to_snake_case(variable_name: &String) -> String {
         let word_break = Regex::new(r"([a-z])([A-Z])").unwrap();
-        word_break.replace_all(&variable_name, |caps: &regex::Captures|
-            format!("{}_{}", &caps[1], &caps[2].to_lowercase())
-        ).to_lowercase().to_string()
+        word_break
+            .replace_all(&variable_name, |caps: &regex::Captures| {
+                format!("{}_{}", &caps[1], &caps[2].to_lowercase())
+            })
+            .to_lowercase()
+            .to_string()
     }
 
     fn covert_to_pascal_case(variable_name: &String) -> String {

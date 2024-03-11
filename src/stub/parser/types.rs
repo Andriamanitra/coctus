@@ -27,7 +27,10 @@ pub struct InputComment {
 
 impl InputComment {
     pub fn new(variable: String, description: String) -> Self {
-        Self { variable, description }
+        Self {
+            variable,
+            description,
+        }
     }
 }
 
@@ -62,8 +65,14 @@ impl JoinTerm {
 #[derive(Debug, Clone, Serialize)]
 pub enum Cmd {
     Read(Vec<VariableCommand>),
-    Loop { count: String, command: Box<Cmd> },
-    LoopLine { object: String, variables: Vec<VariableCommand> },
+    Loop {
+        count: String,
+        command: Box<Cmd>,
+    },
+    LoopLine {
+        object: String,
+        variables: Vec<VariableCommand>,
+    },
     Write(String),
-    WriteJoin(Vec<JoinTerm>)
+    WriteJoin(Vec<JoinTerm>),
 }
