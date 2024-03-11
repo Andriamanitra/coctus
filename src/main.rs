@@ -196,6 +196,7 @@ impl App {
         }
     }
 
+    // This may fail the very first time we call `show` if `next` was never run.
     fn current_handle(&self) -> Result<PublicHandle> {
         let content = std::fs::read_to_string(&self.current_clash_file)
             .with_context(|| format!("Unable to read {:?}", &self.current_clash_file))?;
@@ -384,7 +385,9 @@ impl App {
 
     fn fetch(&self, args: &ArgMatches) -> Result<()> {
         std::fs::create_dir_all(&self.clash_dir)?;
-        let handles = args.get_many::<PublicHandle>("PUBLIC_HANDLE").context("Should have many handles")?;
+        let handles = args
+            .get_many::<PublicHandle>("PUBLIC_HANDLE")
+            .with_context(|| format!("Should have many handles"))?;
         for handle in handles {
             let http = reqwest::blocking::Client::new();
             let res = http
