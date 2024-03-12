@@ -10,21 +10,27 @@ use super::parser::{Cmd, InputComment, JoinTerm, Stub, VariableCommand};
 mod types;
 use types::ReadData;
 
-pub fn render_stub(lang: String, stub: Stub) -> String {
-    Renderer::new(lang, stub).render()
+pub fn render_stub(lang: &str, stub: Stub, debug_mode: bool) -> String {
+    Renderer::new(&lang, stub, debug_mode).render()
 }
 
 struct Renderer {
     tera: Tera,
     lang: Language,
     stub: Stub,
+    debug_mode: bool,
 }
 
 impl Renderer {
-    fn new(lang_name: String, stub: Stub) -> Self {
+    fn new(lang_name: &str, stub: Stub, debug_mode: bool) -> Self {
         let lang = Language::from(lang_name);
         let tera = Tera::new(&lang.template_glob()).expect("There are no templates for this language");
-        Self { lang, tera, stub }
+        Self {
+            lang,
+            tera,
+            stub,
+            debug_mode,
+        }
     }
 
     fn tera_render(&self, template_name: &str, context: &Context) -> String {
@@ -43,6 +49,7 @@ impl Renderer {
 
         context.insert("statement", &statement);
         context.insert("code_lines", &code_lines);
+        context.insert("debug_mode", &self.debug_mode);
 
         self.tera_render("main", &context)
     }
@@ -51,6 +58,8 @@ impl Renderer {
         let mut context = Context::new();
         let statement_lines: Vec<&str> = self.stub.statement.lines().collect();
         context.insert("statement_lines", &statement_lines);
+        context.insert("debug_mode", &self.debug_mode);
+
         self.tera_render("statement", &context)
     }
 
@@ -68,6 +77,8 @@ impl Renderer {
         let mut context = Context::new();
         let messages: Vec<&str> = message.lines().map(|msg| msg.trim_end()).collect();
         context.insert("messages", &messages);
+        context.insert("debug_mode", &self.debug_mode);
+
         self.tera_render("write", &context)
     }
 
@@ -93,6 +104,7 @@ impl Renderer {
         context.insert("comment", &comment);
         context.insert("var", var_data);
         context.insert("type_tokens", &self.lang.type_tokens);
+        context.insert("debug_mode", &self.debug_mode);
 
         self.tera_render("read_one", &context)
     }
@@ -122,6 +134,7 @@ impl Renderer {
         context.insert("comments", &comments);
         context.insert("vars", &read_data);
         context.insert("type_tokens", &self.lang.type_tokens);
+        context.insert("debug_mode", &self.debug_mode);
 
         self.tera_render("read_many", &context)
     }
@@ -132,6 +145,8 @@ impl Renderer {
         let count_with_case = self.lang.variable_format.convert(count);
         context.insert("count", &count_with_case);
         context.insert("inner", &inner_text.lines().collect::<Vec<&str>>());
+        context.insert("debug_mode", &self.debug_mode);
+
         self.tera_render("loop", &context)
     }
 
@@ -145,6 +160,8 @@ impl Renderer {
         context.insert("object", &object_with_case);
         context.insert("vars", &read_data);
         context.insert("type_tokens", &self.lang.type_tokens);
+        context.insert("debug_mode", &self.debug_mode);
+
         self.tera_render("loopline", &context)
     }
 

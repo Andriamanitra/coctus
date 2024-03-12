@@ -54,8 +54,8 @@ pub struct TypeTokens {
     pub string: Option<String>,
 }
 
-impl From<String> for Language {
-    fn from(value: String) -> Self {
+impl From<&str> for Language {
+    fn from(value: &str) -> Self {
         let language_config_filepath = format!("config/stub_templates/{}/stub_config.toml", value);
         let config_file_content = fs::read_to_string(language_config_filepath)
             .expect(&format!("No stub configuration exists for {}", value));

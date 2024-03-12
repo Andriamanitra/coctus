@@ -1,5 +1,9 @@
-# At main
-{{ statement }}
-{% for line in code_lines %}
+{%- if debug_mode -%}
+# MAIN
+{% endif -%}
+
+{%- if statement -%}{{- statement -}}{%- endif -%}
+
+{%- for line in code_lines %}
 {{ line }}
 {%- endfor %}

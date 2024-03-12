@@ -1,4 +1,7 @@
-# At read_many
+{%- if debug_mode -%}
+# READ_MANY
+{% endif -%}
+
 {% for cmt in comments -%}
 # {{ cmt.variable }}: {{cmt.description}}
 {% endfor -%}

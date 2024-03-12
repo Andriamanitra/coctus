@@ -1,4 +1,7 @@
-# At write_join
+{%- if debug_mode -%}
+# WRITE_JOIN
+{% endif -%}
+
 puts "
 {%- for term in terms -%}
   {%- if term.term_type=="Variable" -%}

@@ -1,4 +1,7 @@
-# At loopline
+{%- if debug_mode -%}
+# LOOPLINE
+{% endif -%}
+
 {{ object }}.split.each{% if vars | length > 1 %}_slice({{ vars | length }}){% endif %} do |{{ vars | map(attribute="name") | join(sep=", ") }}|
 {%- for var in vars -%}
 {%- if var.var_type != "Word" %}

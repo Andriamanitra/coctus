@@ -1,5 +1,7 @@
-# At read_one
-{# Variable assignment #}
+{%- if debug_mode -%}
+# READ_ONE
+{% endif -%}
+
 {%- if var.name -%}
 {{ var.name }} = gets
 {%- if var.var_type == "String" or var.var_type == "Word" %}.chomp

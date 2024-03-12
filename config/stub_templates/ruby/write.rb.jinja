@@ -1,4 +1,6 @@
-{# Note this extra space #}
-# At write
+{%- if debug_mode -%}
+# WRITE
+{% endif -%}
+
 {% for line in messages %}puts "{{line}}"
 {% endfor %}

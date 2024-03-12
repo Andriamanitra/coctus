@@ -1,4 +1,7 @@
-# At loop
+{%- if debug_mode -%}
+# LOOP
+{% endif -%}
+
 {{ count }}.times do
 {%- for line in inner %}
   {{line}}
