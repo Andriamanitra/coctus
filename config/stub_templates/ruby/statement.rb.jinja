@@ -1,3 +1,7 @@
-{%- for line in statement_lines %}
+# At statement
+{%- if statement_lines -%}
+# Inside statement
+{% for line in statement_lines %}
 # {{ line }}
 {%- endfor %}
+{%- endif -%}

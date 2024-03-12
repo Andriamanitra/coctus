@@ -1,2 +1,10 @@
-{{ var.name }} = gets{% if var.var_type != "String" %}.{{ type_tokens[var.var_type] }}{% else %}.chomp{% endif %}
-{%- if comment %} # {{ comment.description }}{% endif %}
+# At read_one
+{# Variable assignment #}
+{%- if var.name -%}
+{{ var.name }} = gets
+{%- if var.var_type == "String" or var.var_type == "Word" %}.chomp
+{%- else %}.{{ type_tokens[var.var_type] }}
+{%- endif %}
+{# Comment if any #}
+{%- if comment -%}# {{ comment.description }}{% endif %}
+{%- endif %}

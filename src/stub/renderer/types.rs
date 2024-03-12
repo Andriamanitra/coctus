@@ -21,14 +21,17 @@ pub struct ReadData {
 }
 
 impl ReadData {
+    // VariableNameFormat is just the case (snake_case, pascal_case etc.)
     pub fn new(value: &VariableCommand, name_format: &VariableNameFormat) -> Self {
+        use {VariableCommand as VC, VariableType as VT};
+
         let (name, var_type, max_length) = match value {
-            VariableCommand::Int { name } => (name, VariableType::Int, None),
-            VariableCommand::Float { name } => (name, VariableType::Float, None),
-            VariableCommand::Long { name } => (name, VariableType::Long, None),
-            VariableCommand::Bool { name } => (name, VariableType::Bool, None),
-            VariableCommand::Word { name, max_length } => (name, VariableType::Word, Some(*max_length)),
-            VariableCommand::String { name, max_length } => (name, VariableType::String, Some(*max_length)),
+            VC::Int { name } => (name, VT::Int, None),
+            VC::Float { name } => (name, VT::Float, None),
+            VC::Long { name } => (name, VT::Long, None),
+            VC::Bool { name } => (name, VT::Bool, None),
+            VC::Word { name, max_length } => (name, VT::Word, Some(*max_length)),
+            VC::String { name, max_length } => (name, VT::String, Some(*max_length)),
         };
 
         Self {

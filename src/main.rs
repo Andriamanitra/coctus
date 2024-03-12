@@ -217,9 +217,14 @@ impl App {
     }
 
     fn programming_language_from_args(&self, args: &ArgMatches) -> Result<String> {
-        match args.get_one::<String>("PROGRAMMING_LANGUAGE") {
-            Some(s) => Ok(s.to_owned()),
-            None => Err(anyhow!("No programming language given")),
+        let lang = args
+            .get_one::<String>("PROGRAMMING_LANGUAGE")
+            .context("Should have a programming language")?
+            .as_str();
+
+        match lang {
+            "ruby" => Ok(String::from("ruby")),
+            other => Err(anyhow!("Unsupported language: {}", other)),
         }
     }
 
@@ -482,16 +487,16 @@ impl App {
     }
 
     fn generate_stub(&self, args: &ArgMatches) -> Result<()> {
-        let language = self.programming_language_from_args(args).expect("Programming language not provided");
+        let language = self.programming_language_from_args(args)?;
         let handle = self
             .current_handle()
             .expect("You must have a current clash to generate stubs. Please use clash next");
-        let clash: Clash = self.read_clash(&handle).expect("Could not find clash.");
+        let clash = self.read_clash(&handle)?;
         let stub_generator = clash.stub_generator().expect("Clash provides no input stub generator");
 
-        let stub = stub::generate(language, stub_generator);
+        let stub_string = stub::generate(language, stub_generator);
 
-        println!("{stub}");
+        println!("{stub_string}");
         Ok(())
     }
 

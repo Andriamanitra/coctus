@@ -5,7 +5,8 @@ pub use types::{Cmd, InputComment, JoinTerm, JoinTermType, Stub, VariableCommand
 
 pub fn parse_generator_stub(generator: String) -> Stub {
     let generator = generator.replace("\n", " \n ").replace("\n  \n", "\n \n");
-    Parser::new(generator.split(" ")).parse()
+    let stream = generator.split(" ");
+    Parser::new(stream).parse()
 }
 
 struct Parser<StreamType: Iterator> {
@@ -15,6 +16,27 @@ struct Parser<StreamType: Iterator> {
 impl<'a, I: Iterator<Item = &'a str>> Parser<I> {
     fn new(stream: I) -> Self {
         Self { stream }
+    }
+
+    #[rustfmt::skip]
+    fn parse(&mut self) -> Stub {
+        let mut stub = Stub::new();
+
+        while let Some(token) = self.stream.next() {
+            match token {
+                "read"      => stub.commands.push(self.parse_read()),
+                "write"     => stub.commands.push(self.parse_write()),
+                "loop"      => stub.commands.push(self.parse_loop()),
+                "loopline"  => stub.commands.push(self.parse_loopline()),
+                "OUTPUT"    => stub.output_comment = self.parse_output_comment(),
+                "INPUT"     => stub.input_comments.append(&mut self.parse_input_comment()),
+                "STATEMENT" => stub.statement = self.parse_statement(),
+                "\n" | ""   => continue,
+                thing => panic!("Error parsing stub generator: {}", thing),
+            };
+        }
+
+        stub
     }
 
     fn parse_read(&mut self) -> Cmd {
@@ -100,15 +122,22 @@ impl<'a, I: Iterator<Item = &'a str>> Parser<I> {
         let mut iter = token.split(":");
         let identifier = String::from(iter.next().unwrap());
         let var_type = iter.next().expect("Error in stub generator: missing type");
+        // NOTE: the regex is false, the length itself can be a variable, f.e:
+        // read X:int Y:int
+        // loop Y read LINE:string(X)
+        // https://www.codingame.com/contribute/view/85057be610343f35a80eb2cd8978156af5385
         let length_regex = Regex::new(r"(word|string)\((\d+)\)").unwrap();
         let length_captures = length_regex.captures(var_type);
-        match var_type {
+
+        // Trim because the stub generator may contain sneaky newlines
+        match var_type.trim_end() {
             "int" => VariableCommand::Int { name: identifier },
             "float" => VariableCommand::Float { name: identifier },
             "long" => VariableCommand::Long { name: identifier },
             "bool" => VariableCommand::Bool { name: identifier },
             _ => {
-                let caps = length_captures.expect("Failed to parse variable type in stub generator");
+                let caps =
+                    length_captures.expect(&format!("Failed to parse variable type for token: {}", &token));
                 let new_type = caps.get(1).unwrap().as_str();
                 let var_length: usize = caps.get(2).unwrap().as_str().parse().unwrap();
                 match new_type {
@@ -149,26 +178,6 @@ impl<'a, I: Iterator<Item = &'a str>> Parser<I> {
             Some(thing) => panic!("Error parsing loop command in stub generator, got: {}", thing),
             None => panic!("Loop with no arguments in stub generator"),
         }
-    }
-
-    fn parse(&mut self) -> Stub {
-        let mut stub = Stub::new();
-
-        while let Some(token) = self.stream.next() {
-            match token {
-                "read" => stub.commands.push(self.parse_read()),
-                "write" => stub.commands.push(self.parse_write()),
-                "loop" => stub.commands.push(self.parse_loop()),
-                "loopline" => stub.commands.push(self.parse_loopline()),
-                "OUTPUT" => stub.output_comment = self.parse_output_comment(),
-                "INPUT" => stub.input_comments.append(&mut self.parse_input_comment()),
-                "STATEMENT" => stub.statement = self.parse_statement(),
-                "\n" | "" => continue,
-                thing => panic!("Error parsing stub generator: {}", thing),
-            };
-        }
-
-        stub
     }
 
     fn parse_output_comment(&mut self) -> String {

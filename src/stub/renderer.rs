@@ -27,36 +27,31 @@ impl Renderer {
         Self { lang, tera, stub }
     }
 
+    fn tera_render(&self, template_name: &str, context: &Context) -> String {
+        self.tera
+            .render(&self.template_path(template_name), &context)
+            .expect(&format!("Failed to render {} template.", template_name))
+    }
+
     fn render(&self) -> String {
         let mut context = Context::new();
 
         let statement = self.render_statement();
 
-        let code: String = self
-            .stub
-            .commands
-            .iter()
-            .map(|cmd| format!("{}\n", &self.render_command(cmd)))
-            .collect::<String>()
-            .replace("\n\n", "\n");
-
+        let code: String = self.stub.commands.iter().map(|cmd| self.render_command(cmd)).collect();
         let code_lines: Vec<&str> = code.lines().collect();
 
         context.insert("statement", &statement);
         context.insert("code_lines", &code_lines);
 
-        self.tera
-            .render(&self.template_path("main"), &context)
-            .expect("Failed to render template for stub")
+        self.tera_render("main", &context)
     }
 
     fn render_statement(&self) -> String {
         let mut context = Context::new();
         let statement_lines: Vec<&str> = self.stub.statement.lines().collect();
         context.insert("statement_lines", &statement_lines);
-        self.tera
-            .render(&self.template_path("statement"), &context)
-            .expect("Could not find statement template")
+        self.tera_render("statement", &context)
     }
 
     fn render_command(&self, cmd: &Cmd) -> String {
@@ -71,18 +66,15 @@ impl Renderer {
 
     fn render_write(&self, message: &String) -> String {
         let mut context = Context::new();
-        context.insert("messages", &message.lines().collect::<Vec<&str>>());
-        self.tera
-            .render(&self.template_path("write"), &context)
-            .expect("Could not find write template")
+        let messages: Vec<&str> = message.lines().map(|msg| msg.trim_end()).collect();
+        context.insert("messages", &messages);
+        self.tera_render("write", &context)
     }
 
     fn render_write_join(&self, terms: &Vec<JoinTerm>) -> String {
         let mut context = Context::new();
         context.insert("terms", terms);
-        self.tera
-            .render(&self.template_path("write_join"), &context)
-            .expect("Could not find write template")
+        self.tera_render("write_join", &context)
     }
 
     fn render_read(&self, vars: &Vec<VariableCommand>) -> String {
@@ -102,11 +94,7 @@ impl Renderer {
         context.insert("var", var_data);
         context.insert("type_tokens", &self.lang.type_tokens);
 
-        self.tera
-            .render(&self.template_path("read_one"), &context)
-            .expect("Could not find read template")
-            .trim_end()
-            .to_owned()
+        self.tera_render("read_one", &context)
     }
 
     fn render_read_many(&self, vars: &Vec<VariableCommand>) -> String {
@@ -135,21 +123,16 @@ impl Renderer {
         context.insert("vars", &read_data);
         context.insert("type_tokens", &self.lang.type_tokens);
 
-        self.tera
-            .render(&self.template_path("read_many"), &context)
-            .expect("Could not find read template")
-            .trim_end()
-            .to_owned()
+        self.tera_render("read_many", &context)
     }
 
     fn render_loop(&self, count: &String, cmd: &Box<Cmd>) -> String {
         let mut context = Context::new();
         let inner_text = self.render_command(&cmd);
-        context.insert("count", &count);
+        let count_with_case = self.lang.variable_format.convert(count);
+        context.insert("count", &count_with_case);
         context.insert("inner", &inner_text.lines().collect::<Vec<&str>>());
-        self.tera
-            .render(&self.template_path("loop"), &context)
-            .expect("Could not find loop template")
+        self.tera_render("loop", &context)
     }
 
     fn render_loopline(&self, object: &str, vars: &Vec<VariableCommand>) -> String {
@@ -158,12 +141,11 @@ impl Renderer {
             .map(|var_cmd| ReadData::new(var_cmd, &self.lang.variable_format))
             .collect();
         let mut context = Context::new();
-        context.insert("object", &object);
+        let object_with_case = self.lang.variable_format.convert(&String::from(object));
+        context.insert("object", &object_with_case);
         context.insert("vars", &read_data);
         context.insert("type_tokens", &self.lang.type_tokens);
-        self.tera
-            .render(&self.template_path("loopline"), &context)
-            .expect("Could not find read template")
+        self.tera_render("loopline", &context)
     }
 
     fn template_path(&self, template_name: &str) -> String {

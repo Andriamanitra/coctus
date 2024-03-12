@@ -1,11 +1,29 @@
 use serde::Serialize;
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Stub {
     pub commands: Vec<Cmd>,
     pub input_comments: Vec<InputComment>,
     pub output_comment: String,
     pub statement: String,
+}
+
+// More visual than derive(Debug)
+impl std::fmt::Debug for Stub {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Stub {{\n  commands: [")?;
+
+        // Print commands recursively
+        for command in &self.commands {
+            write!(f, "\n    {:?}", command)?;
+        }
+
+        write!(
+            f,
+            "\n  ],\n  input_comments: {:?},\n  output_comment: {:?},\n  statement: {:?}\n}}",
+            self.input_comments, self.output_comment, self.statement
+        )
+    }
 }
 
 impl Stub {

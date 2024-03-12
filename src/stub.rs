@@ -3,7 +3,7 @@ mod renderer;
 
 pub fn generate(lang: String, generator: &str) -> String {
     let stub = parser::parse_generator_stub(generator.to_string());
-    let output = renderer::render_stub(lang, stub.clone());
+    let output_str = renderer::render_stub(lang, stub.clone());
 
-    format!("{}\n{:?}", output, stub)
+    format!("At stub::generate:\n{}\n{:?}", output_str, stub)
 }

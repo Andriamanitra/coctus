@@ -1,3 +1,4 @@
-{%- for line in messages -%}
-puts '{{line}}'
-{%- endfor %}
+{# Note this extra space #}
+# At write
+{% for line in messages %}puts "{{line}}"
+{% endfor %}

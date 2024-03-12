@@ -2,7 +2,6 @@ use std::fs;
 
 use regex::Regex;
 use serde::{Deserialize, Serialize};
-use toml;
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "snake_case")]

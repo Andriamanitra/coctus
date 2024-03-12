@@ -1,3 +1,4 @@
+# At read_many
 {% for cmt in comments -%}
 # {{ cmt.variable }}: {{cmt.description}}
 {% endfor -%}
@@ -13,7 +14,9 @@
 {% else %}
 
   {%- for var in vars -%}
-    {%- if var.var_type != "Word" %}
+    {%- if var.var_type == "String" or var.var_type == "Word" %}
+{{var.name}} = {{var.name}}.chomp
+    {%- else %}
 {{var.name}} = {{var.name}}.{{ type_tokens[var.var_type] }}
     {%- endif -%}
   {%- endfor -%}
