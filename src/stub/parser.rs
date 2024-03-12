@@ -1,7 +1,7 @@
 use regex::Regex;
 
 pub mod types;
-pub use types::{Cmd, InputComment, JoinTerm, JoinTermType, Stub, VariableCommand};
+pub use types::{Cmd, InputComment, JoinTerm, JoinTermType, LengthType, Stub, VariableCommand};
 
 pub fn parse_generator_stub(generator: String) -> Stub {
     let generator = generator.replace("\n", " \n ").replace("\n  \n", "\n \n");
@@ -122,11 +122,7 @@ impl<'a, I: Iterator<Item = &'a str>> Parser<I> {
         let mut iter = token.split(":");
         let identifier = String::from(iter.next().unwrap());
         let var_type = iter.next().expect("Error in stub generator: missing type");
-        // NOTE: the regex is false, the length itself can be a variable, f.e:
-        // read X:int Y:int
-        // loop Y read LINE:string(X)
-        // https://www.codingame.com/contribute/view/85057be610343f35a80eb2cd8978156af5385
-        let length_regex = Regex::new(r"(word|string)\((\d+)\)").unwrap();
+        let length_regex = Regex::new(r"(word|string)\((\w+)\)").unwrap();
         let length_captures = length_regex.captures(var_type);
 
         // Trim because the stub generator may contain sneaky newlines
@@ -139,15 +135,19 @@ impl<'a, I: Iterator<Item = &'a str>> Parser<I> {
                 let caps =
                     length_captures.expect(&format!("Failed to parse variable type for token: {}", &token));
                 let new_type = caps.get(1).unwrap().as_str();
-                let var_length: usize = caps.get(2).unwrap().as_str().parse().unwrap();
+                let length = caps.get(2).unwrap().as_str();
+                let max_length = String::from(length);
+                let length_type = LengthType::from(length);
                 match new_type {
                     "word" => VariableCommand::Word {
                         name: identifier,
-                        max_length: var_length,
+                        max_length,
+                        length_type,
                     },
                     "string" => VariableCommand::String {
                         name: identifier,
-                        max_length: var_length,
+                        max_length,
+                        length_type,
                     },
                     _ => panic!("Unexpected error"),
                 }

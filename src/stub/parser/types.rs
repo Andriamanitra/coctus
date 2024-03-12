@@ -52,14 +52,45 @@ impl InputComment {
     }
 }
 
+#[derive(Serialize, Clone, Debug)]
+pub enum LengthType {
+    Number,
+    Variable,
+}
+
+impl<'a> From<&'a str> for LengthType {
+    fn from(value: &'a str) -> Self {
+        match value.parse::<usize>() {
+            Ok(_) => Self::Number,
+            Err(_) => Self::Variable,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize)]
 pub enum VariableCommand {
-    Int { name: String },
-    Float { name: String },
-    Long { name: String },
-    Bool { name: String },
-    Word { name: String, max_length: usize },
-    String { name: String, max_length: usize },
+    Int {
+        name: String,
+    },
+    Float {
+        name: String,
+    },
+    Long {
+        name: String,
+    },
+    Bool {
+        name: String,
+    },
+    Word {
+        name: String,
+        max_length: String,
+        length_type: LengthType,
+    },
+    String {
+        name: String,
+        max_length: String,
+        length_type: LengthType,
+    },
 }
 
 #[derive(Serialize, Clone, Debug)]
