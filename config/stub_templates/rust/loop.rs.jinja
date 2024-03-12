@@ -1,0 +1,9 @@
+{%- if debug_mode -%}
+# LOOP
+{% endif -%}
+
+for i in 0..{{ count }} as usize {
+{%- for line in inner %}
+    {{line}}
+{%- endfor %}
+}

@@ -1,0 +1,10 @@
+name = "rust"
+variable_format = "snake_case"
+source_file_ext = "rs"
+
+[type_tokens]
+Int = "i32"
+Long = "i64"
+Float = "f64"
+Bool = "to_bool"
+

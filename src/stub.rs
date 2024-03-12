@@ -6,7 +6,7 @@ pub fn generate(lang: String, generator: &str) -> String {
     let output_str = renderer::render_stub(&lang, stub.clone(), false);
 
     // eprint!("=======\n{:?}\n======", generator);
-    eprint!("=======\n{}\n======", renderer::render_stub(&lang, stub.clone(), true));
+    eprint!("=======\n{}\n======\n", renderer::render_stub(&lang, stub.clone(), true));
     // eprint!("=======\n{:?}\n======", stub);
 
     output_str.as_str().trim().to_string()

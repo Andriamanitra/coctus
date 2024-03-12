@@ -1,0 +1,7 @@
+{%- if debug_mode -%}
+# STATEMENT
+{% endif -%}
+
+{%- for line in statement_lines %}
+# {{ line }}
+{%- endfor %}
