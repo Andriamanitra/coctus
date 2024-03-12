@@ -69,7 +69,7 @@ impl Renderer {
             Cmd::Write(message) => self.render_write(message),
             Cmd::WriteJoin(join_terms) => self.render_write_join(join_terms),
             Cmd::Loop { count, command } => self.render_loop(count, command),
-            Cmd::LoopLine { object, variables } => self.render_loopline(object, variables),
+            Cmd::LoopLine { count_var, variables } => self.render_loopline(count_var, variables),
         }
     }
 
@@ -150,14 +150,14 @@ impl Renderer {
         self.tera_render("loop", &context)
     }
 
-    fn render_loopline(&self, object: &str, vars: &Vec<VariableCommand>) -> String {
+    fn render_loopline(&self, count_var: &str, vars: &Vec<VariableCommand>) -> String {
         let read_data: Vec<ReadData> = vars
             .into_iter()
             .map(|var_cmd| ReadData::new(var_cmd, &self.lang.variable_format))
             .collect();
         let mut context = Context::new();
-        let object_with_case = self.lang.variable_format.convert(&String::from(object));
-        context.insert("object", &object_with_case);
+        let cased_count_var = self.lang.variable_format.convert(&String::from(count_var));
+        context.insert("count_var", &cased_count_var);
         context.insert("vars", &read_data);
         context.insert("type_tokens", &self.lang.type_tokens);
         context.insert("debug_mode", &self.debug_mode);

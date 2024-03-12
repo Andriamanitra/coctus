@@ -119,7 +119,7 @@ pub enum Cmd {
         command: Box<Cmd>,
     },
     LoopLine {
-        object: String,
+        count_var: String,
         variables: Vec<VariableCommand>,
     },
     Write(String),

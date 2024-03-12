@@ -108,14 +108,14 @@ impl<'a, I: Iterator<Item = &'a str>> Parser<I> {
     }
 
     fn parse_loopline(&mut self) -> Cmd {
-        let object = match self.stream.next() {
-            Some("\n") | None => panic!("Loopline stub not provided with identifier to loop through"),
+        let count_var = match self.stream.next() {
+            Some("\n") | None => panic!("Loopline stub not provided with count identifier"),
             Some(other) => String::from(other),
         };
 
         let variables = self.parse_variable_list();
 
-        Cmd::LoopLine { object, variables }
+        Cmd::LoopLine { count_var, variables }
     }
 
     fn parse_variable(token: &str) -> VariableCommand {
