@@ -1,6 +1,6 @@
 use serde::Serialize;
 
-use super::language::VariableNameFormat;
+use super::language::Language;
 use crate::stub::parser::types::VariableCommand;
 use crate::stub::parser::LengthType;
 
@@ -24,7 +24,7 @@ pub struct ReadData {
 
 impl ReadData {
     // VariableNameFormat is just the case (snake_case, pascal_case etc.)
-    pub fn new(value: &VariableCommand, name_format: &VariableNameFormat) -> Self {
+    pub fn new(value: &VariableCommand, lang: &Language) -> Self {
         use {VariableCommand as VC, VariableType as VT};
 
         let (name, var_type, max_length, length_type) = match value {
@@ -43,7 +43,7 @@ impl ReadData {
                 length_type,
             } => {
                 let length = match length_type {
-                    LengthType::Variable => name_format.convert(max_length),
+                    LengthType::Variable => lang.transform_variable_name(max_length),
                     LengthType::Number => max_length.clone(),
                 };
 
@@ -58,7 +58,7 @@ impl ReadData {
         };
 
         Self {
-            name: name_format.convert(name),
+            name: lang.transform_variable_name(name),
             var_type,
             max_length,
             length_type,

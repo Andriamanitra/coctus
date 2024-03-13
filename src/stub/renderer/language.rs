@@ -46,6 +46,21 @@ pub struct Language {
     pub variable_format: VariableNameFormat,
     pub source_file_ext: String,
     pub type_tokens: TypeTokens,
+    pub keywords: Vec<String>,
+}
+
+impl Language {
+    pub fn transform_variable_name(&self, variable_name: &str) -> String {
+        self.escape_keywords(self.variable_format.convert(variable_name))
+    }
+
+    pub fn escape_keywords(&self, variable_name: String) -> String {
+        if self.keywords.contains(&variable_name) {
+            String::from(format!("_{variable_name}"))
+        } else {
+            variable_name
+        }
+    }
 }
 
 #[derive(Deserialize, Serialize, Debug)]

@@ -111,7 +111,7 @@ impl Renderer {
 
     fn render_read_one(&self, var: &VariableCommand) -> String {
         let mut context = Context::new();
-        let var_data = &ReadData::new(var, &self.lang.variable_format);
+        let var_data = &ReadData::new(var, &self.lang);
         let comment = self.stub.input_comments.iter().find(|comment| var_data.name == comment.variable);
 
         context.insert("comment", &comment);
@@ -126,7 +126,7 @@ impl Renderer {
 
         let read_data: Vec<ReadData> = vars
             .iter()
-            .map(|var_cmd| ReadData::new(var_cmd, &self.lang.variable_format))
+            .map(|var_cmd| ReadData::new(var_cmd, &self.lang))
             .collect();
 
         let comments: Vec<&InputComment> = self
@@ -153,7 +153,7 @@ impl Renderer {
     fn render_loop(&self, count: &str, cmd: &Cmd) -> String {
         let mut context = Context::new();
         let inner_text = self.render_command(cmd);
-        let count_with_case = self.lang.variable_format.convert(count);
+        let count_with_case = self.lang.transform_variable_name(count);
         context.insert("count", &count_with_case);
         context.insert("inner", &inner_text.lines().collect::<Vec<&str>>());
 
@@ -163,10 +163,10 @@ impl Renderer {
     fn render_loopline(&self, count_var: &str, vars: &[VariableCommand]) -> String {
         let read_data: Vec<ReadData> = vars
             .iter()
-            .map(|var_cmd| ReadData::new(var_cmd, &self.lang.variable_format))
+            .map(|var_cmd| ReadData::new(var_cmd, &self.lang))
             .collect();
         let mut context = Context::new();
-        let cased_count_var = self.lang.variable_format.convert(&String::from(count_var));
+        let cased_count_var = self.lang.transform_variable_name(&String::from(count_var));
         context.insert("count_var", &cased_count_var);
         context.insert("vars", &read_data);
         context.insert("type_tokens", &self.lang.type_tokens);

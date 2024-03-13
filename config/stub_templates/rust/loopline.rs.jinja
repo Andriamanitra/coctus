@@ -2,7 +2,7 @@
 # LOOPLINE
 {% endif -%}
 
-{{ object }}.split.each{% if vars | length > 1 %}_slice({{ vars | length }}){% endif %} do |{{ vars | map(attribute="name") | join(sep=", ") }}|
+gets.split.each{% if vars | length > 1 %}_slice({{ vars | length }}){% endif %} do |{{ vars | map(attribute="name") | join(sep=", ") }}|
 {%- for var in vars -%}
 {%- if var.var_type != "Word" %}
   {{var.name}} = {{var.name}}.{{type_tokens[var.var_type]-}}
