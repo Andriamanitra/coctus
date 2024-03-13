@@ -1,0 +1,44 @@
+{%- if debug_mode -%}
+# READ_MANY
+{% endif -%}
+
+{% for cmt in comments -%}
+# {{ cmt.variable }}: {{cmt.description}}
+{% endfor -%}
+
+{%- if single_type -%}
+
+{%- if debug_mode -%}
+# SINGLE_TYPE
+{% endif -%}
+
+{# https://keats.github.io/tera/docs/#concat #}
+{%- set_global type = vars[0].var_type -%}
+{%- set_global refs = [] -%}
+{%- set_global types = "" -%}
+{%- for var in vars -%}
+  {%- set var_ref = '&' ~ var.name -%}  
+  {%- set_global refs = refs | concat(with=var_ref) -%}
+  {%- set_global types = types ~ format_symbols[var.var_type] -%}
+{%- endfor -%}
+
+{{ type_tokens[type] }} {{ vars | map(attribute="name") | join(sep=", ") }};
+scanf("{{ types }}", {{ refs | join(sep=", ") }});
+
+{%- else %}
+
+{%- if debug_mode -%}
+{# This is the same as SINGLE_TYPE for rust #}
+# MULTIPLE_TYPE
+{%- endif -%}
+
+{%- set_global types = "" -%}
+
+{%- for var in vars -%}
+{{ type_kw }} {{ var.name }};
+{%- set_global types = types ~ format_symbols[var.var_type] -%}
+{%- endfor -%}
+
+scanf("{{ types }}", {{ refs | join(sep=", ") }});
+
+{%- endif %}

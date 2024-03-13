@@ -1,7 +1,9 @@
 mod language;
 
+use anyhow::Result;
 use itertools::Itertools;
 use language::Language;
+use serde_json::json;
 use tera::{Context, Tera};
 
 use self::types::VariableType;
@@ -10,8 +12,9 @@ use super::parser::{Cmd, InputComment, JoinTerm, Stub, VariableCommand};
 mod types;
 use types::ReadData;
 
-pub fn render_stub(lang: &str, stub: Stub, debug_mode: bool) -> String {
-    Renderer::new(lang, stub, debug_mode).render()
+pub fn render_stub(lang: &str, stub: Stub, debug_mode: bool) -> Result<String> {
+    let renderer = Renderer::new(lang, stub, debug_mode)?;
+    Ok(renderer.render())
 }
 
 struct Renderer {
@@ -22,18 +25,32 @@ struct Renderer {
 }
 
 impl Renderer {
-    fn new(lang_name: &str, stub: Stub, debug_mode: bool) -> Self {
+    fn new(lang_name: &str, stub: Stub, debug_mode: bool) -> Result<Renderer> {
         let lang = Language::from(lang_name);
-        let tera = Tera::new(&lang.template_glob()).expect("There are no templates for this language");
-        Self {
+        let tera = Tera::new(&lang.template_glob())?;
+        Ok(Self {
             lang,
             tera,
             stub,
             debug_mode,
-        }
+        })
     }
 
-    fn tera_render(&self, template_name: &str, context: &Context) -> String {
+    fn tera_render(&self, template_name: &str, context: &mut Context) -> String {
+        context.insert("debug_mode", &self.debug_mode);
+
+        // Since these are (generally) shared across languages, it makes sense to
+        // store it in the "global" context instead of accepting it as parameters.
+        let format_symbols = json!({
+            "Bool": "%b",
+            "Float": "%f",
+            "Int": "%d",
+            "Long": "%l",
+            "String": "%s",
+            "Word": null,
+        });
+        context.insert("format_symbols", &format_symbols);
+
         self.tera
             .render(&format!("{template_name}.{}.jinja", self.lang.source_file_ext), context)
             .unwrap_or_else(|_| panic!("Failed to render {} template.", template_name))
@@ -49,18 +66,16 @@ impl Renderer {
 
         context.insert("statement", &statement);
         context.insert("code_lines", &code_lines);
-        context.insert("debug_mode", &self.debug_mode);
 
-        self.tera_render("main", &context)
+        self.tera_render("main", &mut context)
     }
 
     fn render_statement(&self) -> String {
         let mut context = Context::new();
         let statement_lines: Vec<&str> = self.stub.statement.lines().collect();
         context.insert("statement_lines", &statement_lines);
-        context.insert("debug_mode", &self.debug_mode);
 
-        self.tera_render("statement", &context)
+        self.tera_render("statement", &mut context)
     }
 
     fn render_command(&self, cmd: &Cmd) -> String {
@@ -77,15 +92,14 @@ impl Renderer {
         let mut context = Context::new();
         let messages: Vec<&str> = message.lines().map(|msg| msg.trim_end()).collect();
         context.insert("messages", &messages);
-        context.insert("debug_mode", &self.debug_mode);
 
-        self.tera_render("write", &context)
+        self.tera_render("write", &mut context)
     }
 
     fn render_write_join(&self, terms: &Vec<JoinTerm>) -> String {
         let mut context = Context::new();
         context.insert("terms", terms);
-        self.tera_render("write_join", &context)
+        self.tera_render("write_join", &mut context)
     }
 
     fn render_read(&self, vars: &Vec<VariableCommand>) -> String {
@@ -98,15 +112,13 @@ impl Renderer {
     fn render_read_one(&self, var: &VariableCommand) -> String {
         let mut context = Context::new();
         let var_data = &ReadData::new(var, &self.lang.variable_format);
-        let comment: Option<&InputComment> =
-            self.stub.input_comments.iter().find(|comment| var_data.name == comment.variable);
+        let comment = self.stub.input_comments.iter().find(|comment| var_data.name == comment.variable);
 
         context.insert("comment", &comment);
         context.insert("var", var_data);
         context.insert("type_tokens", &self.lang.type_tokens);
-        context.insert("debug_mode", &self.debug_mode);
 
-        self.tera_render("read_one", &context)
+        self.tera_render("read_one", &mut context)
     }
 
     fn render_read_many(&self, vars: &[VariableCommand]) -> String {
@@ -134,9 +146,8 @@ impl Renderer {
         context.insert("comments", &comments);
         context.insert("vars", &read_data);
         context.insert("type_tokens", &self.lang.type_tokens);
-        context.insert("debug_mode", &self.debug_mode);
 
-        self.tera_render("read_many", &context)
+        self.tera_render("read_many", &mut context)
     }
 
     fn render_loop(&self, count: &str, cmd: &Cmd) -> String {
@@ -145,9 +156,8 @@ impl Renderer {
         let count_with_case = self.lang.variable_format.convert(count);
         context.insert("count", &count_with_case);
         context.insert("inner", &inner_text.lines().collect::<Vec<&str>>());
-        context.insert("debug_mode", &self.debug_mode);
 
-        self.tera_render("loop", &context)
+        self.tera_render("loop", &mut context)
     }
 
     fn render_loopline(&self, count_var: &str, vars: &[VariableCommand]) -> String {
@@ -160,8 +170,7 @@ impl Renderer {
         context.insert("count_var", &cased_count_var);
         context.insert("vars", &read_data);
         context.insert("type_tokens", &self.lang.type_tokens);
-        context.insert("debug_mode", &self.debug_mode);
 
-        self.tera_render("loopline", &context)
+        self.tera_render("loopline", &mut context)
     }
 }

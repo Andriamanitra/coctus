@@ -1,0 +1,13 @@
+{%- if debug_mode -%}
+# WRITE_JOIN
+{% endif -%}
+
+puts "
+{%- for term in terms -%}
+  {%- if term.term_type=="Variable" -%}
+    {{- '#{' }}{{ term.name }}{{ '}' -}}
+  {%- else -%}
+    {{- term.name -}}
+  {%- endif -%}
+  {% if loop.last == false %} {% endif %}
+{%- endfor -%}"

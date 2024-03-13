@@ -1,0 +1,18 @@
+{%- if debug_mode -%}
+# READ_ONE {{ var.var_type }}
+{%- endif -%}
+
+{%- set sym = format_symbols[var.var_type] -%}
+{%- set type_kw = type_tokens[var.var_type] -%}
+
+{%- if var.var_type == "String" or var.var_type == "Word" %}
+{{ type_kw }}[{{ var.max_length }} + 1] {{ var.name }};
+scanf("{{ sym }}", {{ var.name }});
+{% else %}
+{{ type_kw }} {{ var.name }};
+scanf("{{ sym }}", {{ var.name }});
+{% endif %}
+
+{%- if comment -%}
+# {{ comment.description }}
+{% endif -%}

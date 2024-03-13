@@ -1,0 +1,18 @@
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdbool.h>
+
+{% if debug_mode -%}
+# MAIN
+{% endif -%}
+
+{%- if statement -%}{{- statement -}}{%- endif -%}
+
+int main() {
+    {%- for line in code_lines %}
+    {{ line }}
+    {%- endfor %}
+
+    return 0;
+}

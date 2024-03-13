@@ -1,0 +1,10 @@
+name = "c"
+variable_format = "snake_case"
+source_file_ext = "c"
+
+[type_tokens]
+Int = "int"
+Long = "TODO"
+Float = "TODO"
+Bool = "TODO"
+String = "char"

@@ -1,0 +1,9 @@
+{%- if debug_mode -%}
+# LOOP
+{% endif -%}
+
+for (int i = 0; i < {{ count }}; i++) {
+{%- for line in inner %}
+    {{line}}
+{%- endfor %}
+}
