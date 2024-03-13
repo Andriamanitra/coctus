@@ -1,10 +1,15 @@
 name = "c"
 variable_format = "snake_case"
 source_file_ext = "c"
+# TODO
+keywords = [
+  "for" 
+]
 
 [type_tokens]
 Int = "int"
-Long = "TODO"
+Long = "long long"
 Float = "TODO"
 Bool = "TODO"
 String = "char"
+Word = "char"

@@ -1,6 +1,6 @@
 mod language;
 
-use anyhow::Result;
+use anyhow::{Context as _, Result}; // To distinguish it from tera::Context
 use itertools::Itertools;
 use language::Language;
 use serde_json::json;
@@ -45,21 +45,22 @@ impl Renderer {
             "Bool": "%b",
             "Float": "%f",
             "Int": "%d",
-            "Long": "%l",
-            "String": "%s",
-            "Word": null,
+            "Long": "%lld",
+            "String": "%[^\\n]",
+            "Word": "%s",
         });
         context.insert("format_symbols", &format_symbols);
 
         self.tera
             .render(&format!("{template_name}.{}.jinja", self.lang.source_file_ext), context)
-            .unwrap_or_else(|_| panic!("Failed to render {} template.", template_name))
+            .with_context(|| format!("Failed to render {} template.", template_name))
+            .unwrap()
     }
 
     fn render(&self) -> String {
         let mut context = Context::new();
 
-        let statement = self.render_statement();
+        let statement: Vec<&str> = self.stub.statement.lines().collect();
 
         let code: String = self.stub.commands.iter().map(|cmd| self.render_command(cmd)).collect();
         let code_lines: Vec<&str> = code.lines().collect();
@@ -68,14 +69,6 @@ impl Renderer {
         context.insert("code_lines", &code_lines);
 
         self.tera_render("main", &mut context)
-    }
-
-    fn render_statement(&self) -> String {
-        let mut context = Context::new();
-        let statement_lines: Vec<&str> = self.stub.statement.lines().collect();
-        context.insert("statement_lines", &statement_lines);
-
-        self.tera_render("statement", &mut context)
     }
 
     fn render_command(&self, cmd: &Cmd) -> String {
@@ -124,10 +117,8 @@ impl Renderer {
     fn render_read_many(&self, vars: &[VariableCommand]) -> String {
         let mut context = Context::new();
 
-        let read_data: Vec<ReadData> = vars
-            .iter()
-            .map(|var_cmd| ReadData::new(var_cmd, &self.lang))
-            .collect();
+        let read_data: Vec<ReadData> =
+            vars.iter().map(|var_cmd| ReadData::new(var_cmd, &self.lang)).collect();
 
         let comments: Vec<&InputComment> = self
             .stub
@@ -150,23 +141,21 @@ impl Renderer {
         self.tera_render("read_many", &mut context)
     }
 
-    fn render_loop(&self, count: &str, cmd: &Cmd) -> String {
+    fn render_loop(&self, count_var: &str, cmd: &Cmd) -> String {
         let mut context = Context::new();
         let inner_text = self.render_command(cmd);
-        let count_with_case = self.lang.transform_variable_name(count);
-        context.insert("count", &count_with_case);
+        let cased_count_var = self.lang.transform_variable_name(count_var);
+        context.insert("count_var", &cased_count_var);
         context.insert("inner", &inner_text.lines().collect::<Vec<&str>>());
 
         self.tera_render("loop", &mut context)
     }
 
     fn render_loopline(&self, count_var: &str, vars: &[VariableCommand]) -> String {
-        let read_data: Vec<ReadData> = vars
-            .iter()
-            .map(|var_cmd| ReadData::new(var_cmd, &self.lang))
-            .collect();
+        let read_data: Vec<ReadData> =
+            vars.iter().map(|var_cmd| ReadData::new(var_cmd, &self.lang)).collect();
         let mut context = Context::new();
-        let cased_count_var = self.lang.transform_variable_name(&String::from(count_var));
+        let cased_count_var = self.lang.transform_variable_name(count_var);
         context.insert("count_var", &cased_count_var);
         context.insert("vars", &read_data);
         context.insert("type_tokens", &self.lang.type_tokens);

@@ -8,8 +8,9 @@ macro_rules! parse_input {
 # MAIN
 {% endif -%}
 
-{%- if statement -%}{{- statement -}}{%- endif -%}
-
+{%- for line in statement %}
+# {{ line }}
+{%- endfor %}
 fn main() {
     {%- for line in code_lines %}
     {{ line }}

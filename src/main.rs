@@ -493,7 +493,7 @@ impl App {
         let clash = self.read_clash(&handle)?;
         let stub_generator = clash.stub_generator().expect("Clash provides no input stub generator");
 
-        let stub_string = stub::generate(language, stub_generator)?;
+        let stub_string = stub::generate(&language, stub_generator)?;
 
         println!("{stub_string}");
         Ok(())

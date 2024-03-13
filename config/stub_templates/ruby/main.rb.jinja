@@ -1,9 +1,13 @@
-{%- if debug_mode -%}
+{% if debug_mode %}
 # MAIN
 {% endif -%}
+{% if debug_mode -%}
+# STATEMENT
+{% endif -%}
 
-{%- if statement -%}{{- statement -}}{%- endif -%}
-
+{%- for line in statement %}
+# {{ line }}
+{%- endfor %}
 {%- for line in code_lines %}
 {{ line }}
 {%- endfor %}

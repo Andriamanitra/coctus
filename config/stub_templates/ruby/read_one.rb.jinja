@@ -1,6 +1,6 @@
-{%- if debug_mode -%}
-# READ_ONE
-{% endif -%}
+{% if debug_mode -%}
+>>>> 🆁 EAD_ONE: {{ var.var_type }}
+{% endif %}
 
 {%- if var.name -%}
 {{ var.name }} = gets
