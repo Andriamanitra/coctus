@@ -92,18 +92,19 @@ impl Renderer {
         self.tera_render("write", &mut context)
     }
 
-    fn render_write_join(&self, terms: &Vec<JoinTerm>) -> String {
+    fn render_write_join(&self, terms: &[JoinTerm]) -> String {
         let mut context = Context::new();
 
-        let terms: Vec<JoinTerm> = terms.iter().map(|term| {
-            let mut new_term = term.clone();
-
-            if let JoinTermType::Variable = term.term_type {
-                new_term.name = self.lang.transform_variable_name(&new_term.name);
-            }
-
-            new_term
-        }).collect();
+        let terms: Vec<JoinTerm> = terms
+            .iter()
+            .cloned()
+            .map(|mut term| {
+                if let JoinTermType::Variable = term.term_type {
+                    term.name = self.lang.transform_variable_name(&term.name);
+                }
+                term
+            })
+            .collect();
 
         context.insert("terms", &terms);
         self.tera_render("write_join", &mut context)

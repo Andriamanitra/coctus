@@ -1,12 +1,13 @@
 {% if debug_mode -%}
->>>> 🆁 EAD_ONE: {{ var.var_type }}
+---- 🇷 EAD_ONE: {{ var.var_type }}
 {% endif %}
 
-{%- if var.name -%}
-{{ var.name }} = gets
-{%- if var.var_type == "String" or var.var_type == "Word" %}.chomp
-{%- else %}.{{ type_tokens[var.var_type] }}
-{%- endif %}
-{# Comment if any #}
-{%- if comment -%}# {{ comment.description }}{% endif %}
-{%- endif %}
+{%- if var.var_type == "String" -%}
+  {% set method = ".chomp" %}
+{%- elif var.var_type == "Word" -%}
+  {% set method = "" %}
+{%- else -%}
+  {% set method = "." ~ type_tokens[var.var_type] %}
+{%- endif -%}
+
+{{ var.name }} = gets{{ method }}{% if comment %} # {{ comment.description }}{% endif %}

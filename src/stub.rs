@@ -90,10 +90,10 @@ l = gets.chomp
 # a: does stuff
 a, b = gets.split
 x_tra, y = gets.split.map(&:to_i)
-annoying = gets.chomp
-another_annoying = gets.chomp
-a_bc = gets.chomp
-row = gets.chomp
+annoying = gets
+another_annoying = gets
+a_bc = gets.chomp # The alphabet
+row = gets.chomp # Your boat
 n.times do
   ext, mt = gets.split
 end
@@ -121,7 +121,7 @@ gets.split.each_slice(3) do |x, y, z|
 end
 puts "#{a} #{b}"
 puts "#{a} #{b}"
-puts "#{a} b #{aBc}"
+puts "#{a} b #{a_bc}"
 puts "hello world"
 puts "hello #{a} planet""##;
 

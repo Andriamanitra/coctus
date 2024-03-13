@@ -1,5 +1,5 @@
 {%- if debug_mode -%}
->>>> 🅻 OOPLINE
+---- 🇱 OOPLINE
 {% endif -%}
 
 gets.split.each{% if vars | length > 1 %}_slice({{ vars | length }}){% endif %} do |{{ vars | map(attribute="name") | join(sep=", ") }}|
