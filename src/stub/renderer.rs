@@ -6,11 +6,10 @@ use itertools::Itertools;
 use language::Language;
 use serde_json::json;
 use tera::{Context, Tera};
+use types::ReadData;
 
 use self::types::VariableType;
 use super::parser::{Cmd, InputComment, JoinTerm, Stub, VariableCommand};
-
-use types::ReadData;
 
 pub fn render_stub(lang: Language, stub: Stub, debug_mode: bool) -> Result<String> {
     let renderer = Renderer::new(lang, stub, debug_mode)?;

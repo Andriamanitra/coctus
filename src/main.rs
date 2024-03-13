@@ -6,8 +6,8 @@ use anyhow::{anyhow, Context, Result};
 use clap::ArgMatches;
 use clashlib::clash::{Clash, TestCase};
 use clashlib::outputstyle::OutputStyle;
-use clashlib::solution;
-use clashlib::stub::{self, renderer::language::Language};
+use clashlib::stub::renderer::language::Language;
+use clashlib::{solution, stub};
 use directories::ProjectDirs;
 use rand::seq::IteratorRandom;
 
@@ -491,7 +491,7 @@ impl App {
         let clash = self.read_clash(&handle)?;
         let stub_generator = clash.stub_generator().expect("Clash provides no input stub generator");
 
-        let stub_string = stub::generate(&language, stub_generator)?;
+        let stub_string = stub::generate(language, stub_generator)?;
 
         println!("{stub_string}");
         Ok(())

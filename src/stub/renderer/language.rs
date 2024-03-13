@@ -1,5 +1,4 @@
 use std::fs;
-use std::option::Option;
 
 use anyhow::{anyhow, Context, Result};
 use regex::Regex;
@@ -59,7 +58,7 @@ impl Language {
 
     pub fn escape_keywords(&self, variable_name: String) -> String {
         if self.keywords.contains(&variable_name) {
-            String::from(format!("_{variable_name}"))
+            format!("_{variable_name}")
         } else {
             variable_name
         }
@@ -86,10 +85,9 @@ impl TryFrom<&str> for Language {
             .map(|read_dir| read_dir.unwrap().file_name().into_string().expect("Template path must be UTF"))
             .collect();
 
-        Self::find_lang_by_name(value, &lang_folders)?
-            .or(Self::find_lang_by_alias(value, &lang_folders))
+        Self::find_lang_by_name(&value.to_lowercase(), &lang_folders)?
+            .or(Self::find_lang_by_alias(&value.to_lowercase(), &lang_folders))
             .ok_or(anyhow!("Unsupported language: {}", value))
-
     }
 }
 
@@ -98,32 +96,32 @@ impl Language {
         format!("config/stub_templates/{}/*.{}.jinja", self.name, self.source_file_ext)
     }
 
-    fn find_lang_by_name<'a>(name: &'a str, lang_folders: &'a Vec<String>) -> Result<Option<Language>> {
+    fn find_lang_by_name<'a>(name: &'a str, lang_folders: &'a [String]) -> Result<Option<Language>> {
         if lang_folders.iter().any(|l| l == name) {
             let language_config_filepath = format!("config/stub_templates/{}/stub_config.toml", name);
             let config_file_content = fs::read_to_string(language_config_filepath)
                 .context(format!("No stub configuration exists for {}", name))?;
 
-            Ok(toml::from_str(&config_file_content).context("There was an error loading the stub configuration")?)
+            Ok(toml::from_str(&config_file_content)
+                .context("There was an error loading the stub configuration")?)
         } else {
             Ok(None)
         }
     }
 
-    fn find_lang_by_alias<'a>(name: &'a str, lang_folders: &'a Vec<String>) -> Option<Language> {
-        lang_folders.iter().filter_map(|folder| {
-            let language_config_filepath = format!("config/stub_templates/{}/stub_config.toml", folder);
-            match fs::read_to_string(language_config_filepath) {
-                Ok(config_file_content) => {
-                    toml::from_str::<Language>(&config_file_content).ok()
+    fn find_lang_by_alias<'a>(name: &'a str, lang_folders: &'a [String]) -> Option<Language> {
+        lang_folders
+            .iter()
+            .filter_map(|folder| {
+                let language_config_filepath = format!("config/stub_templates/{}/stub_config.toml", folder);
+                match fs::read_to_string(language_config_filepath) {
+                    Ok(config_file_content) => toml::from_str::<Language>(&config_file_content).ok(),
+                    _ => None,
                 }
-                _ => None
-            }
-        }).find(|l| {
-            match &l.aliases {
+            })
+            .find(|l| match &l.aliases {
                 Some(aliases) => aliases.contains(&name.to_string()),
-                None => false
-            }
-        })
+                None => false,
+            })
     }
 }

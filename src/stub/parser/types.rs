@@ -37,6 +37,12 @@ impl Stub {
     }
 }
 
+impl Default for Stub {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[derive(Debug, Clone, Serialize)]
 pub struct InputComment {
     pub variable: String,

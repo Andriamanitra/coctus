@@ -22,8 +22,9 @@ mod tests {
 
     #[test]
     fn test_simple_code_generation() {
+        let lang = Language::try_from("ruby").unwrap();
         let generator = "read m:int n:int\nwrite result";
-        let received = generate("ruby", generator).unwrap();
+        let received = generate(lang, generator).unwrap();
         let expected = "m, n = gets.split.map(&:to_i)\nputs \"result\"";
 
         assert_eq!(received, expected);
@@ -78,8 +79,10 @@ write join("hello", a, "planet")"##;
 
     #[test]
     fn test_reference_stub_ruby() {
-        let received = generate("ruby", REFERENCE_STUB).unwrap();
-        let expected = r##"[Live long , and prosper]
+        let lang = Language::try_from("ruby").unwrap();
+        let received = generate(lang, REFERENCE_STUB).unwrap();
+        let expected = r##"# Live long 
+# and prosper
 puts "many  spaces   here"
 try = gets.to_bool
 _nil = gets.chomp
@@ -129,7 +132,8 @@ puts "hello #{a} planet""##;
 
     #[test]
     fn test_reference_stub_rust() {
-        let received = generate("rust", REFERENCE_STUB).unwrap();
+        let lang = Language::try_from("rust").unwrap();
+        let received = generate(lang, REFERENCE_STUB).unwrap();
         let expected = r##"[Live long , and prosper]
 puts "many  spaces   here"
 try = gets.to_bool
