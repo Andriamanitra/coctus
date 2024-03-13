@@ -1,4 +1,5 @@
-mod language;
+pub mod language;
+mod types;
 
 use anyhow::{Context as _, Result}; // To distinguish it from tera::Context
 use itertools::Itertools;
@@ -9,10 +10,9 @@ use tera::{Context, Tera};
 use self::types::VariableType;
 use super::parser::{Cmd, InputComment, JoinTerm, Stub, VariableCommand};
 
-mod types;
 use types::ReadData;
 
-pub fn render_stub(lang: &str, stub: Stub, debug_mode: bool) -> Result<String> {
+pub fn render_stub(lang: Language, stub: Stub, debug_mode: bool) -> Result<String> {
     let renderer = Renderer::new(lang, stub, debug_mode)?;
     Ok(renderer.render())
 }
@@ -25,8 +25,7 @@ struct Renderer {
 }
 
 impl Renderer {
-    fn new(lang_name: &str, stub: Stub, debug_mode: bool) -> Result<Renderer> {
-        let lang = Language::from(lang_name);
+    fn new(lang: Language, stub: Stub, debug_mode: bool) -> Result<Renderer> {
         let tera = Tera::new(&lang.template_glob())?;
         Ok(Self {
             lang,

@@ -6,7 +6,8 @@ use anyhow::{anyhow, Context, Result};
 use clap::ArgMatches;
 use clashlib::clash::{Clash, TestCase};
 use clashlib::outputstyle::OutputStyle;
-use clashlib::{solution, stub};
+use clashlib::solution;
+use clashlib::stub::{self, renderer::language::Language};
 use directories::ProjectDirs;
 use rand::seq::IteratorRandom;
 
@@ -216,15 +217,12 @@ impl App {
         PublicHandle::from_str(&content)
     }
 
-    fn programming_language_from_args(&self, args: &ArgMatches) -> Result<String> {
-        let lang = args
+    fn programming_language_from_args(&self, args: &ArgMatches) -> Result<Language> {
+        let lang_arg = args
             .get_one::<String>("PROGRAMMING_LANGUAGE")
             .context("Should have a programming language")?;
 
-        match lang.as_str() {
-            "ruby" | "rust" | "c" => Ok(lang.to_string()),
-            other => Err(anyhow!("Unsupported language: {}", other)),
-        }
+        Language::try_from(lang_arg.as_str())
     }
 
     fn clashes(&self) -> Result<std::fs::ReadDir> {

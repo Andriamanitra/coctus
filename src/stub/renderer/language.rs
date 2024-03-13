@@ -1,9 +1,11 @@
 use std::fs;
+use std::option::Option;
 
+use anyhow::{anyhow, Context, Result};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 #[serde(rename_all = "snake_case")]
 #[allow(clippy::enum_variant_names)]
 pub enum VariableNameFormat {
@@ -40,13 +42,14 @@ impl VariableNameFormat {
     }
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct Language {
     pub name: String,
     pub variable_format: VariableNameFormat,
     pub source_file_ext: String,
     pub type_tokens: TypeTokens,
     pub keywords: Vec<String>,
+    pub aliases: Option<Vec<String>>,
 }
 
 impl Language {
@@ -63,7 +66,7 @@ impl Language {
     }
 }
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(rename_all = "PascalCase")]
 pub struct TypeTokens {
     pub int: Option<String>,
@@ -74,18 +77,53 @@ pub struct TypeTokens {
     pub string: Option<String>,
 }
 
-impl From<&str> for Language {
-    fn from(value: &str) -> Self {
-        let language_config_filepath = format!("config/stub_templates/{}/stub_config.toml", value);
-        let config_file_content = fs::read_to_string(language_config_filepath)
-            .unwrap_or_else(|_| panic!("No stub configuration exists for {}", value));
+impl TryFrom<&str> for Language {
+    type Error = anyhow::Error;
 
-        toml::from_str(&config_file_content).expect("There was an error with the stub configuration")
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        let lang_folders: Vec<String> = std::fs::read_dir("config/stub_templates/")
+            .context("Should have stub_templates directiory")?
+            .map(|read_dir| read_dir.unwrap().file_name().into_string().expect("Template path must be UTF"))
+            .collect();
+
+        Self::find_lang_by_name(value, &lang_folders)?
+            .or(Self::find_lang_by_alias(value, &lang_folders))
+            .ok_or(anyhow!("Unsupported language: {}", value))
+
     }
 }
 
 impl Language {
     pub fn template_glob(&self) -> String {
         format!("config/stub_templates/{}/*.{}.jinja", self.name, self.source_file_ext)
+    }
+
+    fn find_lang_by_name<'a>(name: &'a str, lang_folders: &'a Vec<String>) -> Result<Option<Language>> {
+        if lang_folders.iter().any(|l| l == name) {
+            let language_config_filepath = format!("config/stub_templates/{}/stub_config.toml", name);
+            let config_file_content = fs::read_to_string(language_config_filepath)
+                .context(format!("No stub configuration exists for {}", name))?;
+
+            Ok(toml::from_str(&config_file_content).context("There was an error loading the stub configuration")?)
+        } else {
+            Ok(None)
+        }
+    }
+
+    fn find_lang_by_alias<'a>(name: &'a str, lang_folders: &'a Vec<String>) -> Option<Language> {
+        lang_folders.iter().filter_map(|folder| {
+            let language_config_filepath = format!("config/stub_templates/{}/stub_config.toml", folder);
+            match fs::read_to_string(language_config_filepath) {
+                Ok(config_file_content) => {
+                    toml::from_str::<Language>(&config_file_content).ok()
+                }
+                _ => None
+            }
+        }).find(|l| {
+            match &l.aliases {
+                Some(aliases) => aliases.contains(&name.to_string()),
+                None => false
+            }
+        })
     }
 }
