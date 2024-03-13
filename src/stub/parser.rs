@@ -103,7 +103,7 @@ impl<'a, I: Iterator<Item = &'a str>> Parser<I> {
             Some(other) => String::from(other),
         };
 
-        let command = Box::new(self.parse_read_or_write());
+        let command = Box::new(self.parse_loopable());
 
         Cmd::Loop { count, command }
     }
@@ -172,10 +172,12 @@ impl<'a, I: Iterator<Item = &'a str>> Parser<I> {
         vars
     }
 
-    fn parse_read_or_write(&mut self) -> Cmd {
+    fn parse_loopable(&mut self) -> Cmd {
         match self.stream.next() {
             Some("read") => self.parse_read(),
             Some("write") => self.parse_write(),
+            Some("loopline")  => self.parse_loopline(),
+            Some("loop")  => self.parse_loop(),
             Some(thing) => panic!("Error parsing loop command in stub generator, got: {}", thing),
             None => panic!("Loop with no arguments in stub generator"),
         }
