@@ -105,9 +105,9 @@ impl<'a, I: Iterator<Item = &'a str>> Parser<I> {
         match self.next_past_newline() {
             Some("\n") => panic!("Could not find count identifier for loop"),
             None => panic!("Unexpected end of input: Loop stub not provided with loop count"),
-            Some(other) => Cmd::Loop { 
-                count_var: String::from(other), 
-                command: Box::new(self.parse_loopable()) 
+            Some(other) => Cmd::Loop {
+                count_var: String::from(other),
+                command: Box::new(self.parse_loopable()),
             },
         }
     }
@@ -117,7 +117,8 @@ impl<'a, I: Iterator<Item = &'a str>> Parser<I> {
             Some("\n") => panic!("Could not find count identifier for loopline"),
             None => panic!("Unexpected end of input: Loopline stub not provided with count identifier"),
             Some(other) => Cmd::LoopLine {
-                count_var: other.to_string(), variables: self.parse_variable_list()
+                count_var: other.to_string(),
+                variables: self.parse_variable_list(),
             },
         }
     }
@@ -282,5 +283,4 @@ impl<'a, I: Iterator<Item = &'a str>> Parser<I> {
             token => token,
         }
     }
-
 }
