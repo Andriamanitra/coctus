@@ -11,7 +11,7 @@ mod types;
 use types::ReadData;
 
 pub fn render_stub(lang: &str, stub: Stub, debug_mode: bool) -> String {
-    Renderer::new(&lang, stub, debug_mode).render()
+    Renderer::new(lang, stub, debug_mode).render()
 }
 
 struct Renderer {
@@ -35,8 +35,8 @@ impl Renderer {
 
     fn tera_render(&self, template_name: &str, context: &Context) -> String {
         self.tera
-            .render(&self.template_path(template_name), &context)
-            .expect(&format!("Failed to render {} template.", template_name))
+            .render(&format!("{template_name}.{}.jinja", self.lang.source_file_ext), context)
+            .unwrap_or_else(|_| panic!("Failed to render {} template.", template_name))
     }
 
     fn render(&self) -> String {
@@ -73,7 +73,7 @@ impl Renderer {
         }
     }
 
-    fn render_write(&self, message: &String) -> String {
+    fn render_write(&self, message: &str) -> String {
         let mut context = Context::new();
         let messages: Vec<&str> = message.lines().map(|msg| msg.trim_end()).collect();
         context.insert("messages", &messages);
@@ -109,11 +109,11 @@ impl Renderer {
         self.tera_render("read_one", &context)
     }
 
-    fn render_read_many(&self, vars: &Vec<VariableCommand>) -> String {
+    fn render_read_many(&self, vars: &[VariableCommand]) -> String {
         let mut context = Context::new();
 
         let read_data: Vec<ReadData> = vars
-            .into_iter()
+            .iter()
             .map(|var_cmd| ReadData::new(var_cmd, &self.lang.variable_format))
             .collect();
 
@@ -139,9 +139,9 @@ impl Renderer {
         self.tera_render("read_many", &context)
     }
 
-    fn render_loop(&self, count: &String, cmd: &Box<Cmd>) -> String {
+    fn render_loop(&self, count: &str, cmd: &Cmd) -> String {
         let mut context = Context::new();
-        let inner_text = self.render_command(&cmd);
+        let inner_text = self.render_command(cmd);
         let count_with_case = self.lang.variable_format.convert(count);
         context.insert("count", &count_with_case);
         context.insert("inner", &inner_text.lines().collect::<Vec<&str>>());
@@ -150,9 +150,9 @@ impl Renderer {
         self.tera_render("loop", &context)
     }
 
-    fn render_loopline(&self, count_var: &str, vars: &Vec<VariableCommand>) -> String {
+    fn render_loopline(&self, count_var: &str, vars: &[VariableCommand]) -> String {
         let read_data: Vec<ReadData> = vars
-            .into_iter()
+            .iter()
             .map(|var_cmd| ReadData::new(var_cmd, &self.lang.variable_format))
             .collect();
         let mut context = Context::new();
@@ -163,9 +163,5 @@ impl Renderer {
         context.insert("debug_mode", &self.debug_mode);
 
         self.tera_render("loopline", &context)
-    }
-
-    fn template_path(&self, template_name: &str) -> String {
-        format!("{template_name}.{}.jinja", self.lang.source_file_ext)
     }
 }

@@ -1,11 +1,12 @@
+#![allow(clippy::while_let_on_iterator)]
 use regex::Regex;
 
 pub mod types;
 pub use types::{Cmd, InputComment, JoinTerm, JoinTermType, LengthType, Stub, VariableCommand};
 
 pub fn parse_generator_stub(generator: String) -> Stub {
-    let generator = generator.replace("\n", " \n ").replace("\n  \n", "\n \n");
-    let stream = generator.split(" ");
+    let generator = generator.replace('\n', " \n ").replace("\n  \n", "\n \n");
+    let stream = generator.split(' ');
     Parser::new(stream).parse()
 }
 
@@ -68,7 +69,7 @@ impl<'a, I: Iterator<Item = &'a str>> Parser<I> {
         while let Some(token) = self.stream.next() {
             match token {
                 "\n" => panic!("'join(' never closed"),
-                last_term if last_term.contains(")") => {
+                last_term if last_term.contains(')') => {
                     raw_string.push_str(last_term);
                     break;
                 }
@@ -82,7 +83,7 @@ impl<'a, I: Iterator<Item = &'a str>> Parser<I> {
         let terms_string = terms_finder.captures(&raw_string).unwrap().get(1).unwrap().as_str();
         let term_splitter = Regex::new(r"\s*,\s*").unwrap();
         let terms: Vec<JoinTerm> = term_splitter
-            .split(&terms_string)
+            .split(terms_string)
             .map(|term_str| {
                 let literal_matcher = Regex::new("^\\\"(.+)\\\"$").unwrap();
                 if let Some(mtch) = literal_matcher.captures(term_str) {
@@ -119,7 +120,7 @@ impl<'a, I: Iterator<Item = &'a str>> Parser<I> {
     }
 
     fn parse_variable(token: &str) -> VariableCommand {
-        let mut iter = token.split(":");
+        let mut iter = token.split(':');
         let identifier = String::from(iter.next().unwrap());
         let var_type = iter.next().expect("Error in stub generator: missing type");
         let length_regex = Regex::new(r"(word|string)\((\w+)\)").unwrap();
@@ -132,8 +133,8 @@ impl<'a, I: Iterator<Item = &'a str>> Parser<I> {
             "long" => VariableCommand::Long { name: identifier },
             "bool" => VariableCommand::Bool { name: identifier },
             _ => {
-                let caps =
-                    length_captures.expect(&format!("Failed to parse variable type for token: {}", &token));
+                let caps = length_captures
+                    .unwrap_or_else(|| panic!("Failed to parse variable type for token: {}", &token));
                 let new_type = caps.get(1).unwrap().as_str();
                 let length = caps.get(2).unwrap().as_str();
                 let max_length = String::from(length);
@@ -160,7 +161,7 @@ impl<'a, I: Iterator<Item = &'a str>> Parser<I> {
 
         while let Some(token) = self.stream.next() {
             let var: VariableCommand = match token {
-                _ if String::from(token).contains(":") => Self::parse_variable(token),
+                _ if String::from(token).contains(':') => Self::parse_variable(token),
                 "\n" => break,
                 unexp => panic!("Error in stub generator, found {unexp} while searching for stub variables"),
             };
@@ -191,7 +192,7 @@ impl<'a, I: Iterator<Item = &'a str>> Parser<I> {
         while let Some(token) = self.stream.next() {
             let comment = match token {
                 "\n" => break,
-                _ => match token.strip_suffix(":") {
+                _ => match token.strip_suffix(':') {
                     Some(variable) => InputComment::new(String::from(variable), self.read_to_end_of_line()),
                     None => {
                         self.skip_to_next_line();
