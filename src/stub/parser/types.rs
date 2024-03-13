@@ -107,8 +107,8 @@ pub enum JoinTermType {
 
 #[derive(Serialize, Clone, Debug)]
 pub struct JoinTerm {
-    name: String,
-    term_type: JoinTermType,
+    pub name: String,
+    pub term_type: JoinTermType,
 }
 
 impl JoinTerm {
