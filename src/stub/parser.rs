@@ -189,7 +189,9 @@ impl<'a, I: Iterator<Item = &'a str>> Parser<I> {
 
     fn parse_output_comment(&mut self, previous_commands: &mut [Cmd]) {
         let output_comment = self.parse_statement();
-        for cmd in previous_commands { Self::update_cmd_with_output_comment(cmd, &output_comment) }
+        for cmd in previous_commands {
+            Self::update_cmd_with_output_comment(cmd, &output_comment)
+        }
     }
 
     fn update_cmd_with_output_comment(cmd: &mut Cmd, new_comment: &str) {
@@ -198,10 +200,13 @@ impl<'a, I: Iterator<Item = &'a str>> Parser<I> {
                 text: _,
                 ref mut output_comment,
             } if output_comment.is_empty() => *output_comment = new_comment.to_string(),
-            Cmd::Loop { count_var: _, ref mut command } => {
+            Cmd::Loop {
+                count_var: _,
+                ref mut command,
+            } => {
                 Self::update_cmd_with_output_comment(command, new_comment);
             }
-            _ => ()
+            _ => (),
         }
     }
 
