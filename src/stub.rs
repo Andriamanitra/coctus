@@ -64,6 +64,15 @@ loop 4 read number:int
 
 loop 4 write 0 0
 
+read n:int
+loop 
+n    
+loop 4
+write thing
+write thing
+
+write thing
+
 read xCount:int
 loopline xCount x:int
 loopline xCount x:int y:int z:word(50)
@@ -113,6 +122,14 @@ end
 4.times do
   puts "0 0"
 end
+n = gets.to_i
+n.times do
+  4.times do
+    puts "thing"
+    puts "write thing"
+  end
+end
+puts "thing"
 x_count = gets.to_i
 gets.split.each do |x|
   x = x.to_i

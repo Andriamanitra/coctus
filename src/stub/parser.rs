@@ -112,6 +112,18 @@ impl<'a, I: Iterator<Item = &'a str>> Parser<I> {
         }
     }
 
+    fn parse_loopable(&mut self) -> Cmd {
+        match self.next_past_newline() {
+            Some("\n") => panic!("Loop not provided with command"),
+            Some("read") => self.parse_read(),
+            Some("write") => self.parse_write(),
+            Some("loopline") => self.parse_loopline(),
+            Some("loop") => self.parse_loop(),
+            Some(thing) => panic!("Error parsing loop command in stub generator, got: {}", thing),
+            None => panic!("Unexpected end of input, expecting command to loop through"),
+        }
+    }
+
     fn parse_loopline(&mut self) -> Cmd {
         match self.next_past_newline() {
             Some("\n") => panic!("Could not find count identifier for loopline"),
@@ -127,8 +139,6 @@ impl<'a, I: Iterator<Item = &'a str>> Parser<I> {
         let mut iter = token.split(':');
         let identifier = String::from(iter.next().unwrap());
         let var_type = iter.next().expect("Error in stub generator: missing type");
-        let length_regex = Regex::new(r"(word|string)\((\w+)\)").unwrap();
-        let length_captures = length_regex.captures(var_type);
 
         // Trim because the stub generator may contain sneaky newlines
         match var_type.trim_end() {
@@ -137,6 +147,8 @@ impl<'a, I: Iterator<Item = &'a str>> Parser<I> {
             "long" => VariableCommand::Long { name: identifier },
             "bool" => VariableCommand::Bool { name: identifier },
             _ => {
+                let length_regex = Regex::new(r"(word|string)\((\w+)\)").unwrap();
+                let length_captures = length_regex.captures(var_type);
                 let caps = length_captures
                     .unwrap_or_else(|| panic!("Failed to parse variable type for token: {}", &token));
                 let new_type = caps.get(1).unwrap().as_str();
@@ -174,18 +186,6 @@ impl<'a, I: Iterator<Item = &'a str>> Parser<I> {
         }
 
         vars
-    }
-
-    fn parse_loopable(&mut self) -> Cmd {
-        match self.next_past_newline() {
-            Some("\n") => panic!("Loop not provided with command"),
-            Some("read") => self.parse_read(),
-            Some("write") => self.parse_write(),
-            Some("loopline") => self.parse_loopline(),
-            Some("loop") => self.parse_loop(),
-            Some(thing) => panic!("Error parsing loop command in stub generator, got: {}", thing),
-            None => panic!("Unexpected end of input, expecting command to loop through"),
-        }
     }
 
     fn parse_output_comment(&mut self, previous_commands: &mut [Cmd]) {
@@ -280,6 +280,7 @@ impl<'a, I: Iterator<Item = &'a str>> Parser<I> {
     fn next_past_newline(&mut self) -> Option<&'a str> {
         match self.stream.next() {
             Some("\n") => self.stream.next(),
+            Some("") => self.next_past_newline(),
             token => token,
         }
     }
