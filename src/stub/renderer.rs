@@ -171,10 +171,21 @@ impl Renderer {
     fn render_loopline(&self, count_var: &str, vars: &[VariableCommand]) -> String {
         let read_data: Vec<ReadData> =
             vars.iter().map(|var_cmd| ReadData::new(var_cmd, &self.lang)).collect();
+
         let mut context = Context::new();
+
         let cased_count_var = self.lang.transform_variable_name(count_var);
+
+        let comments: Vec<&InputComment> = self
+            .stub
+            .input_comments
+            .iter()
+            .filter(|comment| read_data.iter().any(|var_data| var_data.name == comment.variable))
+            .collect();
+
         context.insert("count_var", &cased_count_var);
         context.insert("vars", &read_data);
+        context.insert("comments", &comments);
         context.insert("type_tokens", &self.lang.type_tokens);
 
         self.tera_render("loopline", &mut context)
