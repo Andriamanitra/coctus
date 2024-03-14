@@ -1,4 +1,5 @@
 #![allow(clippy::while_let_on_iterator)]
+
 use regex::Regex;
 
 pub mod types;
@@ -29,7 +30,7 @@ impl<'a, I: Iterator<Item = &'a str>> Parser<I> {
                 "write"     => stub.commands.push(self.parse_write()),
                 "loop"      => stub.commands.push(self.parse_loop()),
                 "loopline"  => stub.commands.push(self.parse_loopline()),
-                "OUTPUT"    => stub.output_comment = self.parse_output_comment(),
+                "OUTPUT"    => self.parse_output_comment(&mut stub.commands),
                 "INPUT"     => stub.input_comments.append(&mut self.parse_input_comment()),
                 "STATEMENT" => stub.statement = self.parse_statement(),
                 "\n" | ""   => continue,
@@ -60,7 +61,10 @@ impl<'a, I: Iterator<Item = &'a str>> Parser<I> {
             output.push(next_token);
         }
 
-        Cmd::Write(output.join(" "))
+        Cmd::Write {
+            text: output.join(" "),
+            output_comment: String::new(),
+        }
     }
 
     fn parse_write_join(&mut self, start: &str) -> Cmd {
@@ -98,14 +102,14 @@ impl<'a, I: Iterator<Item = &'a str>> Parser<I> {
     }
 
     fn parse_loop(&mut self) -> Cmd {
-        let count = match self.stream.next() {
+        let count_var = match self.stream.next() {
             Some("\n") | None => panic!("Loop stub not provided with loop count"),
             Some(other) => String::from(other),
         };
 
         let command = Box::new(self.parse_loopable());
 
-        Cmd::Loop { count, command }
+        Cmd::Loop { count_var, command }
     }
 
     fn parse_loopline(&mut self) -> Cmd {
@@ -183,8 +187,22 @@ impl<'a, I: Iterator<Item = &'a str>> Parser<I> {
         }
     }
 
-    fn parse_output_comment(&mut self) -> String {
-        self.parse_text_block()
+    fn parse_output_comment(&mut self, previous_commands: &mut [Cmd]) {
+        let output_comment = self.parse_statement();
+        for cmd in previous_commands { Self::update_cmd_with_output_comment(cmd, &output_comment) }
+    }
+
+    fn update_cmd_with_output_comment(cmd: &mut Cmd, new_comment: &str) {
+        match cmd {
+            Cmd::Write {
+                text: _,
+                ref mut output_comment,
+            } if output_comment.is_empty() => *output_comment = new_comment.to_string(),
+            Cmd::Loop { count_var: _, ref mut command } => {
+                Self::update_cmd_with_output_comment(command, new_comment);
+            }
+            _ => ()
+        }
     }
 
     fn parse_input_comment(&mut self) -> Vec<InputComment> {
@@ -215,16 +233,16 @@ impl<'a, I: Iterator<Item = &'a str>> Parser<I> {
     }
 
     fn read_to_end_of_line(&mut self) -> String {
-        let mut output = Vec::new();
+        let mut upto_end_of_line = Vec::new();
 
         while let Some(token) = self.stream.next() {
             match token {
                 "\n" => break,
-                other => output.push(other),
+                other => upto_end_of_line.push(other),
             }
         }
 
-        output.join(" ")
+        upto_end_of_line.join(" ")
     }
 
     fn skip_to_next_line(&mut self) {
@@ -236,7 +254,7 @@ impl<'a, I: Iterator<Item = &'a str>> Parser<I> {
     }
 
     fn parse_text_block(&mut self) -> String {
-        let mut output: Vec<String> = Vec::new();
+        let mut text_block: Vec<String> = Vec::new();
 
         while let Some(token) = self.stream.next() {
             let next_token = match token {
@@ -247,9 +265,9 @@ impl<'a, I: Iterator<Item = &'a str>> Parser<I> {
                 other => String::from(other),
             };
 
-            output.push(next_token);
+            text_block.push(next_token);
         }
 
-        output.join(" ")
+        text_block.join(" ")
     }
 }

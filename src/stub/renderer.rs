@@ -77,17 +77,19 @@ impl Renderer {
     fn render_command(&self, cmd: &Cmd) -> String {
         match cmd {
             Cmd::Read(vars) => self.render_read(vars),
-            Cmd::Write(message) => self.render_write(message),
+            Cmd::Write { text, output_comment } => self.render_write(text, output_comment),
             Cmd::WriteJoin(join_terms) => self.render_write_join(join_terms),
-            Cmd::Loop { count, command } => self.render_loop(count, command),
+            Cmd::Loop { count_var, command } => self.render_loop(count_var, command),
             Cmd::LoopLine { count_var, variables } => self.render_loopline(count_var, variables),
         }
     }
 
-    fn render_write(&self, message: &str) -> String {
+    fn render_write(&self, text: &str, output_comment: &str) -> String {
         let mut context = Context::new();
-        let messages: Vec<&str> = message.lines().map(|msg| msg.trim_end()).collect();
+        let messages: Vec<&str> = text.lines().map(|msg| msg.trim_end()).collect();
+        let output_comments: Vec<&str> = output_comment.lines().map(|msg| msg.trim_end()).collect();
         context.insert("messages", &messages);
+        context.insert("output_comments", &output_comments);
 
         self.tera_render("write", &mut context)
     }

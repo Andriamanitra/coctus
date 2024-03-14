@@ -121,13 +121,16 @@ impl JoinTerm {
 pub enum Cmd {
     Read(Vec<VariableCommand>),
     Loop {
-        count: String,
+        count_var: String,
         command: Box<Cmd>,
     },
     LoopLine {
         count_var: String,
         variables: Vec<VariableCommand>,
     },
-    Write(String),
+    Write {
+        text: String,
+        output_comment: String,
+    },
     WriteJoin(Vec<JoinTerm>),
 }

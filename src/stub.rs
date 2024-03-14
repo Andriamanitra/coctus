@@ -7,9 +7,9 @@ use renderer::language::Language;
 pub fn generate(lang: Language, generator: &str) -> Result<String> {
     let stub = parser::parse_generator_stub(generator.to_string());
 
-    // eprint!("=======\n{:?}\n======", generator);
+    // eprint!("=======\n{:?}\n======\n", generator);
     eprint!("=======\n{}\n======\n", renderer::render_stub(lang.clone(), stub.clone(), true)?);
-    // eprint!("=======\n{:?}\n======", stub);
+    // eprint!("=======\n{:?}\n======\n", stub);
 
     let output_str = renderer::render_stub(lang.clone(), stub, false)?;
 
@@ -83,6 +83,8 @@ write join("hello", a, "planet")"##;
         let received = generate(lang, REFERENCE_STUB).unwrap();
         let expected = r##"# Live long 
 # and prosper
+
+# The spacemaster
 puts "many  spaces   here"
 try = gets.to_bool
 _nil = gets.chomp
