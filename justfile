@@ -53,26 +53,30 @@ check-not-matching:
 ###################
 # HERE BE DRAGONS #
 ###################
+
+# Change this to your favorite text-editor
+editor := "code"
+
 launch-rb:
     cargo run --quiet -- generate-stub "ruby" > tmp.rb
-    code tmp.rb
+    {{editor}} tmp.rb
     cargo run --quiet -- show
     ls *.rb | entr -p cargo run --quiet -- run --command "ruby tmp.rb"
 
 launch-new-rb:
     cargo run --quiet -- next
     cargo run --quiet -- generate-stub "ruby" > tmp.rb
-    code tmp.rb
+    {{editor}} tmp.rb
     cargo run --quiet -- show
     ls *.rb | entr -p cargo run --quiet -- run --command "ruby tmp.rb"
 
 launch-py:
-    code tmp.py
+    {{editor}} tmp.py
     cargo run --quiet -- show
     ls *.py | entr -p cargo run --quiet -- run --command "python3 tmp.py"
 
 launch-c:
-    code tmp.c
+    {{editor}} tmp.c
     cargo run --quiet -- show
     ls *.c | entr -p cargo run --quiet -- run \
     --build-command "gcc -o tmp tmp.c" --command "./tmp"
@@ -88,13 +92,13 @@ launch-c:
 # name = "tmp"
 # path = "tmp.rs"
 launch-rs:
-    code tmp.rs
+    {{editor}} tmp.rs
     cargo run --quiet -- show
     ls *.rs | entr -p cargo run --quiet -- run \
     --command "cargo run --bin tmp"
 
 launch-rs-debug:
-    code tmp.rs
+    {{editor}} tmp.rs
     cargo run --quiet -- show
     ls *.rs | entr -p sh -c 'export RUST_BACKTRACE=1; cargo run --quiet -- run --ignore-failures --command "cargo run --bin tmp"'
 
