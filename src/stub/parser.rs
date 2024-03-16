@@ -54,7 +54,7 @@ impl<'a, I: Iterator<Item = &'a str>> Parser<I> {
                     Some("\n") | None => break,
                     Some(str) => format!("\n{}", str),
                 },
-                join if join.contains("join(") => return self.parse_write_join(join),
+                join if join.starts_with("join(") => return self.parse_write_join(join),
                 other => String::from(other),
             };
 
@@ -270,11 +270,19 @@ impl<'a, I: Iterator<Item = &'a str>> Parser<I> {
                 },
                 other => String::from(other),
             };
-
             text_block.push(next_token);
         }
 
-        text_block.join(" ")
+        // Hacky - The replace is due to the "replace hacks" at generator
+        // so that ["you", "\ndown"] -> you\ndown ...
+        // while trimming spaces both sides of each line
+        text_block
+            .join(" ")
+            .replace(" \n", "\n")
+            .split('\n')
+            .map(|line| line.trim())
+            .collect::<Vec<_>>()
+            .join("\n")
     }
 
     fn next_past_newline(&mut self) -> Option<&'a str> {
