@@ -1,17 +1,20 @@
 {% if debug_mode -%}
-# READ_ONE: {{ var.var_type }}
+---- 🇷 EAD_ONE: {{ var.var_type }}
+{% endif %}
+
+{%- if comment -%}
+// {{ comment.description }}
 {% endif %}
 
 {%- set sym = format_symbols[var.var_type] -%}
 {%- set type_kw = type_tokens[var.var_type] -%}
 {%- if var.var_type == "String" or var.var_type == "Word" -%}
-  {% set len = [var.max_length ~ " + 1"] %}
+  {%- set len = [var.max_length ~ " + 1"] -%}
+  {%- set ref = "" -%}
 {%- else -%}
-  {% set len = "" %}
+  {%- set len = "" -%}
+  {%- set ref = "&" -%}
 {%- endif -%}
 
 {{ type_kw }} {{ var.name }}{{ len }};
-scanf("{{ sym }}", {{ var.name }});
-{% if comment -%}
-# {{ comment.description }}
-{% endif %}
+scanf("{{ sym }}", {{ ref }}{{ var.name }});

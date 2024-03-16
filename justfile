@@ -71,6 +71,12 @@ launch-py:
     cargo run --quiet -- show
     ls *.py | entr -p cargo run --quiet -- run --command "python3 tmp.py"
 
+launch-c:
+    code tmp.c
+    cargo run --quiet -- show
+    ls *.c | entr -p cargo run --quiet -- run \
+    --build-command "gcc -o tmp tmp.c" --command "./tmp"
+
 # Requires Cargo.toml to look be like this:
 # [package]
 # name = "clash"
