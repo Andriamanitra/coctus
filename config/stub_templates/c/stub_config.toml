@@ -9,7 +9,7 @@ keywords = [
 [type_tokens]
 Int = "int"
 Long = "long long"
-Float = "TODO"
-Bool = "TODO"
+Float = "float"
+Bool = "int"
 String = "char"
 Word = "char"

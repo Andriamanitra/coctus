@@ -13,5 +13,5 @@ keywords = [
 Int = "i32"
 Long = "i64"
 Float = "f64"
-Bool = "to_bool"
+Bool = "i32"
 

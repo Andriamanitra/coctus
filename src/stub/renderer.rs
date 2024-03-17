@@ -53,7 +53,9 @@ impl Renderer {
             "Float": "%f",
             "Int": "%d",
             "Long": "%lld",
-            "String": "%[^\\n]",
+            // The extra space at the start is an improvement over CG's fgetc(stdin).
+            // It trims previous whitespace (" \n\r\t" etc.) if any.
+            "String": " %[^\\n]",
             "Word": "%s",
         });
         context.insert("format_symbols", &format_symbols);
