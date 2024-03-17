@@ -2,7 +2,7 @@
 # LOOP
 {% endif -%}
 
-for i in 0..{{ count_var }} as usize {
+for {{ index_ident }} in 0..{{ count_var }} as usize {
 {%- for line in inner %}
     {{line}}
 {%- endfor %}

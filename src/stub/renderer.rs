@@ -11,6 +11,10 @@ use types::ReadData;
 use self::types::VariableType;
 use super::parser::{Cmd, InputComment, JoinTerm, JoinTermType, Stub, VariableCommand};
 
+const ALPHABET: [&str; 19] = [
+    "@", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z",
+];
+
 pub fn render_stub(lang: Language, stub: Stub, debug_mode: bool) -> Result<String> {
     let renderer = Renderer::new(lang, stub, debug_mode)?;
     Ok(renderer.render())
@@ -65,7 +69,7 @@ impl Renderer {
 
         let statement: Vec<&str> = self.stub.statement.lines().collect();
 
-        let code: String = self.stub.commands.iter().map(|cmd| self.render_command(cmd)).collect();
+        let code: String = self.stub.commands.iter().map(|cmd| self.render_command(cmd, 0)).collect();
         let code_lines: Vec<&str> = code.lines().collect();
 
         context.insert("statement", &statement);
@@ -74,12 +78,12 @@ impl Renderer {
         self.tera_render("main", &mut context)
     }
 
-    fn render_command(&self, cmd: &Cmd) -> String {
+    fn render_command(&self, cmd: &Cmd, nesting_depth: usize) -> String {
         match cmd {
             Cmd::Read(vars) => self.render_read(vars),
             Cmd::Write { text, output_comment } => self.render_write(text, output_comment),
             Cmd::WriteJoin(join_terms) => self.render_write_join(join_terms),
-            Cmd::Loop { count_var, command } => self.render_loop(count_var, command),
+            Cmd::Loop { count_var, command } => self.render_loop(count_var, command, nesting_depth + 1),
             Cmd::LoopLine { count_var, variables } => self.render_loopline(count_var, variables),
         }
     }
@@ -158,12 +162,14 @@ impl Renderer {
         self.tera_render("read_many", &mut context)
     }
 
-    fn render_loop(&self, count_var: &str, cmd: &Cmd) -> String {
+    fn render_loop(&self, count_var: &str, cmd: &Cmd, nesting_depth: usize) -> String {
         let mut context = Context::new();
-        let inner_text = self.render_command(cmd);
+        let inner_text = self.render_command(cmd, nesting_depth);
         let cased_count_var = self.lang.transform_variable_name(count_var);
+        let index_ident = ALPHABET[nesting_depth];
         context.insert("count_var", &cased_count_var);
         context.insert("inner", &inner_text.lines().collect::<Vec<&str>>());
+        context.insert("index_ident", index_ident);
 
         self.tera_render("loop", &mut context)
     }
