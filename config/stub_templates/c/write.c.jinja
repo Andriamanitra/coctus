@@ -2,6 +2,9 @@
 ---- 🇼 RITE
 {% endif -%}
 
-{% for line in messages %}
+{%- for line in output_comments %}
+// {{ line }}
+{% endfor %}
+{%- for line in messages -%}
 printf("{{line}}\n");
-{%- endfor %}
+{% endfor %}

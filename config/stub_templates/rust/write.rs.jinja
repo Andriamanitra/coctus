@@ -1,7 +1,10 @@
 {% if debug_mode -%}
-# WRITE
+---- 🇼 RITE
 {%- endif -%}
 
-{% for line in messages %}
+{%- for line in output_comments %}
+// {{ line }}
+{% endfor %}
+{%- for line in messages -%}
 println!("{{line}}");
-{%- endfor %}
+{% endfor %}

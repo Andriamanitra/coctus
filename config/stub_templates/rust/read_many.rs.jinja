@@ -1,9 +1,14 @@
 {%- if debug_mode -%}
-# READ_MANY
+---- 🇷 EAD_MANY
+{%- if single_type -%} 
+  (SINGLE_TYPE)
+{% else -%}
+  (MULTIPLE_TYPE)
+{% endif -%}
 {% endif -%}
 
 {% for cmt in comments -%}
-# {{ cmt.variable }}: {{cmt.description}}
+// {{ cmt.variable }}: {{cmt.description}}
 {% endfor -%}
 
 let mut input_line = String::new();
@@ -11,9 +16,6 @@ io::stdin().read_line(&mut input_line).unwrap();
 let inputs = input_line.split(" ").collect::<Vec<_>>();
 
 {%- if single_type -%}
-  {%- if debug_mode %}
-# SINGLE_TYPE
-  {%- endif -%}
 
 {%- for var in vars -%}
   {%- if var.var_type == "String" or var.var_type == "Word" %}
@@ -24,11 +26,6 @@ let {{var.name}} = parse_input!(inputs[{{ loop.index - 1 }}], {{ type_tokens[var
 {%- endfor -%}
 
 {%- else %}
-  {%- if debug_mode -%}
-{# This is the same as SINGLE_TYPE for rust #}
-# MULTIPLE_TYPE
-  {%- endif -%}
-
   {%- for var in vars -%}
     {%- if var.var_type == "String" or var.var_type == "Word" %}
 let {{var.name}} = inputs[{{ loop.index - 1 }}].trim().to_string();

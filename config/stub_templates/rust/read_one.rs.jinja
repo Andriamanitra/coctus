@@ -1,5 +1,5 @@
 {% if debug_mode -%}
-# READ_ONE
+---- 🇷 EAD_ONE: {{ var.var_type }}
 {% endif -%}
 
 let mut input_line = String::new();
@@ -12,5 +12,5 @@ let {{ var.name }} = parse_input!(input_line, {{ type_tokens[var.var_type] }});
 {% endif %}
 
 {%- if comment -%}
-# {{ comment.description }}
+// {{ comment.description }}
 {% endif -%}
