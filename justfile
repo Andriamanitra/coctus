@@ -58,15 +58,15 @@ check-not-matching:
 editor := "code"
 
 launch-rb:
-    cargo run --quiet -- generate-stub "ruby" > tmp.rb
     {{editor}} tmp.rb
+    cargo run --quiet -- generate-stub "ruby" > tmp.rb
     cargo run --quiet -- show
     ls *.rb | entr -p cargo run --quiet -- run --command "ruby tmp.rb"
 
 launch-new-rb:
+    {{editor}} tmp.rb
     cargo run --quiet -- next
     cargo run --quiet -- generate-stub "ruby" > tmp.rb
-    {{editor}} tmp.rb
     cargo run --quiet -- show
     ls *.rb | entr -p cargo run --quiet -- run --command "ruby tmp.rb"
 
@@ -80,6 +80,20 @@ launch-c:
     cargo run --quiet -- show
     ls *.c | entr -p cargo run --quiet -- run \
     --build-command "gcc -o tmp tmp.c" --command "./tmp"
+
+launch-new-c:
+    {{editor}} tmp.c
+    cargo run --quiet -- next
+    cargo run --quiet -- generate-stub "c" > tmp.c
+    cargo run --quiet -- show
+    ls *.c | entr -p cargo run --quiet -- run \
+    --build-command "gcc -o tmp tmp.c" --command "./tmp"
+
+launch-c-debug:
+    {{editor}} tmp.c
+    cargo run --quiet -- show
+    ls *.c | entr -p cargo run --quiet -- run \
+    --build-command "gcc -o tmp tmp.c" --command "./tmp" --ignore-failures
 
 # Requires Cargo.toml to look be like this:
 # [package]
@@ -95,27 +109,29 @@ launch-rs:
     {{editor}} tmp.rs
     cargo run --quiet -- show
     ls *.rs | entr -p cargo run --quiet -- run \
-    --command "cargo run --bin tmp"
+    --build-command "cargo build --bin tmp" --command "./target/debug/tmp"
 
 launch-rs-debug:
     {{editor}} tmp.rs
     cargo run --quiet -- show
-    ls *.rs | entr -p sh -c 'export RUST_BACKTRACE=1; cargo run --quiet -- run --ignore-failures --command "cargo run --bin tmp"'
+    ls *.rs | entr -p sh -c 'export RUST_BACKTRACE=1; cargo run --quiet -- run \
+    --build-command "cargo build --bin tmp" --command "./target/debug/tmp"'
+
+# Test against CG STUB puzzle
+# [[bin]]
+# name = "templates"
+# path = "tmp_templates.rs"
+launch-templates:
+    cargo run fetch 759481e6afefea199836a6cb76e15b21d673d
+    cargo run next 759481e6afefea199836a6cb76e15b21d673d
+    cargo run --quiet -- run \
+    --ignore-failures --testcases 3,5,7 \
+    --build-command "cargo build --bin templates" --command "./target/debug/templates"
 
 run:
     cargo run -- run --command "ruby tmp.rb"
 
-# Test the stub generator with a random clash in ruby
-test-stub-rb:
-    cargo run -- next
-    cargo run -- generate-stub "ruby"
-
-# Test the stub generator with a random clash in rust
-test-stub-rs:
-    cargo run -- next
-    cargo run -- generate-stub "rust"
-
-# Test the stub generator with a random clash in C
-test-stub-c:
-    cargo run -- next
-    cargo run -- generate-stub "c"
+# Test the stub generator with a random clash in LANG
+test-stub LANG:
+    cargo run next
+    cargo run generate-stub {{LANG}}
