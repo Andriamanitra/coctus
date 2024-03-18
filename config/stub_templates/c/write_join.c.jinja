@@ -1,13 +1,20 @@
+{#
+    This only deals with WriteJoin with literals at the moment.
+#}
+
 {%- if debug_mode -%}
 ---- 🇼 RITE_JOIN
 {% endif -%}
 
-puts "
+{%- set_global joined_terms = [] -%}
 {%- for term in terms -%}
-  {%- if term.term_type=="Variable" -%}
-    {{- '#{' }}{{ term.name }}{{ '}' -}}
+  {%- if term.term_type == "Variable"%}
+    {%- set ref = "TODO" -%}
   {%- else -%}
-    {{- term.name -}}
+    {%- set ref = term.name -%}
   {%- endif -%}
-  {% if loop.last == false %} {% endif %}
-{%- endfor -%}"
+  {%- set_global joined_terms = joined_terms | concat(with=ref) -%}
+{%- endfor -%}
+{%- set fmt_joined_terms = joined_terms | join(sep=" ") -%}
+
+printf("{{ fmt_joined_terms }}");

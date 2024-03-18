@@ -2,16 +2,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
-{% if debug_mode %}
----- 🇲 AIN
-{% endif -%}
-{% if debug_mode -%}
----- 🇸 TATEMENT
-{% endif -%}
-
-{%- for line in statement %}
+{% for line in statement %}
 // {{ line }}
-{% endfor %}
+{%- endfor %}
+
 int main() {
     {%- for line in code_lines %}
     {{ line }}

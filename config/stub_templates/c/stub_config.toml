@@ -1,6 +1,7 @@
 name = "c"
 variable_format = "snake_case"
 source_file_ext = "c"
+allow_uppercase_vars = false
 # TODO
 keywords = [
   "for" 
