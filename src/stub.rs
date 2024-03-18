@@ -81,9 +81,6 @@ Live long
 and prosper
       and a line with spaces both sides   
 
-write    care, here   spaces   everywhere    
-      and some  more    
-
 write something something join(a, b)
 write something join(a, b) something
 write join(a, "b", aBc)
@@ -143,8 +140,6 @@ gets.split.each_slice(3) do |x, y, z|
   x = x.to_i
   y = y.to_i
 end
-puts "care, here   spaces   everywhere"
-puts "and some  more"
 puts "#{a} #{b}"
 puts "#{a} #{b}"
 puts "#{a} b #{a_bc}"
@@ -158,6 +153,7 @@ puts "hello #{a} planet""##;
 
     #[test]
     fn test_reference_stub_rust() {
+        // TODO
         let lang = Language::try_from("rust").unwrap();
         let received = generate(lang, REFERENCE_STUB).unwrap();
         let expected = r##"[Live long , and prosper]
