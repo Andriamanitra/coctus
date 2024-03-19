@@ -1,6 +1,6 @@
 use serde::Serialize;
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct Stub {
     pub commands: Vec<Cmd>,
     pub output_comment: String,
@@ -22,22 +22,6 @@ impl std::fmt::Debug for Stub {
             "\n  ],\n  output_comment: {:?},\n  statement: {:?}\n}}",
             self.output_comment, self.statement
         )
-    }
-}
-
-impl Stub {
-    pub fn new() -> Self {
-        Self {
-            commands: Vec::new(),
-            output_comment: String::new(),
-            statement: String::new(),
-        }
-    }
-}
-
-impl Default for Stub {
-    fn default() -> Self {
-        Self::new()
     }
 }
 
