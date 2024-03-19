@@ -1,14 +1,11 @@
 pub mod language;
-mod types;
 
 use anyhow::{Context as _, Result}; // To distinguish it from tera::Context
 use itertools::Itertools;
 use language::Language;
 use serde_json::json;
 use tera::{Context, Tera};
-use types::ReadData;
 
-use self::types::VariableType;
 use super::parser::{Cmd, InputComment, JoinTerm, JoinTermType, Stub, VariableCommand};
 
 const ALPHABET: [char; 18] = [
@@ -135,11 +132,12 @@ impl Renderer {
 
     fn render_read_one(&self, var: &VariableCommand) -> String {
         let mut context = Context::new();
-        let var_data = &ReadData::new(var, &self.lang);
-        let comment = self.stub.input_comments.iter().find(|comment| var_data.name == comment.variable);
+        let var = self.lang.transform_variable_command(var);
+
+        let comment = self.stub.input_comments.iter().find(|comment| var.ident == comment.variable);
 
         context.insert("comment", &comment);
-        context.insert("var", var_data);
+        context.insert("var", &var);
         context.insert("type_tokens", &self.lang.type_tokens);
 
         self.tera_render("read_one", &mut context)
@@ -147,18 +145,16 @@ impl Renderer {
 
     fn render_read_many(&self, vars: &[VariableCommand]) -> String {
         let mut context = Context::new();
-
-        let read_data: Vec<ReadData> =
-            vars.iter().map(|var_cmd| ReadData::new(var_cmd, &self.lang)).collect();
+        let vars = vars.iter().map(|var| self.lang.transform_variable_command(var)).collect::<Vec<_>>();
 
         let comments: Vec<&InputComment> = self
             .stub
             .input_comments
             .iter()
-            .filter(|comment| read_data.iter().any(|var_data| var_data.name == comment.variable))
+            .filter(|comment| vars.iter().any(|var_data| var_data.ident == comment.variable))
             .collect();
 
-        let types: Vec<&VariableType> = read_data.iter().map(|r| &r.var_type).unique().collect();
+        let types: Vec<_> = vars.iter().map(|r| &r.var_type).unique().collect();
 
         match types.as_slice() {
             [single_type] => context.insert("single_type", single_type),
@@ -166,7 +162,7 @@ impl Renderer {
         }
 
         context.insert("comments", &comments);
-        context.insert("vars", &read_data);
+        context.insert("vars", &vars);
         context.insert("type_tokens", &self.lang.type_tokens);
 
         self.tera_render("read_many", &mut context)
@@ -185,8 +181,7 @@ impl Renderer {
     }
 
     fn render_loopline(&self, count_var: &str, vars: &[VariableCommand], nesting_depth: usize) -> String {
-        let read_data: Vec<ReadData> =
-            vars.iter().map(|var_cmd| ReadData::new(var_cmd, &self.lang)).collect();
+        let vars = vars.iter().map(|var| self.lang.transform_variable_command(var)).collect::<Vec<_>>();
 
         let mut context = Context::new();
 
@@ -197,11 +192,11 @@ impl Renderer {
             .stub
             .input_comments
             .iter()
-            .filter(|comment| read_data.iter().any(|var_data| var_data.name == comment.variable))
+            .filter(|comment| vars.iter().any(|var_data| var_data.ident == comment.variable))
             .collect();
 
         context.insert("count_var", &cased_count_var);
-        context.insert("vars", &read_data);
+        context.insert("vars", &vars);
         context.insert("comments", &comments);
         context.insert("type_tokens", &self.lang.type_tokens);
         context.insert("index_ident", &index_ident);

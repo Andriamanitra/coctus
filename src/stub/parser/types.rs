@@ -58,45 +58,33 @@ impl InputComment {
     }
 }
 
-#[derive(Serialize, Clone, Debug)]
-pub enum LengthType {
-    Number,
-    Variable,
-}
-
-impl<'a> From<&'a str> for LengthType {
-    fn from(value: &'a str) -> Self {
-        match value.parse::<usize>() {
-            Ok(_) => Self::Number,
-            Err(_) => Self::Variable,
-        }
-    }
+#[derive(Debug, Clone, Serialize, PartialEq, Eq, Hash)]
+pub enum VarType {
+    Int,
+    Float,
+    Long,
+    Bool,
+    Word,
+    String,
 }
 
 #[derive(Debug, Clone, Serialize)]
-pub enum VariableCommand {
-    Int {
-        name: String,
-    },
-    Float {
-        name: String,
-    },
-    Long {
-        name: String,
-    },
-    Bool {
-        name: String,
-    },
-    Word {
-        name: String,
-        max_length: String,
-        length_type: LengthType,
-    },
-    String {
-        name: String,
-        max_length: String,
-        length_type: LengthType,
-    },
+pub struct VariableCommand {
+    pub ident: String,
+    pub var_type: VarType,
+    pub max_length: Option<String>,
+    pub input_comment: String,
+}
+
+impl VariableCommand {
+    pub fn new(ident: String, var_type: VarType, max_length: Option<String>) -> VariableCommand {
+        VariableCommand {
+            ident,
+            var_type,
+            max_length,
+            input_comment: String::new(),
+        }
+    }
 }
 
 #[derive(Serialize, Clone, Debug)]

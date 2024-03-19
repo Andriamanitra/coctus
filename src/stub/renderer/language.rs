@@ -5,6 +5,8 @@ use lazy_static::lazy_static;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 
+use crate::stub::parser::VariableCommand;
+
 lazy_static! {
     static ref SC_WORD_BREAK: Regex = Regex::new(r"([a-z])([A-Z])").unwrap();
     static ref PC_WORD_BREAK: Regex = Regex::new(r"([A-Z]*)([A-Z][a-z])").unwrap();
@@ -86,6 +88,15 @@ impl Language {
         };
 
         self.escape_keywords(converted_variable_name)
+    }
+
+    pub fn transform_variable_command(&self, var: &VariableCommand) -> VariableCommand {
+        VariableCommand {
+            ident: self.transform_variable_name(&var.ident),
+            var_type: var.var_type.clone(),
+            input_comment: var.input_comment.clone(),
+            max_length: var.max_length.clone(),
+        }
     }
 
     pub fn escape_keywords(&self, variable_name: String) -> String {

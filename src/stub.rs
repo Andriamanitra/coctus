@@ -100,7 +100,6 @@ puts "many  spaces   here"
 try = gets.to_bool
 _nil = gets.chomp
 l = gets.chomp
-# a: does stuff
 a, b = gets.split
 x_tra, y = gets.split.map(&:to_i)
 annoying = gets
@@ -151,57 +150,16 @@ puts "hello #{a} planet""##;
         }
     }
 
+    // Just test that it compiles
     #[test]
     fn test_reference_stub_rust() {
-        // TODO
         let lang = Language::try_from("rust").unwrap();
-        let received = generate(lang, REFERENCE_STUB).unwrap();
-        let expected = r##"[Live long , and prosper]
-puts "many  spaces   here"
-try = gets.to_bool
-_nil = gets.chomp
-l = gets.chomp
-# a: does stuff
-a, b = gets.split
-x_tra, y = gets.split.map(&:to_i)
-annoying = gets.chomp
-another_annoying = gets.chomp
-a_bc = gets.chomp
-row = gets.chomp
-n.times do
-  ext, mt = gets.split
-end
-n.times do
-  count, name = gets.split
-  count = count.to_i
-  name = name.chomp
-end
-q.times do
-  fname = gets.chomp
-end
-4.times do
-  number = gets.to_i
-end
-4.times do
-  puts "0 0"
-end
-x_count = gets.to_i
-gets.split.each do |x|
-  x = x.to_i
-end
-gets.split.each_slice(3) do |x, y, z|
-  x = x.to_i
-  y = y.to_i
-end
-puts "#{a} #{b}"
-puts "#{a} #{b}"
-puts "#{a} b #{aBc}"
-puts "hello world"
-puts "hello #{a} planet""##;
-        println!("{}", received);
+        generate(lang, REFERENCE_STUB).unwrap();
+    }
 
-        // for (r, e) in received.lines().zip(expected.lines()) {
-        //     assert_eq!(r, e)
-        // }
+    #[test]
+    fn test_reference_stub_c() {
+        let lang = Language::try_from("C").unwrap();
+        generate(lang, REFERENCE_STUB).unwrap();
     }
 }
