@@ -277,13 +277,6 @@ impl<'a, I: Iterator<Item = &'a str>> Parser<I> {
 
         let mut text_block: Vec<String> = Vec::new();
         while let Some(line) = self.upto_newline() {
-            // What if the line is only spaces? It should be ignored
-            // OUTPUT•this•has•only•spaces•as•content⏎
-            // •••⏎
-            // etc.
-            if line.join("").is_empty() {
-                return "".to_string()
-            }
             text_block.push(line.join(" ").trim().to_string())
         }
 
@@ -308,9 +301,10 @@ impl<'a, I: Iterator<Item = &'a str>> Parser<I> {
             buf.push(token)
         }
 
-        match buf.as_slice() {
-            [] | [""] => None,
-            _ => Some(buf),
+        if buf.join("").is_empty() {
+            None
+        } else {
+            Some(buf)
         }
     }
 }
