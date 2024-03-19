@@ -319,7 +319,7 @@ print("baited,     care spaces")
 }
 
 #[test]
-fn test_stub_input() {
+fn test_stub_input_1() {
     let generator = r##"read init:int
 read x:int
 
@@ -353,6 +353,21 @@ two, words = input().split()
 inputs = input().split()
 i = int(inputs[0])  # int
 f = float(inputs[1])  # float
+"##;
+
+    test_stub_builder(generator, expected);
+}
+
+#[test]
+fn test_stub_input_2() {
+    let generator = r##"read A:int
+
+INPUT case sensitive???
+a : NEIN NEIN
+A : ????
+"##;
+
+    let expected = r##"a = int(input())  # ????
 "##;
 
     test_stub_builder(generator, expected);
