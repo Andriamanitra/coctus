@@ -1,0 +1,48 @@
+{%- if debug_mode -%}
+---- 🇱 OOPLINE
+{%- if vars | length == 1 -%} 
+  (SINGLE_TYPE)
+{% else -%}
+  (MULTIPLE_TYPE)
+{% endif -%}
+{% endif -%}
+
+{%- if vars | length == 1 -%} 
+{# SINGLE_TYPE #}
+{%- set var = vars[0] -%}
+{# Special CG case, doesn't make much sense otherwise #}
+{%- if var.var_type == "Word" -%}
+for {{ var.ident }} in input().split():
+    pass
+
+{%- else -%}
+
+for {{ index_ident }} in input().split():
+    {%- if var.var_type == "String" -%}
+        {%- set fn = index_ident -%}
+    {%- else -%}
+        {%- set fn = type_tokens[var.var_type] ~ "(" ~ index_ident ~ ")" -%}
+    {%- endif %}
+    {{ var.ident }} = {{ fn }}
+
+{%- endif -%}
+{# MULTIPLE_TYPE #}
+{%- else -%}
+
+inputs = input().split()
+for {{ index_ident }} in range({{ count_var }}):
+{%- for var in vars %}
+    {%- if loop.index0 == 0 -%}
+        {%- set idx = "" -%}
+    {%- else -%}
+        {%- set idx = "+" ~ loop.index0 -%}
+    {%- endif -%}
+    {%- if var.var_type == "String" or var.var_type == "Word" -%}
+        {%- set fn = "inputs[2*" ~ index_ident ~ idx ~ "]" -%}
+    {%- else -%}
+        {%- set fn = type_tokens[var.var_type] ~ "(inputs[2*" ~ index_ident ~ idx ~ "])" -%}
+    {%- endif %}
+    {{ var.ident }} = {{ fn }}
+{%- endfor %}
+
+{%- endif %}

@@ -1,0 +1,39 @@
+{%- if debug_mode -%}
+---- 🇷 EAD_MANY
+{%- if single_type -%} 
+  (SINGLE_TYPE)
+{% else -%}
+  (MULTIPLE_TYPE)
+{% endif -%}
+{% endif -%}
+
+{%- set_global names = vars | map(attribute="ident") | join(sep=", ") -%}
+
+{%- if single_type -%}
+
+{%- for var in vars %}
+{%- if var.input_comment -%}# {{ var.ident }}: {{ var.input_comment }}
+{% endif -%}
+{% endfor -%}
+
+{%- set_global type = vars[0].var_type -%}
+{%- if type == "String" or type == "Word" -%}
+    {%- set assign = "input().split()" -%}
+{%- else -%}
+    {%- set assign = "[" ~ type_tokens[type] ~ "(i) for i in input().split()]" -%}
+{%- endif -%}
+{{ names }} = {{ assign }}
+
+{%- else -%}
+
+inputs = input().split()
+{%- for var in vars %}
+{% if var.var_type == "String" or var.var_type == "Word" -%}
+    {%- set assign = "inputs[" ~ loop.index0  ~ "]" -%}
+{% else -%}
+    {%- set assign = type_tokens[var.var_type] ~ "(inputs[" ~ loop.index0 ~ "])" -%}
+{% endif -%}
+{{ var.ident }} = {{ assign }}{%- if var.input_comment %}  # {{ var.input_comment }}{% endif %}
+{%- endfor -%}
+
+{%- endif %}

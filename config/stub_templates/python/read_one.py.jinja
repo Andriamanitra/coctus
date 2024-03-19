@@ -1,0 +1,13 @@
+{% if debug_mode -%}
+---- 🇷 EAD_ONE: {{ var.var_type }}
+{% endif %}
+
+{%- if var.var_type == "String" or var.var_type == "Word" -%}
+    {%- set fn = "input()" -%}
+{%- elif var.var_type == "Bool" -%}
+    {%- set fn = "input()" ~ type_tokens[var.var_type] -%}
+{%- else -%}
+    {%- set fn = type_tokens[var.var_type] ~ "(input())" -%}
+{%- endif -%}
+
+{{ var.ident }} = {{ fn }}{%- if var.input_comment %}  # {{ var.input_comment }}{% endif %}
