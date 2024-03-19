@@ -6,7 +6,7 @@ use language::Language;
 use serde_json::json;
 use tera::{Context, Tera};
 
-use super::parser::{Cmd, InputComment, JoinTerm, JoinTermType, Stub, VariableCommand};
+use super::parser::{Cmd, JoinTerm, JoinTermType, Stub, VariableCommand};
 
 const ALPHABET: [char; 18] = [
     'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
@@ -27,10 +27,6 @@ struct Renderer {
 impl Renderer {
     fn new(lang: Language, mut stub: Stub, debug_mode: bool) -> Result<Renderer> {
         let tera = Tera::new(&lang.template_glob())?;
-
-        for comment in &mut stub.input_comments {
-            comment.variable = lang.transform_variable_name(&comment.variable);
-        }
 
         Ok(Self {
             lang,
@@ -134,9 +130,6 @@ impl Renderer {
         let mut context = Context::new();
         let var = self.lang.transform_variable_command(var);
 
-        let comment = self.stub.input_comments.iter().find(|comment| var.ident == comment.variable);
-
-        context.insert("comment", &comment);
         context.insert("var", &var);
         context.insert("type_tokens", &self.lang.type_tokens);
 
@@ -147,13 +140,6 @@ impl Renderer {
         let mut context = Context::new();
         let vars = vars.iter().map(|var| self.lang.transform_variable_command(var)).collect::<Vec<_>>();
 
-        let comments: Vec<&InputComment> = self
-            .stub
-            .input_comments
-            .iter()
-            .filter(|comment| vars.iter().any(|var_data| var_data.ident == comment.variable))
-            .collect();
-
         let types: Vec<_> = vars.iter().map(|r| &r.var_type).unique().collect();
 
         match types.as_slice() {
@@ -161,7 +147,6 @@ impl Renderer {
             _ => context.insert("single_type", &false),
         }
 
-        context.insert("comments", &comments);
         context.insert("vars", &vars);
         context.insert("type_tokens", &self.lang.type_tokens);
 
@@ -188,16 +173,8 @@ impl Renderer {
         let cased_count_var = self.lang.transform_variable_name(count_var);
         let index_ident = ALPHABET[nesting_depth];
 
-        let comments: Vec<&InputComment> = self
-            .stub
-            .input_comments
-            .iter()
-            .filter(|comment| vars.iter().any(|var_data| var_data.ident == comment.variable))
-            .collect();
-
         context.insert("count_var", &cased_count_var);
         context.insert("vars", &vars);
-        context.insert("comments", &comments);
         context.insert("type_tokens", &self.lang.type_tokens);
         context.insert("index_ident", &index_ident);
 

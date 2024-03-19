@@ -3,7 +3,6 @@ use serde::Serialize;
 #[derive(Clone)]
 pub struct Stub {
     pub commands: Vec<Cmd>,
-    pub input_comments: Vec<InputComment>,
     pub output_comment: String,
     pub statement: String,
 }
@@ -20,8 +19,8 @@ impl std::fmt::Debug for Stub {
 
         write!(
             f,
-            "\n  ],\n  input_comments: {:?},\n  output_comment: {:?},\n  statement: {:?}\n}}",
-            self.input_comments, self.output_comment, self.statement
+            "\n  ],\n  output_comment: {:?},\n  statement: {:?}\n}}",
+            self.output_comment, self.statement
         )
     }
 }
@@ -30,7 +29,6 @@ impl Stub {
     pub fn new() -> Self {
         Self {
             commands: Vec::new(),
-            input_comments: Vec::new(),
             output_comment: String::new(),
             statement: String::new(),
         }
@@ -40,21 +38,6 @@ impl Stub {
 impl Default for Stub {
     fn default() -> Self {
         Self::new()
-    }
-}
-
-#[derive(Debug, Clone, Serialize)]
-pub struct InputComment {
-    pub variable: String,
-    pub description: String,
-}
-
-impl InputComment {
-    pub fn new(variable: String, description: String) -> Self {
-        Self {
-            variable,
-            description,
-        }
     }
 }
 

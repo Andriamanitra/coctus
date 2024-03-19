@@ -3,7 +3,7 @@
 use regex::Regex;
 
 pub mod types;
-pub use types::{Cmd, InputComment, JoinTerm, JoinTermType, Stub, VariableCommand};
+pub use types::{Cmd, JoinTerm, JoinTermType, Stub, VariableCommand};
 
 pub fn parse_generator_stub(generator: String) -> Stub {
     let generator = generator.replace('\n', " \n ");
@@ -227,21 +227,21 @@ impl<'a, I: Iterator<Item = &'a str>> Parser<I> {
             .filter(|line| line.contains(':'))
             .map(|line| {
                 if let Some((var, rest)) = line.split_once(':') {
-                    InputComment::new(String::from(var.trim()), String::from(rest.trim()))
+                    (String::from(var.trim()), String::from(rest.trim()))
                 } else {
                     panic!("Impossible since the list was filtered??");
                 }
             })
             .collect::<Vec<_>>();
 
-        for ic in input_comments {
+        for (ic_ident, ic_comment) in input_comments {
             for cmd in previous_commands.iter_mut() {
-                Self::update_cmd_with_input_comment(cmd, &ic);
+                Self::update_cmd_with_input_comment(cmd, &ic_ident, &ic_comment);
             }
         }
     }
 
-    fn update_cmd_with_input_comment(cmd: &mut Cmd, new_comment: &InputComment) {
+    fn update_cmd_with_input_comment(cmd: &mut Cmd, ic_ident: &String, ic_comment: &String) {
         match cmd {
             Cmd::Read(variables)
             | Cmd::LoopLine {
@@ -249,8 +249,8 @@ impl<'a, I: Iterator<Item = &'a str>> Parser<I> {
                 variables,
             } => {
                 for var in variables.iter_mut() {
-                    if var.ident == new_comment.variable {
-                        var.input_comment = new_comment.description.clone();
+                    if var.ident == *ic_ident {
+                        var.input_comment = ic_comment.clone();
                     }
                 }
             }
@@ -258,7 +258,7 @@ impl<'a, I: Iterator<Item = &'a str>> Parser<I> {
                 count_var: _,
                 ref mut command,
             } => {
-                return Self::update_cmd_with_input_comment(command, new_comment);
+                return Self::update_cmd_with_input_comment(command, &ic_ident, &ic_comment);
             }
             _ => (),
         }

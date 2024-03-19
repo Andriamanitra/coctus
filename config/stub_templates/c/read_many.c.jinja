@@ -7,8 +7,9 @@
 {% endif -%}
 {% endif -%}
 
-{% for cmt in comments -%}
-// {{ cmt.variable }}: {{cmt.description}}
+{%- for var in vars %}
+{%- if var.input_comment -%}# {{ var.ident }}: {{ var.input_comment }}
+{% endif -%}
 {% endfor -%}
 
 {# Setup of types (%d, %s etc.) and variable references (& or "") inside the scanf function #}
