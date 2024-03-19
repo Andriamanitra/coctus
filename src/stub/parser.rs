@@ -34,7 +34,7 @@ impl<'a, I: Iterator<Item = &'a str>> Parser<I> {
                 "INPUT"     => stub.input_comments.append(&mut self.parse_input_comment()),
                 "STATEMENT" => stub.statement = self.parse_statement(),
                 "\n" | ""   => continue,
-                thing => panic!("Error parsing stub generator: {}", thing),
+                thing => panic!("Unknown token stub generator: '{}'", thing),
             };
         }
 
@@ -42,7 +42,7 @@ impl<'a, I: Iterator<Item = &'a str>> Parser<I> {
     }
 
     fn parse_read(&mut self) -> Cmd {
-        Cmd::Read(self.parse_variable_list())
+        Cmd::Read(self.parse_variables())
     }
 
     fn parse_write(&mut self) -> Cmd {
@@ -130,7 +130,7 @@ impl<'a, I: Iterator<Item = &'a str>> Parser<I> {
             None => panic!("Unexpected end of input: Loopline stub not provided with count identifier"),
             Some(other) => Cmd::LoopLine {
                 count_var: other.to_string(),
-                variables: self.parse_variable_list(),
+                variables: self.parse_variables(),
             },
         }
     }
@@ -172,17 +172,16 @@ impl<'a, I: Iterator<Item = &'a str>> Parser<I> {
         }
     }
 
-    fn parse_variable_list(&mut self) -> Vec<VariableCommand> {
+    fn parse_variables(&mut self) -> Vec<VariableCommand> {
         let mut vars = Vec::new();
+        let Some(line) = self.upto_newline() else {
+            panic!("Empty line after read keyword")
+        };
 
-        while let Some(token) = self.stream.next() {
-            let var: VariableCommand = match token {
-                _ if String::from(token).contains(':') => Self::parse_variable(token),
-                "\n" => break,
-                unexp => panic!("Error in stub generator, found {unexp} while searching for stub variables"),
-            };
-
-            vars.push(var);
+        for token in line {
+            if token != "" {
+                vars.push(Self::parse_variable(token))
+            }
         }
 
         vars
@@ -290,6 +289,22 @@ impl<'a, I: Iterator<Item = &'a str>> Parser<I> {
             Some("\n") => self.stream.next(),
             Some("") => self.next_past_newline(),
             token => token,
+        }
+    }
+
+    // Consumes the newline
+    fn upto_newline(&mut self) -> Option<Vec<&'a str>> {
+        let mut buf = Vec::new();
+        while let Some(token) = self.stream.next() {
+            if token == "\n" {
+                break
+            }
+            buf.push(token)
+        }
+
+        match buf.as_slice() {
+            [] | [""] => None,
+            _ => Some(buf),
         }
     }
 }
