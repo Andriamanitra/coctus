@@ -11,7 +11,7 @@ for (int i = 0; i < {{ count_var }}; i++) {
     {%- else -%}
         {% set len = "" %}
     {%- endif %}
-    {{ type_kw }} {{ var.name }}{{ len }};
-    scanf("{{ sym }}", {{ var.name }});
+    {{ type_kw }} {{ var.ident }}{{ len }};
+    scanf("{{ sym }}", {{ var.ident }});
 {%- endfor %}
 }

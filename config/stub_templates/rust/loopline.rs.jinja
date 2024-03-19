@@ -2,10 +2,10 @@
 # LOOPLINE
 {% endif -%}
 
-gets.split.each{% if vars | length > 1 %}_slice({{ vars | length }}){% endif %} do |{{ vars | map(attribute="name") | join(sep=", ") }}|
+gets.split.each{% if vars | length > 1 %}_slice({{ vars | length }}){% endif %} do |{{ vars | map(attribute="ident") | join(sep=", ") }}|
 {%- for var in vars -%}
 {%- if var.var_type != "Word" %}
-  {{var.name}} = {{var.name}}.{{type_tokens[var.var_type]-}}
+  {{var.ident}} = {{var.ident}}.{{type_tokens[var.var_type]-}}
 {% endif -%}
 {%- endfor %}
 end

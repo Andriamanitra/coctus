@@ -16,5 +16,5 @@
   {%- set ref = "&" -%}
 {%- endif -%}
 
-{{ type_kw }} {{ var.name }}{{ len }};
-scanf("{{ sym }}", {{ ref }}{{ var.name }});
+{{ type_kw }} {{ var.ident }}{{ len }};
+scanf("{{ sym }}", {{ ref }}{{ var.ident }});

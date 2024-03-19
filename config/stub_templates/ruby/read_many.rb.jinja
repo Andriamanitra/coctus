@@ -1,12 +1,18 @@
 {%- if debug_mode -%}
 ---- 🇷 EAD_MANY
+{%- if single_type -%} 
+  (SINGLE_TYPE)
+{% else -%}
+  (MULTIPLE_TYPE)
+{% endif -%}
 {% endif -%}
 
-{% for cmt in comments -%}
-# {{ cmt.variable }}: {{cmt.description}}
+{%- for var in vars %}
+{%- if var.input_comment -%}# {{ var.ident }}: {{ var.input_comment }}
+{% endif -%}
 {% endfor -%}
 
-{{- vars | map(attribute="name") | join(sep=", ") }} = gets.split
+{{- vars | map(attribute="ident") | join(sep=", ") }} = gets.split
 
 {%- if single_type -%}
 
@@ -18,9 +24,9 @@
 
   {%- for var in vars -%}
     {%- if var.var_type == "String" or var.var_type == "Word" %}
-{{var.name}} = {{var.name}}.chomp
+{{var.ident}} = {{var.ident}}.chomp
     {%- else %}
-{{var.name}} = {{var.name}}.{{ type_tokens[var.var_type] }}
+{{var.ident}} = {{var.ident}}.{{ type_tokens[var.var_type] }}
     {%- endif -%}
   {%- endfor -%}
 

@@ -6,9 +6,9 @@ let mut input_line = String::new();
 io::stdin().read_line(&mut input_line).unwrap();
 
 {%- if var.var_type == "String" or var.var_type == "Word" %}
-let {{ var.name }} = input_line.trim_matches('\n').to_string();
+let {{ var.ident }} = input_line.trim_matches('\n').to_string();
 {% else %}
-let {{ var.name }} = parse_input!(input_line, {{ type_tokens[var.var_type] }});
+let {{ var.ident }} = parse_input!(input_line, {{ type_tokens[var.var_type] }});
 {% endif %}
 
 {%- if comment -%}

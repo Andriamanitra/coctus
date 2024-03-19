@@ -19,18 +19,18 @@ let inputs = input_line.split(" ").collect::<Vec<_>>();
 
 {%- for var in vars -%}
   {%- if var.var_type == "String" or var.var_type == "Word" %}
-let {{var.name}} = inputs[{{ loop.index - 1 }}].trim().to_string();
+let {{var.ident}} = inputs[{{ loop.index - 1 }}].trim().to_string();
   {%- else %}
-let {{var.name}} = parse_input!(inputs[{{ loop.index - 1 }}], {{ type_tokens[var.var_type] }});
+let {{var.ident}} = parse_input!(inputs[{{ loop.index - 1 }}], {{ type_tokens[var.var_type] }});
   {%- endif %}
 {%- endfor -%}
 
 {%- else %}
   {%- for var in vars -%}
     {%- if var.var_type == "String" or var.var_type == "Word" %}
-let {{var.name}} = inputs[{{ loop.index - 1 }}].trim().to_string();
+let {{var.ident}} = inputs[{{ loop.index - 1 }}].trim().to_string();
     {%- else %}
-let {{var.name}} = parse_input!(inputs[{{ loop.index - 1 }}], {{ type_tokens[var.var_type] }});
+let {{var.ident}} = parse_input!(inputs[{{ loop.index - 1 }}], {{ type_tokens[var.var_type] }});
     {%- endif -%}
   {%- endfor -%}
 

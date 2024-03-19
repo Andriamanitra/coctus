@@ -10,4 +10,4 @@
   {% set method = "." ~ type_tokens[var.var_type] %}
 {%- endif -%}
 
-{{ var.name }} = gets{{ method }}{% if comment %} # {{ comment.description }}{% endif %}
+{{ var.ident }} = gets{{ method }}{% if var.input_comment %} # {{ var.input_comment }}{% endif %}
