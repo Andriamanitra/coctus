@@ -25,7 +25,7 @@ struct Renderer {
 }
 
 impl Renderer {
-    fn new(lang: Language, mut stub: Stub, debug_mode: bool) -> Result<Renderer> {
+    fn new(lang: Language, stub: Stub, debug_mode: bool) -> Result<Renderer> {
         let tera = Tera::new(&lang.template_glob())?;
 
         Ok(Self {
@@ -90,8 +90,8 @@ impl Renderer {
 
     fn render_write(&self, text: &str, output_comment: &str) -> String {
         let mut context = Context::new();
-        let output_comments: Vec<&str> = output_comment.lines().map(|msg| msg.trim_end()).collect();
-        let messages: Vec<&str> = text.lines().map(|msg| msg.trim_end()).collect();
+        let output_comments: Vec<&str> = output_comment.lines().collect();
+        let messages: Vec<&str> = text.lines().collect();
 
         context.insert("messages", &messages);
         context.insert("output_comments", &output_comments);
@@ -101,7 +101,7 @@ impl Renderer {
 
     fn render_write_join(&self, terms: &[JoinTerm], output_comment: &str) -> String {
         let mut context = Context::new();
-        let output_comments: Vec<&str> = output_comment.lines().map(|msg| msg.trim_end()).collect();
+        let output_comments: Vec<&str> = output_comment.lines().collect();
         let terms: Vec<JoinTerm> = terms
             .iter()
             .cloned()

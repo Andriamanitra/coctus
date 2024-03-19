@@ -3,7 +3,6 @@ use serde::Serialize;
 #[derive(Clone, Default)]
 pub struct Stub {
     pub commands: Vec<Cmd>,
-    pub output_comment: String,
     pub statement: String,
 }
 
@@ -11,17 +10,10 @@ pub struct Stub {
 impl std::fmt::Debug for Stub {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "Stub {{\n  commands: [")?;
-
-        // Print commands recursively
         for command in &self.commands {
             write!(f, "\n    {:?}", command)?;
         }
-
-        write!(
-            f,
-            "\n  ],\n  output_comment: {:?},\n  statement: {:?}\n}}",
-            self.output_comment, self.statement
-        )
+        write!(f, "\n  ],\n  statement: {:?}\n}}", self.statement)
     }
 }
 

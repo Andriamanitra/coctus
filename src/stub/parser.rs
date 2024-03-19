@@ -22,7 +22,7 @@ impl<'a, I: Iterator<Item = &'a str>> Parser<I> {
 
     #[rustfmt::skip]
     fn parse(&mut self) -> Stub {
-        let mut stub = Stub::new();
+        let mut stub = Stub::default();
 
         while let Some(token) = self.stream.next() {
             match token {
