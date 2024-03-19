@@ -86,7 +86,9 @@ impl Renderer {
             Cmd::Write { text, output_comment } => self.render_write(text, output_comment),
             Cmd::WriteJoin(join_terms) => self.render_write_join(join_terms),
             Cmd::Loop { count_var, command } => self.render_loop(count_var, command, nesting_depth),
-            Cmd::LoopLine { count_var, variables } => self.render_loopline(count_var, variables),
+            Cmd::LoopLine { count_var, variables } => {
+                self.render_loopline(count_var, variables, nesting_depth)
+            }
         }
     }
 
@@ -176,13 +178,14 @@ impl Renderer {
         self.tera_render("loop", &mut context)
     }
 
-    fn render_loopline(&self, count_var: &str, vars: &[VariableCommand]) -> String {
+    fn render_loopline(&self, count_var: &str, vars: &[VariableCommand], nesting_depth: usize) -> String {
         let read_data: Vec<ReadData> =
             vars.iter().map(|var_cmd| ReadData::new(var_cmd, &self.lang)).collect();
 
         let mut context = Context::new();
 
         let cased_count_var = self.lang.transform_variable_name(count_var);
+        let index_ident = ALPHABET[nesting_depth];
 
         let comments: Vec<&InputComment> = self
             .stub
@@ -195,6 +198,7 @@ impl Renderer {
         context.insert("vars", &read_data);
         context.insert("comments", &comments);
         context.insert("type_tokens", &self.lang.type_tokens);
+        context.insert("index_ident", &index_ident);
 
         self.tera_render("loopline", &mut context)
     }
