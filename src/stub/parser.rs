@@ -99,6 +99,15 @@ impl<'a, I: Iterator<Item = &'a str>> Parser<I> {
             })
             .collect::<Vec<_>>();
 
+        // write•join("hi",,,•"Jim")⏎ should be rendered as a Write Cmd
+        // (I guess the original parser fails a previous command due to consecutive commas)
+        if join_terms.iter().any(|jt| jt.name.is_empty()) {
+            return Cmd::Write {
+                text: inner,
+                output_comment: String::new(),
+            }
+        }
+
         Cmd::WriteJoin(join_terms)
     }
 
