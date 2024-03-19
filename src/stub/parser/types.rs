@@ -132,5 +132,8 @@ pub enum Cmd {
         text: String,
         output_comment: String,
     },
-    WriteJoin(Vec<JoinTerm>),
+    WriteJoin {
+        join_terms: Vec<JoinTerm>,
+        output_comment: String,
+    },
 }

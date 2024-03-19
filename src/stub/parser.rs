@@ -108,7 +108,10 @@ impl<'a, I: Iterator<Item = &'a str>> Parser<I> {
             }
         }
 
-        Cmd::WriteJoin(join_terms)
+        Cmd::WriteJoin {
+            join_terms,
+            output_comment: String::new(),
+        }
     }
 
     fn parse_loop(&mut self) -> Cmd {
@@ -208,6 +211,10 @@ impl<'a, I: Iterator<Item = &'a str>> Parser<I> {
         match cmd {
             Cmd::Write {
                 text: _,
+                ref mut output_comment,
+            }
+            | Cmd::WriteJoin {
+                join_terms: _,
                 ref mut output_comment,
             } if output_comment.is_empty() => *output_comment = new_comment.to_string(),
             Cmd::Loop {

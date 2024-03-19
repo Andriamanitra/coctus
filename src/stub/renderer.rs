@@ -84,7 +84,10 @@ impl Renderer {
         match cmd {
             Cmd::Read(vars) => self.render_read(vars),
             Cmd::Write { text, output_comment } => self.render_write(text, output_comment),
-            Cmd::WriteJoin(join_terms) => self.render_write_join(join_terms),
+            Cmd::WriteJoin {
+                join_terms,
+                output_comment,
+            } => self.render_write_join(join_terms, output_comment),
             Cmd::Loop { count_var, command } => self.render_loop(count_var, command, nesting_depth),
             Cmd::LoopLine { count_var, variables } => {
                 self.render_loopline(count_var, variables, nesting_depth)
@@ -94,17 +97,18 @@ impl Renderer {
 
     fn render_write(&self, text: &str, output_comment: &str) -> String {
         let mut context = Context::new();
-        let messages: Vec<&str> = text.lines().map(|msg| msg.trim_end()).collect();
         let output_comments: Vec<&str> = output_comment.lines().map(|msg| msg.trim_end()).collect();
+        let messages: Vec<&str> = text.lines().map(|msg| msg.trim_end()).collect();
+
         context.insert("messages", &messages);
         context.insert("output_comments", &output_comments);
 
         self.tera_render("write", &mut context)
     }
 
-    fn render_write_join(&self, terms: &[JoinTerm]) -> String {
+    fn render_write_join(&self, terms: &[JoinTerm], output_comment: &str) -> String {
         let mut context = Context::new();
-
+        let output_comments: Vec<&str> = output_comment.lines().map(|msg| msg.trim_end()).collect();
         let terms: Vec<JoinTerm> = terms
             .iter()
             .cloned()
@@ -117,6 +121,8 @@ impl Renderer {
             .collect();
 
         context.insert("terms", &terms);
+        context.insert("output_comments", &output_comments);
+
         self.tera_render("write_join", &mut context)
     }
 
