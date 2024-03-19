@@ -152,7 +152,7 @@ fn cli() -> clap::Command {
             Command::new("generate-stub")
                 .alias("gen")
                 .about("Generate input handling code for a given language")
-                .arg(arg!(<PROGRAMMING_LANGUAGE> ... "programming language of the solution stub"))
+                .arg(arg!(<PROGRAMMING_LANGUAGE> "programming language of the solution stub"))
                 .after_help(
                     "Prints boilerplate code for the input of the current clash.\
                     \nIntended to be piped to a file.\
