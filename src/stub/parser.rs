@@ -100,7 +100,7 @@ impl<'a, I: Iterator<Item = &'a str>> Parser<I> {
             .collect::<Vec<_>>();
 
         // write•join("hi",,,•"Jim")⏎ should be rendered as a Write Cmd
-        // (I guess the original parser fails a previous command due to consecutive commas)
+        // (I guess the CG parser fails due to consecutive commas)
         if join_terms.iter().any(|jt| jt.name.is_empty()) {
             return Cmd::Write {
                 text: inner,
@@ -183,7 +183,7 @@ impl<'a, I: Iterator<Item = &'a str>> Parser<I> {
         };
 
         for token in line {
-            if token != "" {
+            if !token.is_empty() {
                 vars.push(Self::parse_variable(token))
             }
         }
@@ -258,7 +258,7 @@ impl<'a, I: Iterator<Item = &'a str>> Parser<I> {
                 count_var: _,
                 ref mut command,
             } => {
-                return Self::update_cmd_with_input_comment(command, &ic_ident, &ic_comment);
+                Self::update_cmd_with_input_comment(command, ic_ident, ic_comment);
             }
             _ => (),
         }
