@@ -1,4 +1,4 @@
-mod parser;
+pub mod parser;
 pub mod renderer;
 
 use anyhow::Result;
