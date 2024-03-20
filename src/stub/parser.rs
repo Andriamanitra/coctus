@@ -78,8 +78,15 @@ impl<'a> Parser<'a> {
                 .iter()
                 .position(|&token| token.starts_with("join(") && !token.starts_with("join()") && first_line)
             {
-                let result_slice = &token_list[position..];
-                return self.parse_write_join(result_slice.to_vec())
+                let (prelude, join_slice) = &token_list.split_at(position);
+                let mut write = self.parse_write_join(join_slice.to_vec());
+                if let Cmd::Write { ref mut text, .. } = write { 
+                    if !prelude.is_empty() { 
+                        *text = [prelude.join(" "), text.clone()].join(" ");
+                    };
+                };
+
+                return write;
             }
             first_line = false;
             write_text.push(token_list.join(" ").trim().to_string())
