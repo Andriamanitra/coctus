@@ -5,7 +5,7 @@ use anyhow::Result;
 use renderer::language::Language;
 
 pub fn generate(lang: Language, generator: &str) -> Result<String> {
-    let stub = parser::parse_generator_stub(generator.to_string());
+    let stub = parser::parse_generator_stub(generator);
 
     // eprint!("=======\n{:?}\n======\n", generator);
     eprint!("=======\n{}\n======\n", renderer::render_stub(lang.clone(), stub.clone(), true)?);
