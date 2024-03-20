@@ -11,13 +11,13 @@ pub fn parse_generator_stub(generator: &str) -> Stub {
     Parser::new(generator).parse()
 }
 
+/// A wrapper around an iterator of tokens in the CG stub. Contains all of the stub parsing logic.
+///
+/// Exists solely to be consumed with `.parse()`
 pub struct Parser<'a> {
     token_stream: Box<dyn Iterator<Item = &'a str> + 'a>,
 }
 
-/// A wrapper around an iterator of tokens in the CG stub. Contains all of the stub parsing logic.
-///
-/// Exists solely to be consumed with `.parse()`
 impl<'a> Parser<'a> {
     pub fn new(stub: &'a str) -> Self {
         // .chain just adds an iterator to the end of another one,
@@ -28,7 +28,6 @@ impl<'a> Parser<'a> {
         Self { token_stream: Box::new(token_stream) }
     }
 
-    #[rustfmt::skip]
     /// Parses its stream into a Stub, which includes a tree of the commands in the CG stub.
     ///
     /// Cannot be called twice since it consumes the stream.
@@ -41,6 +40,7 @@ impl<'a> Parser<'a> {
     /// let stub_text = "read a:int b:long \n write this is a test";
     /// Parser::new(stub_text).parse();
     /// ```
+    #[rustfmt::skip]
     pub fn parse(mut self) -> Stub {
         let mut stub = Stub::default();
 
@@ -340,3 +340,6 @@ impl<'a> Parser<'a> {
         }
     }
 }
+
+#[cfg(test)]
+mod parser_tests;
