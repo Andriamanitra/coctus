@@ -6,7 +6,7 @@ use anyhow::{anyhow, Context, Result};
 use clap::ArgMatches;
 use clashlib::clash::{Clash, TestCase};
 use clashlib::outputstyle::OutputStyle;
-use clashlib::stub::renderer::language::Language;
+use clashlib::stub::Language;
 use clashlib::{solution, stub};
 use directories::ProjectDirs;
 use rand::seq::IteratorRandom;

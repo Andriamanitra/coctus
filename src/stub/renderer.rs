@@ -1,8 +1,6 @@
-pub mod language;
-
 use anyhow::{Context as _, Result}; // To distinguish it from tera::Context
 use itertools::Itertools;
-use language::Language;
+use super::Language;
 use serde_json::json;
 use tera::{Context, Tera};
 

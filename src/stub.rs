@@ -1,8 +1,9 @@
 pub mod parser;
 pub mod renderer;
+pub mod language;
 
 use anyhow::Result;
-use renderer::language::Language;
+pub use language::Language;
 use serde::Serialize;
 
 pub fn generate(lang: Language, generator: &str) -> Result<String> {

@@ -1,9 +1,8 @@
-use clashlib::stub::generate;
-use clashlib::stub::renderer::language::Language;
+use clashlib::stub::{self, Language};
 
 fn test_stub_builder(generator: &str, expected: &str) {
     let lang = Language::try_from("python").unwrap();
-    let received = generate(lang, generator).unwrap().as_str().trim().to_string();
+    let received = stub::generate(lang, generator).unwrap().as_str().trim().to_string();
     let expected = expected.trim();
 
     assert_eq!(expected.lines().count(), received.lines().count());
