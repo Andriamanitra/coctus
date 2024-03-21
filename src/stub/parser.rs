@@ -1,9 +1,6 @@
 #![allow(clippy::while_let_on_iterator)]
 
-pub mod types;
-
-pub use types::{Cmd, JoinTerm, JoinTermType, Stub, VariableCommand};
-
+use super::{Cmd, JoinTerm, JoinTermType, Stub, VariableCommand, VarType};
 use regex::Regex;
 use std::iter;
 
@@ -182,10 +179,10 @@ impl<'a> Parser<'a> {
 
         // Trim because the stub generator may contain sneaky newlines
         match var_type.trim_end() {
-            "int" => VariableCommand::new(identifier, types::VarType::Int, None),
-            "float" => VariableCommand::new(identifier, types::VarType::Float, None),
-            "long" => VariableCommand::new(identifier, types::VarType::Long, None),
-            "bool" => VariableCommand::new(identifier, types::VarType::Bool, None),
+            "int" => VariableCommand::new(identifier, VarType::Int, None),
+            "float" => VariableCommand::new(identifier, VarType::Float, None),
+            "long" => VariableCommand::new(identifier, VarType::Long, None),
+            "bool" => VariableCommand::new(identifier, VarType::Bool, None),
             _ => {
                 let length_regex = Regex::new(r"(word|string)\((\w+)\)").unwrap();
                 let length_captures = length_regex.captures(var_type);
@@ -195,8 +192,8 @@ impl<'a> Parser<'a> {
                 let length = caps.get(2).unwrap().as_str();
                 let max_length = String::from(length);
                 match new_type {
-                    "word" => VariableCommand::new(identifier, types::VarType::Word, Some(max_length)),
-                    "string" => VariableCommand::new(identifier, types::VarType::String, Some(max_length)),
+                    "word" => VariableCommand::new(identifier, VarType::Word, Some(max_length)),
+                    "string" => VariableCommand::new(identifier, VarType::String, Some(max_length)),
                     _ => panic!("Unexpected error"),
                 }
             }

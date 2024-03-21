@@ -5,7 +5,7 @@ use lazy_static::lazy_static;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 
-use crate::stub::parser::VariableCommand;
+use crate::stub::VariableCommand;
 
 lazy_static! {
     static ref SC_WORD_BREAK: Regex = Regex::new(r"([a-z])([A-Z])").unwrap();

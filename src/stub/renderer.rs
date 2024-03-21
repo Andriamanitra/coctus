@@ -6,7 +6,7 @@ use language::Language;
 use serde_json::json;
 use tera::{Context, Tera};
 
-use super::parser::{Cmd, JoinTerm, JoinTermType, Stub, VariableCommand};
+use super::{Cmd, JoinTerm, JoinTermType, Stub, VariableCommand};
 
 const ALPHABET: [char; 18] = [
     'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
