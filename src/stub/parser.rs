@@ -11,12 +11,12 @@ pub fn parse_generator_stub(generator: &str) -> Stub {
 /// A wrapper around an iterator of tokens in the CG stub. Contains all of the stub parsing logic.
 ///
 /// Exists solely to be consumed with `.parse()`
-pub struct Parser<'a> {
+struct Parser<'a> {
     token_stream: Box<dyn Iterator<Item = &'a str> + 'a>,
 }
 
 impl<'a> Parser<'a> {
-    pub fn new(stub: &'a str) -> Self {
+    fn new(stub: &'a str) -> Self {
         // .chain just adds an iterator to the end of another one,
         // iter::once creates an iterator out of a single element. 
         // Essentially this puts a "\n" at the end of each line so the parser can tell where the
@@ -25,20 +25,8 @@ impl<'a> Parser<'a> {
         Self { token_stream: Box::new(token_stream) }
     }
 
-    /// Parses its stream into a Stub, which includes a tree of the commands in the CG stub.
-    ///
-    /// Cannot be called twice since it consumes the stream.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use clashlib::stub::parser::Parser; 
-    ///
-    /// let stub_text = "read a:int b:long \n write this is a test";
-    /// Parser::new(stub_text).parse();
-    /// ```
     #[rustfmt::skip]
-    pub fn parse(mut self) -> Stub {
+    fn parse(mut self) -> Stub {
         let mut stub = Stub::default();
 
         while let Some(token) = self.next_token() {

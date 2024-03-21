@@ -1,5 +1,5 @@
-pub mod parser;
-pub mod renderer;
+mod parser;
+mod renderer;
 pub mod language;
 
 use anyhow::Result;
