@@ -246,26 +246,17 @@ impl<'a> Parser<'a> {
     // nor InputComments to variables with the same identifier
     fn parse_input_comment(&mut self, previous_commands: &mut [Cmd]) {
         let input_statement = self.parse_text_block();
-        let input_comments = input_statement
+        input_statement
             .lines()
-            .filter(|line| line.contains(':'))
-            .map(|line| {
-                if let Some((var, rest)) = line.split_once(':') {
-                    (String::from(var.trim()), String::from(rest.trim()))
-                } else {
-                    panic!("Impossible since the list was filtered??");
+            .filter_map(|line| line.split_once(':'))
+            .for_each(|(ic_ident, ic_comment)|
+                for cmd in previous_commands.iter_mut() {
+                    Self::update_cmd_with_input_comment(cmd, ic_ident.trim(), ic_comment.trim());
                 }
-            })
-            .collect::<Vec<_>>();
-
-        for (ic_ident, ic_comment) in input_comments {
-            for cmd in previous_commands.iter_mut() {
-                Self::update_cmd_with_input_comment(cmd, &ic_ident, &ic_comment);
-            }
-        }
+            );
     }
 
-    fn update_cmd_with_input_comment(cmd: &mut Cmd, ic_ident: &String, ic_comment: &String) {
+    fn update_cmd_with_input_comment(cmd: &mut Cmd, ic_ident: &str, ic_comment: &str) {
         match cmd {
             Cmd::Read(variables)
             | Cmd::LoopLine {
@@ -274,7 +265,7 @@ impl<'a> Parser<'a> {
             } => {
                 for var in variables.iter_mut() {
                     if var.ident == *ic_ident {
-                        var.input_comment = ic_comment.clone();
+                        var.input_comment = ic_comment.to_string();
                     }
                 }
             }
