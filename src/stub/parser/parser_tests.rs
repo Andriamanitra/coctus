@@ -1,4 +1,5 @@
 use super::*;
+use indoc::indoc;
 
 #[test]
 fn parse_read_parses_variable_list() {
@@ -187,5 +188,89 @@ fn parse_loopline_panics_without_variables() {
 
 #[test]
 fn parse_input_comment_attaches_comment_to_read() {
+    let mut parser = Parser::new(indoc! {r"
+        a:int
+        INPUT
+        a: a number
+    "});
 
+    let mut commands = [parser.parse_read()];
+    parser.parse_input_comment(&mut commands);
+    let Cmd::Read(ref vars) = commands[0] else { panic!() };
+    assert_eq!(vars[0].input_comment, "a number");
 }
+
+#[test]
+fn parse_input_comment_attaches_comment_to_multiple_vars() {
+    let mut parser = Parser::new(indoc! {r"
+        a:int b:long
+        INPUT
+        b: A big number
+        a: a number
+    "});
+
+    let mut commands = [parser.parse_read()];
+    parser.parse_input_comment(&mut commands);
+    let Cmd::Read(ref vars) = commands[0] else { panic!() };
+    assert_eq!(vars[0].input_comment, "a number");
+    assert_eq!(vars[1].input_comment, "A big number");
+}
+
+#[test]
+fn parse_input_comment_ignores_lines_without_variable() {
+    let mut parser = Parser::new(indoc! {r"
+        a:int b:long
+        INPUT
+        A WORTHLESS LINE
+        a: a number
+    "});
+
+    let mut commands = [parser.parse_read()];
+    parser.parse_input_comment(&mut commands);
+    let Cmd::Read(ref vars) = commands[0] else { panic!() };
+    assert_eq!(vars[0].input_comment, "a number");
+}
+
+#[test]
+fn parse_input_comment_attaches_comment_to_loopline() {
+    let mut parser = Parser::new(indoc! {r"
+        1 a:int
+        INPUT
+        a: a number
+    "});
+
+    let mut commands = [parser.parse_loopline()];
+    parser.parse_input_comment(&mut commands);
+    let Cmd::LoopLine { ref variables, .. } = commands[0] else { panic!() };
+    assert_eq!(variables[0].input_comment, "a number");
+}
+
+#[test]
+fn parse_input_comment_attaches_comment_to_read_inside_loop() {
+    let mut parser = Parser::new(indoc! {r"
+        1 read a:int
+        INPUT
+        a: a number
+    "});
+    let mut commands = [parser.parse_loop()];
+    parser.parse_input_comment(&mut commands);
+    let Cmd::Loop { ref command, .. } = commands[0] else { panic!() };
+    let Cmd::Read(variables) = *command.clone() else { panic!() };
+    assert_eq!(variables[0].input_comment, "a number");
+}
+
+#[test]
+fn parse_input_comment_attaches_comment_to_loopline_inside_loop() {
+    let mut parser = Parser::new(indoc! {r"
+        1 loopline 1 a:int
+        INPUT
+        a: a number
+    "});
+
+    let mut commands = [parser.parse_loop()];
+    parser.parse_input_comment(&mut commands);
+    let Cmd::Loop { ref command, .. } = commands[0] else { panic!() };
+    let Cmd::LoopLine { ref variables, .. } = *command.clone() else { panic!() };
+    assert_eq!(variables[0].input_comment, "a number");
+}
+
