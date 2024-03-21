@@ -196,6 +196,7 @@ impl App {
         }
     }
 
+    // This may fail the very first time we call `show` if `next` was never run.
     fn current_handle(&self) -> Result<PublicHandle> {
         let content = std::fs::read_to_string(&self.current_clash_file)
             .with_context(|| format!("Unable to read {:?}", &self.current_clash_file))?;
@@ -383,23 +384,23 @@ impl App {
     }
 
     fn fetch(&self, args: &ArgMatches) -> Result<()> {
-        if let Some(handles) = args.get_many::<PublicHandle>("PUBLIC_HANDLE") {
-            for handle in handles {
-                let http = reqwest::blocking::Client::new();
-                let res = http
-                    .post("https://www.codingame.com/services/Contribution/findContribution")
-                    .body(format!(r#"["{}", true]"#, handle))
-                    .header(reqwest::header::CONTENT_TYPE, "application/json")
-                    .send()?;
-                let content = res.error_for_status()?.text()?;
-                let clash_file_path = self.clash_dir.join(format!("{}.json", handle));
-                std::fs::write(&clash_file_path, &content)?;
-                println!("Saved clash {} as {}", &handle, &clash_file_path.display());
-            }
-            Ok(())
-        } else {
-            Err(anyhow!("fetched no clashes"))
+        std::fs::create_dir_all(&self.clash_dir)?;
+        let handles = args
+            .get_many::<PublicHandle>("PUBLIC_HANDLE")
+            .with_context(|| format!("Should have many handles"))?;
+        for handle in handles {
+            let http = reqwest::blocking::Client::new();
+            let res = http
+                .post("https://www.codingame.com/services/Contribution/findContribution")
+                .body(format!(r#"["{}", true]"#, handle))
+                .header(reqwest::header::CONTENT_TYPE, "application/json")
+                .send()?;
+            let content = res.error_for_status()?.text()?;
+            let clash_file_path = self.clash_dir.join(format!("{}.json", handle));
+            std::fs::write(&clash_file_path, &content)?;
+            println!("Saved clash {} as {}", &handle, &clash_file_path.display());
         }
+        Ok(())
     }
 
     fn showtests(&self, args: &ArgMatches) -> Result<()> {
