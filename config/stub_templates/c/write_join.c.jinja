@@ -8,7 +8,7 @@
 
 {%- set_global joined_terms = [] -%}
 {%- for term in terms -%}
-  {%- if term.term_type == "Variable"%}
+  {%- if term.is_variable %}
     {%- set ref = "TODO" -%}
   {%- else -%}
     {%- set ref = term.name -%}

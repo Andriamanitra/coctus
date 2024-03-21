@@ -4,7 +4,7 @@
 
 {%- set_global out = "" -%}
 {%- for term in terms -%}
-  {%- if term.term_type == "Variable" -%}
+  {%- if term.is_variable -%}
     {%- set_global out = out ~ "str(" ~ term.name ~ ")" -%}
   {%- else -%}
     {%- set_global out = out ~ '"' ~ term.name ~ '"' -%}

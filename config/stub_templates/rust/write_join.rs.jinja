@@ -4,7 +4,7 @@
 
 puts "
 {%- for term in terms -%}
-  {%- if term.term_type=="Variable" -%}
+  {%- if term.is_variable -%}
     {{- '#{' }}{{ term.name }}{{ '}' -}}
   {%- else -%}
     {{- term.name -}}

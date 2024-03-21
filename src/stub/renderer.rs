@@ -4,7 +4,7 @@ use super::Language;
 use serde_json::json;
 use tera::{Context, Tera};
 
-use super::{Cmd, JoinTerm, JoinTermType, Stub, VariableCommand};
+use super::{Cmd, JoinTerm, Stub, VariableCommand};
 
 const ALPHABET: [char; 18] = [
     'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
@@ -104,7 +104,7 @@ impl Renderer {
             .iter()
             .cloned()
             .map(|mut term| {
-                if let JoinTermType::Variable = term.term_type {
+                if term.is_variable {
                     term.name = self.lang.transform_variable_name(&term.name);
                 }
                 term

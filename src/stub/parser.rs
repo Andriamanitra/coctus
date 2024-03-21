@@ -1,6 +1,6 @@
 #![allow(clippy::while_let_on_iterator)]
 
-use super::{Cmd, JoinTerm, JoinTermType, Stub, VariableCommand, VarType};
+use super::{Cmd, JoinTerm, Stub, VariableCommand, VarType};
 use regex::Regex;
 use std::iter;
 
@@ -116,9 +116,9 @@ impl<'a> Parser<'a> {
             .split(terms_string)
             .map(|term_str| {
                 if let Some(mtch) = literal_matcher.captures(term_str) {
-                    JoinTerm::new(mtch.get(1).unwrap().as_str().to_owned(), JoinTermType::Literal)
+                    JoinTerm::new_literal(mtch.get(1).unwrap().as_str().to_owned())
                 } else {
-                    JoinTerm::new(term_str.to_owned(), JoinTermType::Variable)
+                    JoinTerm::new_variable(term_str.to_string())
                 }
             })
             .collect::<Vec<_>>();

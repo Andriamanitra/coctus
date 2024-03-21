@@ -65,20 +65,18 @@ impl VariableCommand {
 }
 
 #[derive(Serialize, Clone, Debug)]
-pub enum JoinTermType {
-    Literal,
-    Variable,
-}
-
-#[derive(Serialize, Clone, Debug)]
 pub struct JoinTerm {
     pub name: String,
-    pub term_type: JoinTermType,
+    pub is_variable: bool
 }
 
 impl JoinTerm {
-    pub fn new(name: String, term_type: JoinTermType) -> Self {
-        Self { name, term_type }
+    pub fn new_literal(name: String) -> Self {
+        Self { name, is_variable: false }
+    }
+
+    pub fn new_variable(name: String) -> Self {
+        Self { name, is_variable: true }
     }
 }
 
