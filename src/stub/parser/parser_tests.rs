@@ -274,3 +274,78 @@ fn parse_input_comment_attaches_comment_to_loopline_inside_loop() {
     assert_eq!(variables[0].input_comment, "a number");
 }
 
+#[test]
+fn parse_output_comment_adds_comment_to_write() {
+    let mut parser = Parser::new(indoc! {r"
+        Knock You Out
+
+        the OUTPUT keyword is already consumed
+        Mama said
+    "});
+
+    let mut commands = [parser.parse_write()];
+    parser.parse_output_comment(&mut commands);
+    let Cmd::Write { ref text, ref output_comment } = commands[0] else { panic!() };
+    assert_eq!(text, "Knock You Out");
+    assert_eq!(output_comment, "Mama said");
+}
+
+#[test]
+fn parse_output_comment_adds_comment_to_multiple_writes() {
+    let mut parser = Parser::new(indoc! {r"
+        Knock You Out
+
+        Eat your vegetables
+
+        the OUTPUT keyword is already consumed
+        Mama said
+    "});
+
+    let mut commands = [parser.parse_write(), parser.parse_write()];
+    parser.parse_output_comment(&mut commands);
+
+    let Cmd::Write { ref text, ref output_comment } = commands[0] else { panic!() };
+    let Cmd::Write { text: ref second_text, output_comment: ref second_comment } = commands[1] else { panic!() };
+
+    assert_eq!(text, "Knock You Out");
+    assert_eq!(output_comment, "Mama said");
+
+    assert_eq!(second_text, "Eat your vegetables");
+    assert_eq!(second_comment, "Mama said");
+}
+
+#[test]
+fn parse_output_comment_does_not_overwrite() {
+    let mut parser = Parser::new(indoc! {r"
+        Knock You Out
+
+        the OUTPUT keyword is already consumed
+        Mama said
+
+        the OUTPUT keyword is already consumed
+        Daddy said
+    "});
+
+    let mut commands = [parser.parse_write()];
+    parser.parse_output_comment(&mut commands);
+    parser.parse_output_comment(&mut commands); // Parses "Daddy said" but does not use it
+
+    let Cmd::Write { ref text, ref output_comment } = commands[0] else { panic!() };
+
+    assert_eq!(text, "Knock You Out");
+    assert_eq!(output_comment, "Mama said");
+}
+
+#[test]
+fn parse_output_comment_adds_comment_to_write_join() {
+    let mut parser = Parser::new(indoc! {r##"
+        join("Knock", "You", "Out")
+        the OUTPUT keyword is already consumed
+        Mama said
+    "##});
+
+    let mut commands = [parser.parse_write()];
+    parser.parse_output_comment(&mut commands);
+    let Cmd::WriteJoin { ref output_comment, .. } = commands[0] else { panic!() };
+    assert_eq!(output_comment, "Mama said");
+}
