@@ -165,3 +165,27 @@ fn parse_loop_tolerates_newlines_around_count() {
     assert_eq!(vars.len(), 1);
 }
 
+#[test]
+fn parse_loopline_parses_counter_and_variables() {
+    let mut parser = Parser::new("n a:int b:long c:word(50)");
+    let Cmd::LoopLine { count_var, variables } = parser.parse_loopline() else { panic!() };
+    assert_eq!(count_var, "n");
+    assert_eq!(variables.len(), 3);
+}
+
+#[test]
+#[should_panic]
+fn parse_loopline_panics_without_counter() {
+    Parser::new("").parse_loopline();
+}
+
+#[test]
+#[should_panic]
+fn parse_loopline_panics_without_variables() {
+    Parser::new("n").parse_loopline();
+}
+
+#[test]
+fn parse_input_comment_attaches_comment_to_read() {
+
+}
