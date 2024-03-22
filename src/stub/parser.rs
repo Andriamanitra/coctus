@@ -65,7 +65,7 @@ impl<'a> Parser<'a> {
 
         Cmd::Write {
             lines,
-            output_comment: String::new(),
+            output_comment: Vec::new(),
         }
     }
 
@@ -81,7 +81,7 @@ impl<'a> Parser<'a> {
                     // (I guess the CG parser fails due to consecutive commas)
                     Some(Cmd::Write { 
                             lines: vec![line.to_string()], 
-                            output_comment: String::new() 
+                            output_comment: Vec::new() 
                         })
                 } else {
                     // NOTE: write•join("a")⏎ is a valid join
@@ -107,12 +107,12 @@ impl<'a> Parser<'a> {
 
         Cmd::WriteJoin { 
             join_terms,
-            output_comment: String::new() 
+            output_comment: Vec::new() 
         }
     }
 
     fn parse_loop(&mut self) -> Cmd {
-        match self.next_past_newline() {
+        match self.next_token_past_newline() {
             Some("\n") => panic!("Could not find count identifier for loop"),
             None => panic!("Unexpected end of input: Loop stub not provided with loop count"),
             Some(other) => Cmd::Loop {
@@ -123,7 +123,7 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_loopable(&mut self) -> Cmd {
-        match self.next_past_newline() {
+        match self.next_token_past_newline() {
             Some("\n") => panic!("Loop not provided with command"),
             Some("read") => self.parse_read(),
             Some("write") => self.parse_write(),
@@ -135,7 +135,7 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_loopline(&mut self) -> Cmd {
-        match self.next_past_newline() {
+        match self.next_token_past_newline() {
             Some("\n") => panic!("Could not find count identifier for loopline"),
             None => panic!("Unexpected end of input: Loopline stub not provided with count identifier"),
             Some(other) => Cmd::LoopLine {
@@ -175,57 +175,39 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn update_cmd_with_output_comment(cmd: &mut Cmd, new_comment: &str) {
-        match cmd {
-            Cmd::Write {
-                lines: _,
-                ref mut output_comment,
+    // Doesn't deal with InputComments to unassigned variables
+    // nor InputComments to variables with the same identifier
+    fn parse_input_comment(&mut self, previous_commands: &mut [Cmd]) {
+        self.skip_to_next_line();
+
+        while let Some(line) = self.rest_of_line() {
+            if let Some((ic_ident, ic_comment)) = line.split_once(':') {
+                for cmd in previous_commands.iter_mut() {
+                    Self::update_cmd_with_input_comment(cmd, ic_ident.trim(), ic_comment.trim());
+                }
             }
-            | Cmd::WriteJoin {
-                join_terms: _,
-                ref mut output_comment,
-            } if output_comment.is_empty() => *output_comment = new_comment.to_string(),
-            Cmd::Loop {
-                count_var: _,
-                ref mut command,
-            } => {
+        }
+    }
+
+    fn update_cmd_with_output_comment(cmd: &mut Cmd, new_comment: &Vec<String>) {
+        match cmd {
+            Cmd::Write { ref mut output_comment, .. } | Cmd::WriteJoin { ref mut output_comment, .. } 
+                if output_comment.is_empty() => *output_comment = new_comment.clone(),
+            Cmd::Loop { ref mut command, .. } => {
                 Self::update_cmd_with_output_comment(command, new_comment);
             }
             _ => (),
         }
     }
 
-    // Doesn't deal with InputComments to unassigned variables
-    // nor InputComments to variables with the same identifier
-    fn parse_input_comment(&mut self, previous_commands: &mut [Cmd]) {
-        let input_statement = self.parse_text_block();
-        input_statement
-            .lines()
-            .filter_map(|line| line.split_once(':'))
-            .for_each(|(ic_ident, ic_comment)|
-                for cmd in previous_commands.iter_mut() {
-                    Self::update_cmd_with_input_comment(cmd, ic_ident.trim(), ic_comment.trim());
-                }
-            );
-    }
-
     fn update_cmd_with_input_comment(cmd: &mut Cmd, ic_ident: &str, ic_comment: &str) {
         match cmd {
-            Cmd::Read(variables)
-            | Cmd::LoopLine {
-                count_var: _,
-                variables,
-            } => {
-                for var in variables.iter_mut() {
-                    if var.ident == *ic_ident {
-                        var.input_comment = ic_comment.to_string();
-                    }
+            Cmd::Read(variables) | Cmd::LoopLine { variables, .. } => {
+                for var in variables.iter_mut().filter(|var| var.ident == *ic_ident) {
+                    var.input_comment = ic_comment.to_string();
                 }
             }
-            Cmd::Loop {
-                count_var: _,
-                ref mut command,
-            } => {
+            Cmd::Loop { ref mut command, .. } => {
                 Self::update_cmd_with_input_comment(command, ic_ident, ic_comment);
             }
             _ => (),
@@ -240,27 +222,28 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn parse_text_block(&mut self) -> String {
+    fn parse_text_block(&mut self) -> Vec<String> {
         self.skip_to_next_line();
 
-        let mut text_block: Vec<String> = Vec::new();
-        while let Some(line) = self.tokens_upto_newline() {
-            text_block.push(line.join(" ").trim().to_string())
+        let mut text_block = Vec::new();
+
+        while let Some(line) = self.rest_of_line() {
+            text_block.push(line.trim().to_string())
         }
 
-        text_block.join("\n")
-    }
-
-    fn next_past_newline(&mut self) -> Option<&'a str> {
-        match self.next_token() {
-            Some("\n") => self.next_token(),
-            Some("") => self.next_past_newline(),
-            token => token,
-        }
+        text_block
     }
 
     fn next_token(&mut self) -> Option<&'a str> {
         self.token_stream.next()
+    }
+
+    fn next_token_past_newline(&mut self) -> Option<&'a str> {
+        match self.next_token() {
+            Some("\n") => self.next_token(),
+            Some("") => self.next_token_past_newline(),
+            token => token,
+        }
     }
 
     fn rest_of_line(&mut self) -> Option<String> {

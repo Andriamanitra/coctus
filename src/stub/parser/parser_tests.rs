@@ -287,7 +287,7 @@ fn parse_output_comment_adds_comment_to_write() {
     parser.parse_output_comment(&mut commands);
     let Cmd::Write { ref lines, ref output_comment } = commands[0] else { panic!() };
     assert_eq!(lines[0], "Knock You Out");
-    assert_eq!(output_comment, "Mama said");
+    assert_eq!(output_comment[0], "Mama said");
 }
 
 #[test]
@@ -308,10 +308,10 @@ fn parse_output_comment_adds_comment_to_multiple_writes() {
     let Cmd::Write { lines: ref second_lines, output_comment: ref second_comment } = commands[1] else { panic!() };
 
     assert_eq!(lines[0], "Knock You Out");
-    assert_eq!(output_comment, "Mama said");
+    assert_eq!(output_comment[0], "Mama said");
 
     assert_eq!(second_lines[0], "Eat your vegetables");
-    assert_eq!(second_comment, "Mama said");
+    assert_eq!(second_comment[0], "Mama said");
 }
 
 #[test]
@@ -333,7 +333,7 @@ fn parse_output_comment_does_not_overwrite() {
     let Cmd::Write { ref lines, ref output_comment } = commands[0] else { panic!() };
 
     assert_eq!(lines[0], "Knock You Out");
-    assert_eq!(output_comment, "Mama said");
+    assert_eq!(output_comment[0], "Mama said");
 }
 
 #[test]
@@ -347,5 +347,5 @@ fn parse_output_comment_adds_comment_to_write_join() {
     let mut commands = [parser.parse_write()];
     parser.parse_output_comment(&mut commands);
     let Cmd::WriteJoin { ref output_comment, .. } = commands[0] else { panic!() };
-    assert_eq!(output_comment, "Mama said");
+    assert_eq!(output_comment[0], "Mama said");
 }

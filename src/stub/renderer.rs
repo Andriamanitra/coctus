@@ -60,12 +60,10 @@ impl Renderer {
     fn render(&self) -> String {
         let mut context = Context::new();
 
-        let statement: Vec<&str> = self.stub.statement.lines().collect();
-
         let code: String = self.stub.commands.iter().map(|cmd| self.render_command(cmd, 0)).collect();
         let code_lines: Vec<&str> = code.lines().collect();
 
-        context.insert("statement", &statement);
+        context.insert("statement", &self.stub.statement);
         context.insert("code_lines", &code_lines);
 
         self.tera_render("main", &mut context)
@@ -86,19 +84,18 @@ impl Renderer {
         }
     }
 
-    fn render_write(&self, lines: &[String], output_comment: &str) -> String {
+    fn render_write(&self, lines: &[String], output_comments: &[String]) -> String {
         let mut context = Context::new();
-        let output_comments: Vec<&str> = output_comment.lines().collect();
 
         context.insert("messages", lines);
-        context.insert("output_comments", &output_comments);
+        context.insert("output_comments", output_comments);
 
         self.tera_render("write", &mut context)
     }
 
-    fn render_write_join(&self, terms: &[JoinTerm], output_comment: &str) -> String {
+    fn render_write_join(&self, terms: &[JoinTerm], output_comments: &[String]) -> String {
         let mut context = Context::new();
-        let output_comments: Vec<&str> = output_comment.lines().collect();
+
         let terms: Vec<JoinTerm> = terms
             .iter()
             .cloned()
@@ -111,7 +108,7 @@ impl Renderer {
             .collect();
 
         context.insert("terms", &terms);
-        context.insert("output_comments", &output_comments);
+        context.insert("output_comments", output_comments);
 
         self.tera_render("write_join", &mut context)
     }

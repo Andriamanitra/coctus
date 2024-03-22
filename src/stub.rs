@@ -21,7 +21,7 @@ pub fn generate(lang: Language, generator: &str) -> Result<String> {
 #[derive(Clone, Default)]
 pub struct Stub {
     pub commands: Vec<Cmd>,
-    pub statement: String,
+    pub statement: Vec<String>,
 }
 
 // More visual than derive(Debug)
@@ -113,11 +113,11 @@ pub enum Cmd {
     },
     Write {
         lines: Vec<String>,
-        output_comment: String,
+        output_comment: Vec<String>,
     },
     WriteJoin {
         join_terms: Vec<JoinTerm>,
-        output_comment: String,
+        output_comment: Vec<String>,
     },
 }
 
