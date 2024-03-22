@@ -92,7 +92,7 @@ pub enum Cmd {
         variables: Vec<VariableCommand>,
     },
     Write {
-        text: String,
+        lines: Vec<String>,
         output_comment: String,
     },
     WriteJoin {
@@ -100,6 +100,7 @@ pub enum Cmd {
         output_comment: String,
     },
 }
+
 #[cfg(test)]
 mod tests {
     use super::*;

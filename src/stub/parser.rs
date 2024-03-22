@@ -51,78 +51,64 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_write(&mut self) -> Cmd {
-        let mut write_text: Vec<String> = Vec::new();
-        let mut first_line = true;
+        let mut lines = Vec::new();
 
-        while let Some(token_list) = self.tokens_upto_newline() {
-            // NOTE: write•join()•rest⏎, with NOTHING inside the parens,
-            //       gets parsed as a write and not as a write_join
-            // NOTE: write•join("a")⏎ is a valid join
-            // NOTE: write•join(⏎ gets parsed as a raw_string
-            if let Some(position) = token_list
-                .iter()
-                .position(|&token| token.starts_with("join(") && !token.starts_with("join()") && first_line)
-            {
-                let (prelude, join_slice) = &token_list.split_at(position);
-                let mut write = self.parse_write_join(join_slice.to_vec());
-                if let Cmd::Write { ref mut text, .. } = write { 
-                    if !prelude.is_empty() { 
-                        *text = [prelude.join(" "), text.clone()].join(" ");
-                    };
-                };
-
-                return write;
+        while let Some(line) = self.rest_of_line() {
+            // NOTE: A join could be present on the first line
+            if lines.is_empty() {
+                if let Some(write) = self.check_for_write_join(&line) {
+                    return write
+                }
             }
-            first_line = false;
-            write_text.push(token_list.join(" ").trim().to_string())
+
+            lines.push(line)
         }
 
         Cmd::Write {
-            text: write_text.join("\n"),
+            lines,
             output_comment: String::new(),
         }
     }
 
-    fn parse_write_join(&self, line_stream: Vec<&str>) -> Cmd {
-        let inner = line_stream.join(" ");
-        let terms_finder = Regex::new(r"join\(([^)]*)\)").unwrap();
-        let terms_string_captures = terms_finder.captures(&inner);
-        let terms_string = match terms_string_captures {
-            None => {
-                // in case write join(⏎
-                return Cmd::Write {
-                    text: inner,
-                    output_comment: String::new(),
-                }
-            }
-            Some(str) => str.get(1).unwrap().as_str(),
-        };
-        let term_splitter = Regex::new(r",\s*").unwrap();
-        let literal_matcher = Regex::new("\\\"([^)]+)\\\"").unwrap();
+    fn check_for_write_join(&self, line: &str) -> Option<Cmd> {
+        // NOTE: write•join()•rest⏎, with NOTHING inside the parens,
+        //       gets parsed as a write and not as a write_join
+        match line.replace("join()", "").split_once("join(") {
+            Some((_, join_arg)) if join_arg.contains(")") => {
+                let terms_string = join_arg.split_once(")").expect("Already checked existence").0;
 
-        let join_terms = term_splitter
-            .split(terms_string)
-            .map(|term_str| {
-                if let Some(mtch) = literal_matcher.captures(term_str) {
-                    JoinTerm::new_literal(mtch.get(1).unwrap().as_str().to_owned())
+                if terms_string.split(",").any(|t| t.trim().is_empty()) {
+                    // write•join("hi",,,•"Jim")⏎ should be rendered as a Write Cmd
+                    // (I guess the CG parser fails due to consecutive commas)
+                    Some(Cmd::Write { 
+                            lines: vec![line.to_string()], 
+                            output_comment: String::new() 
+                        })
                 } else {
-                    JoinTerm::new_variable(term_str.to_string())
+                    // NOTE: write•join("a")⏎ is a valid join
+                    Some(self.parse_write_join(terms_string))
                 }
-            })
-            .collect::<Vec<_>>();
-
-        // write•join("hi",,,•"Jim")⏎ should be rendered as a Write Cmd
-        // (I guess the CG parser fails due to consecutive commas)
-        if join_terms.iter().any(|jt| jt.name.is_empty()) {
-            return Cmd::Write {
-                text: inner,
-                output_comment: String::new(),
             }
+            // NOTE: write•join(⏎ gets parsed as a raw string
+            //       and write parsing resumes
+            _ => None
         }
+    }
 
-        Cmd::WriteJoin {
+    fn parse_write_join(&self, terms_string: &str) -> Cmd {
+        let join_terms =  
+            terms_string.split(",").map(|term|
+                if term.contains('"') {
+                    let term_name = term.trim_matches(|c| c != '"').trim_matches('"').to_string();
+                    JoinTerm::new_literal(term_name)
+                } else { 
+                    JoinTerm::new_variable(term.trim().to_string())
+                }
+            ).collect();
+
+        Cmd::WriteJoin { 
             join_terms,
-            output_comment: String::new(),
+            output_comment: String::new() 
         }
     }
 
@@ -213,7 +199,7 @@ impl<'a> Parser<'a> {
     fn update_cmd_with_output_comment(cmd: &mut Cmd, new_comment: &str) {
         match cmd {
             Cmd::Write {
-                text: _,
+                lines: _,
                 ref mut output_comment,
             }
             | Cmd::WriteJoin {
@@ -298,6 +284,10 @@ impl<'a> Parser<'a> {
         self.token_stream.next()
     }
 
+    fn rest_of_line(&mut self) -> Option<String> {
+        Some(self.tokens_upto_newline()?.join(" ").trim().to_string())
+    }
+
     // Consumes the newline
     fn tokens_upto_newline(&mut self) -> Option<Vec<&'a str>> {
         let mut buf = Vec::new();
@@ -315,6 +305,7 @@ impl<'a> Parser<'a> {
             Some(buf)
         }
     }
+
 }
 
 #[cfg(test)]

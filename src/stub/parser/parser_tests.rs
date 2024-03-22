@@ -35,22 +35,22 @@ fn parse_read_panics_with_sized_variable_without_size() {
 #[test]
 fn parse_write_captures_text() {
     let mut parser = Parser::new("hello world");
-    let Cmd::Write { text, .. } = parser.parse_write() else { panic!() };
-    assert_eq!(text, "hello world");
+    let Cmd::Write { lines, .. } = parser.parse_write() else { panic!() };
+    assert_eq!(lines[0], "hello world");
 }
 
 #[test]
 fn parse_write_captures_lines_of_text() {
     let mut parser = Parser::new("hello\nworld");
-    let Cmd::Write { text, .. } = parser.parse_write() else { panic!() };
-    assert_eq!(text, "hello\nworld");
+    let Cmd::Write { lines, .. } = parser.parse_write() else { panic!() };
+    assert_eq!(lines, vec!["hello", "world"]);
 }
 
 #[test]
 fn parse_write_captures_lines_of_text_until_empty_line() {
     let mut parser = Parser::new("hello\nworld\n\nread");
-    let Cmd::Write { text, .. } = parser.parse_write() else { panic!() };
-    assert_eq!(text, "hello\nworld");
+    let Cmd::Write { lines, .. } = parser.parse_write() else { panic!() };
+    assert_eq!(lines, vec!["hello", "world"]);
 }
 
 #[test]
@@ -70,22 +70,22 @@ fn parse_write_returns_write_joins() {
 #[test]
 fn parse_write_captures_empty_write_joins() {
     let mut parser = Parser::new("hello join() world");
-    let Cmd::Write { text, .. } = parser.parse_write() else { panic!() };
-    assert_eq!(text, "hello join() world");
+    let Cmd::Write { lines, .. } = parser.parse_write() else { panic!() };
+    assert_eq!(lines[0], "hello join() world");
 }
 
 #[test]
 fn parse_write_captures_incomplete_write_joins() {
     let mut parser = Parser::new("hello join( world");
-    let Cmd::Write { text, .. } = parser.parse_write() else { panic!() };
-    assert_eq!(text, "hello join( world");
+    let Cmd::Write { lines, .. } = parser.parse_write() else { panic!() };
+    assert_eq!(lines[0], "hello join( world");
 }
 
 #[test]
 fn parse_write_captures_invalid_write_joins() {
     let mut parser = Parser::new("hello join(\"thing\",,) world");
-    let Cmd::Write { text, .. } = parser.parse_write() else { panic!() };
-    assert_eq!(text, "hello join(\"thing\",,) world");
+    let Cmd::Write { lines, .. } = parser.parse_write() else { panic!() };
+    assert_eq!(lines[0], "hello join(\"thing\",,) world");
 }
 
 #[test]
@@ -132,8 +132,8 @@ fn parse_loop_accepts_read_command() {
 fn parse_loop_accepts_write_command() {
     let mut parser = Parser::new("n write hello world");
     let Cmd::Loop { command: inner_cmd, ..  } = parser.parse_loop() else { panic!() };
-    let Cmd::Write { text, .. } = *inner_cmd else { panic!() };
-    assert_eq!(text, "hello world")
+    let Cmd::Write { lines, .. } = *inner_cmd else { panic!() };
+    assert_eq!(lines[0], "hello world")
 }
 
 #[test]
@@ -285,8 +285,8 @@ fn parse_output_comment_adds_comment_to_write() {
 
     let mut commands = [parser.parse_write()];
     parser.parse_output_comment(&mut commands);
-    let Cmd::Write { ref text, ref output_comment } = commands[0] else { panic!() };
-    assert_eq!(text, "Knock You Out");
+    let Cmd::Write { ref lines, ref output_comment } = commands[0] else { panic!() };
+    assert_eq!(lines[0], "Knock You Out");
     assert_eq!(output_comment, "Mama said");
 }
 
@@ -304,13 +304,13 @@ fn parse_output_comment_adds_comment_to_multiple_writes() {
     let mut commands = [parser.parse_write(), parser.parse_write()];
     parser.parse_output_comment(&mut commands);
 
-    let Cmd::Write { ref text, ref output_comment } = commands[0] else { panic!() };
-    let Cmd::Write { text: ref second_text, output_comment: ref second_comment } = commands[1] else { panic!() };
+    let Cmd::Write { ref lines, ref output_comment } = commands[0] else { panic!() };
+    let Cmd::Write { lines: ref second_lines, output_comment: ref second_comment } = commands[1] else { panic!() };
 
-    assert_eq!(text, "Knock You Out");
+    assert_eq!(lines[0], "Knock You Out");
     assert_eq!(output_comment, "Mama said");
 
-    assert_eq!(second_text, "Eat your vegetables");
+    assert_eq!(second_lines[0], "Eat your vegetables");
     assert_eq!(second_comment, "Mama said");
 }
 
@@ -330,9 +330,9 @@ fn parse_output_comment_does_not_overwrite() {
     parser.parse_output_comment(&mut commands);
     parser.parse_output_comment(&mut commands); // Parses "Daddy said" but does not use it
 
-    let Cmd::Write { ref text, ref output_comment } = commands[0] else { panic!() };
+    let Cmd::Write { ref lines, ref output_comment } = commands[0] else { panic!() };
 
-    assert_eq!(text, "Knock You Out");
+    assert_eq!(lines[0], "Knock You Out");
     assert_eq!(output_comment, "Mama said");
 }
 

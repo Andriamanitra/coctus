@@ -74,7 +74,7 @@ impl Renderer {
     fn render_command(&self, cmd: &Cmd, nesting_depth: usize) -> String {
         match cmd {
             Cmd::Read(vars) => self.render_read(vars),
-            Cmd::Write { text, output_comment } => self.render_write(text, output_comment),
+            Cmd::Write { lines, output_comment } => self.render_write(lines, output_comment),
             Cmd::WriteJoin {
                 join_terms,
                 output_comment,
@@ -86,12 +86,11 @@ impl Renderer {
         }
     }
 
-    fn render_write(&self, text: &str, output_comment: &str) -> String {
+    fn render_write(&self, lines: &[String], output_comment: &str) -> String {
         let mut context = Context::new();
         let output_comments: Vec<&str> = output_comment.lines().collect();
-        let messages: Vec<&str> = text.lines().collect();
 
-        context.insert("messages", &messages);
+        context.insert("messages", lines);
         context.insert("output_comments", &output_comments);
 
         self.tera_render("write", &mut context)
