@@ -1,7 +1,6 @@
 #![allow(clippy::while_let_on_iterator)]
 
 use super::{Cmd, JoinTerm, Stub, VariableCommand, VarType};
-use regex::Regex;
 use std::iter;
 
 pub fn parse_generator_stub(generator: &str) -> Stub {
@@ -146,47 +145,27 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn parse_variable(token: &str) -> VariableCommand {
-        let mut iter = token.split(':');
-        let identifier = String::from(iter.next().unwrap());
-        let var_type = iter.next().expect("Error in stub generator: missing type");
-
-        // Trim because the stub generator may contain sneaky newlines
-        match var_type.trim_end() {
-            "int" => VariableCommand::new(identifier, VarType::Int, None),
-            "float" => VariableCommand::new(identifier, VarType::Float, None),
-            "long" => VariableCommand::new(identifier, VarType::Long, None),
-            "bool" => VariableCommand::new(identifier, VarType::Bool, None),
-            _ => {
-                let length_regex = Regex::new(r"(word|string)\((\w+)\)").unwrap();
-                let length_captures = length_regex.captures(var_type);
-                let caps = length_captures
-                    .unwrap_or_else(|| panic!("Failed to parse variable type for token: {}", &token));
-                let new_type = caps.get(1).unwrap().as_str();
-                let length = caps.get(2).unwrap().as_str();
-                let max_length = String::from(length);
-                match new_type {
-                    "word" => VariableCommand::new(identifier, VarType::Word, Some(max_length)),
-                    "string" => VariableCommand::new(identifier, VarType::String, Some(max_length)),
-                    _ => panic!("Unexpected error"),
-                }
-            }
-        }
-    }
-
     fn parse_variables(&mut self) -> Vec<VariableCommand> {
-        let mut vars = Vec::new();
-        let Some(line) = self.tokens_upto_newline() else {
+        let Some(tokens) = self.tokens_upto_newline() else {
             panic!("Empty line after read keyword")
         };
 
-        for token in line {
-            if !token.is_empty() {
-                vars.push(Self::parse_variable(token))
-            }
-        }
+        tokens.into_iter().filter_map(Self::parse_variable).collect()
+    }
 
-        vars
+    fn parse_variable(token: &str) -> Option<VariableCommand> {
+        if token.is_empty() { return None }
+        let Some((ident, type_string)) = token.split_once(':') else { panic!("Variable must have type") };
+        let (var_type, max_length) = Self::extract_type_and_length(type_string);
+
+        Some(VariableCommand::new(ident.to_string(), var_type, max_length))
+    }
+
+    fn extract_type_and_length(type_string: &str) -> (VarType, Option<String>) {
+        match type_string.trim_end_matches(')').split_once('(') {
+            None => (VarType::new_unsized(type_string), None),
+            Some((var_type, max_length)) => (VarType::new_sized(var_type), Some(max_length.to_string()))
+        }
     }
 
     fn parse_output_comment(&mut self, previous_commands: &mut [Cmd]) {

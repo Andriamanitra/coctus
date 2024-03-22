@@ -45,6 +45,26 @@ pub enum VarType {
     String,
 }
 
+impl<'a> VarType {
+    fn new_unsized(value: &'a str) -> Self {
+        match value {
+            "int" => VarType::Int,
+            "float" => VarType::Float,
+            "long" => VarType::Long,
+            "bool" => VarType::Bool,
+            other => panic!("No unsized variable type: {other}"),
+        }
+    }
+
+    fn new_sized(value: &'a str) -> Self {
+        match value {
+            "word" => VarType::Word,
+            "string" => VarType::String,
+            other => panic!("No sized variable type: {other}"),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize)]
 pub struct VariableCommand {
     pub ident: String,
