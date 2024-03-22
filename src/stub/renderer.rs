@@ -1,10 +1,9 @@
 use anyhow::{Context as _, Result}; // To distinguish it from tera::Context
 use itertools::Itertools;
-use super::Language;
 use serde_json::json;
 use tera::{Context, Tera};
 
-use super::{Cmd, JoinTerm, Stub, VariableCommand};
+use super::{Cmd, JoinTerm, Language, Stub, VariableCommand};
 
 const ALPHABET: [char; 18] = [
     'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
@@ -72,7 +71,10 @@ impl Renderer {
     fn render_command(&self, cmd: &Cmd, nesting_depth: usize) -> String {
         match cmd {
             Cmd::Read(vars) => self.render_read(vars),
-            Cmd::Write { lines, output_comment } => self.render_write(lines, output_comment),
+            Cmd::Write {
+                lines,
+                output_comment,
+            } => self.render_write(lines, output_comment),
             Cmd::WriteJoin {
                 join_terms,
                 output_comment,

@@ -1,5 +1,8 @@
-use super::*;
+#![cfg_attr(rustfmt, rustfmt_skip)]
+
 use indoc::indoc;
+
+use super::*;
 
 #[test]
 fn parse_read_parses_variable_list() {

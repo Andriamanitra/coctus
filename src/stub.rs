@@ -1,6 +1,6 @@
+pub mod language;
 mod parser;
 mod renderer;
-pub mod language;
 
 use anyhow::Result;
 pub use language::Language;
@@ -87,16 +87,22 @@ impl VariableCommand {
 #[derive(Serialize, Clone, Debug)]
 pub struct JoinTerm {
     pub name: String,
-    pub is_variable: bool
+    pub is_variable: bool,
 }
 
 impl JoinTerm {
     pub fn new_literal(name: String) -> Self {
-        Self { name, is_variable: false }
+        Self {
+            name,
+            is_variable: false,
+        }
     }
 
     pub fn new_variable(name: String) -> Self {
-        Self { name, is_variable: true }
+        Self {
+            name,
+            is_variable: true,
+        }
     }
 }
 

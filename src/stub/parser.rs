@@ -1,13 +1,13 @@
-#![allow(clippy::while_let_on_iterator)]
-
-use super::{Cmd, JoinTerm, Stub, VariableCommand, VarType};
 use std::iter;
+
+use super::{Cmd, JoinTerm, Stub, VarType, VariableCommand};
 
 pub fn parse_generator_stub(generator: &str) -> Stub {
     Parser::new(generator).parse()
 }
 
-/// A wrapper around an iterator of tokens in the CG stub. Contains all of the stub parsing logic.
+/// A wrapper around an iterator of tokens in the CG stub. Contains all of the
+/// stub parsing logic.
 ///
 /// Exists solely to be consumed with `.parse()`
 struct Parser<'a> {
@@ -17,11 +17,14 @@ struct Parser<'a> {
 impl<'a> Parser<'a> {
     fn new(stub: &'a str) -> Self {
         // .chain just adds an iterator to the end of another one,
-        // iter::once creates an iterator out of a single element. 
-        // Essentially this puts a "\n" at the end of each line so the parser can tell where the
-        // lines end. Unfortunately I cannot concat &strs which would have made this much simpler.
+        // iter::once creates an iterator out of a single element.
+        // Essentially this puts a "\n" at the end of each line so the parser can tell
+        // where the lines end. Unfortunately I cannot concat &strs which would
+        // have made this much simpler.
         let token_stream = stub.lines().flat_map(|line| line.split(' ').chain(iter::once("\n")));
-        Self { token_stream: Box::new(token_stream) }
+        Self {
+            token_stream: Box::new(token_stream),
+        }
     }
 
     #[rustfmt::skip]
@@ -73,16 +76,16 @@ impl<'a> Parser<'a> {
         // NOTE: write•join()•rest⏎, with NOTHING inside the parens,
         //       gets parsed as a write and not as a write_join
         match line.replace("join()", "").split_once("join(") {
-            Some((_, join_arg)) if join_arg.contains(")") => {
-                let terms_string = join_arg.split_once(")").expect("Already checked existence").0;
+            Some((_, join_arg)) if join_arg.contains(')') => {
+                let terms_string = join_arg.split_once(')').expect("Already checked existence").0;
 
-                if terms_string.split(",").any(|t| t.trim().is_empty()) {
+                if terms_string.split(',').any(|t| t.trim().is_empty()) {
                     // write•join("hi",,,•"Jim")⏎ should be rendered as a Write Cmd
                     // (I guess the CG parser fails due to consecutive commas)
-                    Some(Cmd::Write { 
-                            lines: vec![line.to_string()], 
-                            output_comment: Vec::new() 
-                        })
+                    Some(Cmd::Write {
+                        lines: vec![line.to_string()],
+                        output_comment: Vec::new(),
+                    })
                 } else {
                     // NOTE: write•join("a")⏎ is a valid join
                     Some(self.parse_write_join(terms_string))
@@ -90,24 +93,26 @@ impl<'a> Parser<'a> {
             }
             // NOTE: write•join(⏎ gets parsed as a raw string
             //       and write parsing resumes
-            _ => None
+            _ => None,
         }
     }
 
     fn parse_write_join(&self, terms_string: &str) -> Cmd {
-        let join_terms =  
-            terms_string.split(",").map(|term|
+        let join_terms = terms_string
+            .split(',')
+            .map(|term| {
                 if term.contains('"') {
                     let term_name = term.trim_matches(|c| c != '"').trim_matches('"').to_string();
                     JoinTerm::new_literal(term_name)
-                } else { 
+                } else {
                     JoinTerm::new_variable(term.trim().to_string())
                 }
-            ).collect();
+            })
+            .collect();
 
-        Cmd::WriteJoin { 
+        Cmd::WriteJoin {
             join_terms,
-            output_comment: Vec::new() 
+            output_comment: Vec::new(),
         }
     }
 
@@ -155,9 +160,12 @@ impl<'a> Parser<'a> {
 
     fn parse_variable(token: &str) -> Option<VariableCommand> {
         // A token may be empty if extra spaces were present: "read   x:int  "
-        if token.is_empty() { return None }
-
-        let Some((ident, type_string)) = token.split_once(':') else { panic!("Variable must have type") };
+        if token.is_empty() {
+            return None
+        }
+        let Some((ident, type_string)) = token.split_once(':') else {
+            panic!("Variable must have type")
+        };
         let (var_type, max_length) = Self::extract_type_and_length(type_string);
 
         Some(VariableCommand::new(ident.to_string(), var_type, max_length))
@@ -165,7 +173,7 @@ impl<'a> Parser<'a> {
 
     fn extract_type_and_length(type_string: &str) -> (VarType, Option<String>) {
         match type_string.trim_end_matches(')').split_once('(') {
-            Some((var_type, max_length)) => (VarType::new_sized(var_type), Some(max_length.to_string()))
+            Some((var_type, max_length)) => (VarType::new_sized(var_type), Some(max_length.to_string())),
             None => (VarType::new_unsized(type_string), None),
         }
     }
@@ -193,8 +201,14 @@ impl<'a> Parser<'a> {
 
     fn update_cmd_with_output_comment(cmd: &mut Cmd, new_comment: &Vec<String>) {
         match cmd {
-            Cmd::Write { ref mut output_comment, .. } | Cmd::WriteJoin { ref mut output_comment, .. } 
-                if output_comment.is_empty() => *output_comment = new_comment.clone(),
+            Cmd::Write {
+                ref mut output_comment,
+                ..
+            }
+            | Cmd::WriteJoin {
+                ref mut output_comment,
+                ..
+            } if output_comment.is_empty() => *output_comment = new_comment.clone(),
             Cmd::Loop { ref mut command, .. } => {
                 Self::update_cmd_with_output_comment(command, new_comment);
             }
@@ -269,7 +283,6 @@ impl<'a> Parser<'a> {
             Some(buf)
         }
     }
-
 }
 
 #[cfg(test)]

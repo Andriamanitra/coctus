@@ -57,43 +57,49 @@ check-not-matching:
 # Change this to your favorite text-editor
 editor := "code"
 
+build  := "cargo build --quiet --release"
+binary := "./target/release/clash"
+
 launch-rb:
     {{editor}} tmp.rb
-    cargo run --quiet -- generate-stub "ruby" > tmp.rb
-    cargo run --quiet -- show
-    ls *.rb | entr -p cargo run --quiet -- run --command "ruby tmp.rb"
+    {{build}}
+    ls *.rb | entr -p {{binary}} run --command "ruby tmp.rb"
 
 launch-new-rb:
     {{editor}} tmp.rb
-    cargo run --quiet -- next
-    cargo run --quiet -- generate-stub "ruby" > tmp.rb
-    cargo run --quiet -- show
-    ls *.rb | entr -p cargo run --quiet -- run --command "ruby tmp.rb"
+    {{build}}
+    {{binary}} next
+    {{binary}} show
+    {{binary}} generate-stub ruby > tmp.rb
+    ls *.rb | entr -p {{binary}} run --command "ruby tmp.rb"
 
 launch-py:
     {{editor}} tmp.py
-    cargo run --quiet -- show
-    ls *.py | entr -p cargo run --quiet -- run --command "python3 tmp.py"
+    {{build}}
+    ls *.py | entr -p {{binary}} run --command "python3 tmp.py"
+
+launch-new-py:
+    {{editor}} tmp.py
+    {{build}}
+    {{binary}} next
+    {{binary}} show
+    {{binary}} generate-stub python > tmp.py
+    ls *.py | entr -p {{binary}} run --command "python3 tmp.py"
 
 launch-c:
     {{editor}} tmp.c
-    cargo run --quiet -- show
-    ls *.c | entr -p cargo run --quiet -- run \
+    {{build}}
+    ls *.c | entr -p {{binary}} run \
     --build-command "gcc -o tmp tmp.c" --command "./tmp"
 
 launch-new-c:
     {{editor}} tmp.c
-    cargo run --quiet -- next
-    cargo run --quiet -- generate-stub "c" > tmp.c
-    cargo run --quiet -- show
-    ls *.c | entr -p cargo run --quiet -- run \
+    {{build}}
+    {{binary}} next
+    {{binary}} show
+    {{binary}} generate-stub c > tmp.c
+    ls *.c | entr -p {{binary}} -- run \
     --build-command "gcc -o tmp tmp.c" --command "./tmp"
-
-launch-c-debug:
-    {{editor}} tmp.c
-    cargo run --quiet -- show
-    ls *.c | entr -p cargo run --quiet -- run \
-    --build-command "gcc -o tmp tmp.c" --command "./tmp" --ignore-failures
 
 # Requires Cargo.toml to look be like this:
 # [package]
@@ -107,29 +113,15 @@ launch-c-debug:
 # path = "tmp.rs"
 launch-rs:
     {{editor}} tmp.rs
-    cargo run --quiet -- show
-    ls *.rs | entr -p cargo run --quiet -- run \
+    {{build}}
+    ls *.rs | entr -p {{binary}} -- run \
     --build-command "cargo build --bin tmp" --command "./target/debug/tmp"
 
 launch-rs-debug:
     {{editor}} tmp.rs
-    cargo run --quiet -- show
-    ls *.rs | entr -p sh -c 'export RUST_BACKTRACE=1; cargo run --quiet -- run \
-    --build-command "cargo build --bin tmp" --command "./target/debug/tmp"'
-
-# Test against CG STUB puzzle
-# [[bin]]
-# name = "templates"
-# path = "tmp_templates.rs"
-launch-templates:
-    cargo run fetch 759481e6afefea199836a6cb76e15b21d673d
-    cargo run next 759481e6afefea199836a6cb76e15b21d673d
-    cargo run --quiet -- run \
-    --ignore-failures --testcases 3,5,7 \
-    --build-command "cargo build --bin templates" --command "./target/debug/templates"
-
-run:
-    cargo run -- run --command "ruby tmp.rb"
+    {{build}}
+    ls *.rs | entr -p sh -c 'export RUST_BACKTRACE=1; {{binary}} run \
+    --build-command "cargo build --release --bin tmp" --command "./target/release/tmp"'
 
 # Test the stub generator with a random clash in LANG
 test-stub LANG:
