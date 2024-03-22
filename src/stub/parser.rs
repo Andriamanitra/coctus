@@ -154,7 +154,9 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_variable(token: &str) -> Option<VariableCommand> {
+        // A token may be empty if extra spaces were present: "read   x:int  "
         if token.is_empty() { return None }
+
         let Some((ident, type_string)) = token.split_once(':') else { panic!("Variable must have type") };
         let (var_type, max_length) = Self::extract_type_and_length(type_string);
 
@@ -163,8 +165,8 @@ impl<'a> Parser<'a> {
 
     fn extract_type_and_length(type_string: &str) -> (VarType, Option<String>) {
         match type_string.trim_end_matches(')').split_once('(') {
-            None => (VarType::new_unsized(type_string), None),
             Some((var_type, max_length)) => (VarType::new_sized(var_type), Some(max_length.to_string()))
+            None => (VarType::new_unsized(type_string), None),
         }
     }
 
@@ -178,7 +180,7 @@ impl<'a> Parser<'a> {
     // Doesn't deal with InputComments to unassigned variables
     // nor InputComments to variables with the same identifier
     fn parse_input_comment(&mut self, previous_commands: &mut [Cmd]) {
-        self.skip_to_next_line();
+        self.skip_line();
 
         while let Some(line) = self.rest_of_line() {
             if let Some((ic_ident, ic_comment)) = line.split_once(':') {
@@ -214,16 +216,8 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn skip_to_next_line(&mut self) {
-        while let Some(token) = self.next_token() {
-            if token == "\n" {
-                break
-            }
-        }
-    }
-
     fn parse_text_block(&mut self) -> Vec<String> {
-        self.skip_to_next_line();
+        self.skip_line();
 
         let mut text_block = Vec::new();
 
@@ -232,6 +226,14 @@ impl<'a> Parser<'a> {
         }
 
         text_block
+    }
+
+    fn skip_line(&mut self) {
+        while let Some(token) = self.next_token() {
+            if token == "\n" {
+                break
+            }
+        }
     }
 
     fn next_token(&mut self) -> Option<&'a str> {
@@ -261,7 +263,7 @@ impl<'a> Parser<'a> {
             buf.push(token)
         }
 
-        if buf.join("").is_empty() {
+        if buf.iter().all(|s| s.is_empty()) {
             None
         } else {
             Some(buf)
