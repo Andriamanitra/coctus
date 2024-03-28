@@ -125,18 +125,32 @@ impl Language {
         }
     }
 
-    pub fn from_hardcoded_config(value: &str) -> Result<Option<Self>> {
+    /// Looks for Language definition in hardcoded stub templates 
+    /// compiled into the binary using the `include_dir` crate.
+    ///
+    /// It returns a `Result<Option<_>>` in order to differentiate from errors
+    /// that ought to pause execution and be reported to the user (`Err`), or simply
+    /// failure to find a configuration that matches the input query (`None`).
+    ///
+    /// Err scenarios include:
+    /// - An empty `stub_config.toml`
+    /// - serde Deserialize failure
+    /// - Failure to read hardcoded template "files"
+    /// - Tera build_inheritance_chains returning `Err`
+    pub fn from_hardcoded_config(input_lang_name: &str) -> Result<Option<Self>> {
         Ok(
-            Self::hardcoded_lang_by_name(&value.to_lowercase())?
-                .or(Self::hardcoded_lang_by_alias(&value.to_lowercase())?)
+            Self::hardcoded_lang_by_name(&input_lang_name.to_lowercase())?
+                .or(Self::hardcoded_lang_by_alias(&input_lang_name.to_lowercase())?)
         )
     }
 
-    fn hardcoded_lang_by_name(name: &str) -> Result<Option<Language>> {
-        match HARDCODED_TEMPLATE_DIR.get_file(&format!("{name}/stub_config.toml")) {
+    // Tries to find a folder in the binary-embedded `config` folder
+    // and parse its `stub_config.toml`
+    fn hardcoded_lang_by_name(input_lang_name: &str) -> Result<Option<Language>> {
+        match HARDCODED_TEMPLATE_DIR.get_file(&format!("{input_lang_name}/stub_config.toml")) {
             Some(config_file) => {
                 let config_file_content = config_file.contents_utf8()
-                    .context(format!("No stub configuration exists for {}", name))?;
+                    .context(format!("Could not get contents of config file for {}", input_lang_name))?;
 
                 let mut lang: Language = toml::from_str(config_file_content)
                     .context("There was an error loading the stub configuration")?;
@@ -149,19 +163,23 @@ impl Language {
         }
     }
 
-    fn hardcoded_lang_by_alias(name: &str) -> Result<Option<Language>> {
+    // Looks through every template folder in the binary-embedded Strings
+    // loads them until it finds that has `input_lang_name` listed as an alias
+    fn hardcoded_lang_by_alias(input_lang_name: &str) -> Result<Option<Language>> {
         let mut config_files = HARDCODED_TEMPLATE_DIR.find("*/stub_config.toml")?;
 
-        if let Some(mut lang) = config_files.find_map(|dir_entry| {
+        let lang_result = config_files.find_map(|dir_entry| {
             let config_file = dir_entry.as_file()?;
             let lang: Self = toml::from_str(config_file.contents_utf8()?).ok()?;
 
-            if lang.aliases.clone()?.contains(&name.to_string()) {
+            if lang.aliases.clone()?.contains(&input_lang_name.to_string()) {
                 Some(lang)
             } else {
                 None
             }
-        }) {
+        });
+
+        if let Some(mut lang) = lang_result {
             lang.attach_tera_from_embedded_config()?;
             Ok(Some(lang))
         } else {
@@ -169,6 +187,8 @@ impl Language {
         }
     }
 
+    // Creates a new Tera instance from embedded Strings which Tera does not really support.
+    // Reads every file into a string as a workaround and uses raw templates.
     fn attach_tera_from_embedded_config(&mut self) -> Result<()> {
         let template_files = HARDCODED_TEMPLATE_DIR.find(&format!("{}/*.jinja", self.name))
             .context("Could not read embedded template files")?
@@ -192,23 +212,38 @@ impl Language {
         Ok(())
     }
 
-    pub fn find_in_user_config(name: &str, config_path: &PathBuf) -> Result<Option<Language>> {
+    /// Looks for Language definition in stub templates in the user's 
+    /// config directory (i. e. `~/.config/clash/stub_templates/` for linux).
+    ///
+    /// It returns a `Result<Option<_>>` in order to differentiate from errors
+    /// that ought to pause execution and be reported to the user (`Err`), or simply
+    /// failure to find a configuration that matches the input query (`None`).
+    ///
+    /// Err scenarios include:
+    /// - An empty `stub_config.toml`
+    /// - serde Deserialize failure
+    /// - Failure to convert folder file name to str from OsStr
+    /// - Tera build_inheritance_chains returning `Err`
+    pub fn find_in_user_config(input_lang_name: &str, config_path: &PathBuf) -> Result<Option<Language>> {
         // If user does not have a config directory carry on without error
         if !config_path.exists() {
             return Ok(None);
         }
 
-        match Self::user_config_lang_by_name(&name.to_lowercase(), config_path)? {
+        match Self::user_config_lang_by_name(&input_lang_name.to_lowercase(), config_path)? {
             Some(lang) => Ok(Some(lang)),
-            None => Ok(Self::user_config_lang_by_alias(&name.to_lowercase(), config_path)?)
+            None => Ok(Self::user_config_lang_by_alias(&input_lang_name.to_lowercase(), config_path)?)
         }
     }
 
-    fn user_config_lang_by_name<'a>(name: &'a str, config_path: &PathBuf) -> Result<Option<Language>> {
-        let lang_dir = config_path.join(name);
+    // Tries to find a folder in the user config dir
+    // that matches `input_lang_name` and parse its `stub_config.toml`
+    fn user_config_lang_by_name<'a>(input_lang_name: &'a str, config_path: &PathBuf) -> Result<Option<Language>> {
+        let lang_dir = config_path.join(input_lang_name);
+
         if lang_dir.is_dir() {
             let config_file_content = fs::read_to_string(lang_dir.join("stub_config.toml"))
-                .context(format!("No stub configuration exists for {}", name))?;
+                .context(format!("Could not get contents of config file for {}", input_lang_name))?;
 
             let mut lang: Self = toml::from_str(&config_file_content)
                 .context("There was an error loading the stub configuration")?;
@@ -221,8 +256,10 @@ impl Language {
         }
     }
 
-    fn user_config_lang_by_alias<'a>(name: &'a str, config_path: &PathBuf) -> Result<Option<Language>> {
-        if let Some(mut lang) = std::fs::read_dir(config_path)?
+    // Looks through every template folder in the user config dir and
+    // loads them until it finds that has `input_lang_name` listed as an alias
+    fn user_config_lang_by_alias<'a>(input_lang_name: &'a str, config_path: &PathBuf) -> Result<Option<Language>> {
+        let lang_result = std::fs::read_dir(config_path)?
             .find_map(|folder| {
                 let folder_path = folder.ok()?.path();
                 let language_config_filepath = format!("{}/stub_config.toml", folder_path.to_str()?);
@@ -230,12 +267,14 @@ impl Language {
                 
                 let lang: Language = toml::from_str::<Language>(&config_file_content).ok()?;
 
-                if lang.aliases.clone()?.contains(&name.to_string()) {
+                if lang.aliases.clone()?.contains(&input_lang_name.to_string()) {
                     Some(lang)
                 } else {
                     None
                 }
-            }) {
+            });
+
+        if let Some(mut lang) = lang_result {
             lang.attach_tera_from_user_config(config_path)?;
             Ok(Some(lang))
         } else {
@@ -243,6 +282,8 @@ impl Language {
         }
     }
 
+    // Creates a new Tera instance from real files in the filesystem
+    // as opposed to Strings embedded in the binary
     fn attach_tera_from_user_config(&mut self, config_path: &PathBuf) -> Result<()> {
         self.tera = Tera::new(
             config_path.join(&self.name).join("*.jinja").to_str()

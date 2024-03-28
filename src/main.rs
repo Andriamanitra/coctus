@@ -224,8 +224,17 @@ impl App {
             .get_one::<String>("PROGRAMMING_LANGUAGE")
             .context("Should have a programming language")?;
 
+        // Language definitions can be stored in multiple locations.
+        // This code checks the following locations (earlier items take precedence)
+        // - in the user config dir: `stub_templates/#{lang_arg}/stub_config.toml`
+        // - in the user config dir: `stub_templates/*/stub_config.toml` where `lang_arg` is an alias
+        // - in embedded templates: `stub_templates/#{lang_arg}/stub_config.toml`
+        // - in embedded templates: `stub_templates/*/stub_config.toml` where `lang_arg` is an alias
+        //
+        // where the user config dir is in `~/.config/clash` (Linux)
+        // and the embedded templates are under `config/stub_templates` in this repo
         match Language::find_in_user_config(lang_arg.as_str(), &self.stub_templates_dir)
-            .context("Failed to load language from config dir")? {
+            .context("Unrecoverable error loaing language from user config dir")? {
             Some(lang) => Ok(lang),
             None => Language::from_hardcoded_config(lang_arg.as_str())?.ok_or(anyhow!("No stub for lang '{}'", lang_arg.as_str()))
         }
