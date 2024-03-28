@@ -98,7 +98,7 @@ launch-new-c:
     {{binary}} next
     {{binary}} show
     {{binary}} generate-stub c > tmp.c
-    ls *.c | entr -p {{binary}} -- run \
+    ls *.c | entr -p {{binary}} run \
     --build-command "gcc -o tmp tmp.c" --command "./tmp"
 
 # Requires Cargo.toml to look be like this:
@@ -114,7 +114,7 @@ launch-new-c:
 launch-rs:
     {{editor}} tmp.rs
     {{build}}
-    ls *.rs | entr -p {{binary}} -- run \
+    ls *.rs | entr -p {{binary}} run \
     --build-command "cargo build --bin tmp" --command "./target/debug/tmp"
 
 launch-rs-debug:
