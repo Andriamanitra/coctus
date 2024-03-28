@@ -265,10 +265,7 @@ impl Language {
 
     // Looks through every template folder in the user config dir and
     // loads them until it finds that has `input_lang_name` listed as an alias
-    fn user_config_lang_by_alias<'a>(
-        input_lang_name: &'a str,
-        config_path: &PathBuf,
-    ) -> Result<Option<Language>> {
+    fn user_config_lang_by_alias(input_lang_name: &str, config_path: &PathBuf) -> Result<Option<Language>> {
         let lang_result = std::fs::read_dir(config_path)?.find_map(|folder| {
             let folder_path = folder.ok()?.path();
             let language_config_filepath = format!("{}/stub_config.toml", folder_path.to_str()?);
