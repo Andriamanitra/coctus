@@ -1,5 +1,5 @@
 use std::fs;
-use std::path::PathBuf;
+use std::path::Path;
 
 use anyhow::{anyhow, Context, Result};
 use include_dir::include_dir;
@@ -228,7 +228,7 @@ impl Language {
     /// - serde Deserialize failure
     /// - Failure to convert folder file name to str from OsStr
     /// - Tera build_inheritance_chains returning `Err`
-    pub fn find_in_user_config(input_lang_name: &str, config_path: &PathBuf) -> Result<Option<Language>> {
+    pub fn find_in_user_config(input_lang_name: &str, config_path: &Path) -> Result<Option<Language>> {
         // If user does not have a config directory carry on without error
         if !config_path.exists() {
             return Ok(None);
@@ -242,10 +242,7 @@ impl Language {
 
     // Tries to find a folder in the user config dir
     // that matches `input_lang_name` and parse its `stub_config.toml`.
-    fn user_config_lang_by_name<'a>(
-        input_lang_name: &'a str,
-        config_path: &PathBuf,
-    ) -> Result<Option<Language>> {
+    fn user_config_lang_by_name(input_lang_name: &str, config_path: &Path) -> Result<Option<Language>> {
         let lang_dir = config_path.join(input_lang_name);
 
         if lang_dir.is_dir() {
@@ -265,7 +262,7 @@ impl Language {
 
     // Looks through every template folder in the user config dir and
     // loads them until it finds one that has `input_lang_name` listed as an alias.
-    fn user_config_lang_by_alias(input_lang_name: &str, config_path: &PathBuf) -> Result<Option<Language>> {
+    fn user_config_lang_by_alias(input_lang_name: &str, config_path: &Path) -> Result<Option<Language>> {
         let lang_result = std::fs::read_dir(config_path)?.find_map(|folder| {
             let folder_path = folder.ok()?.path();
             let language_config_filepath = format!("{}/stub_config.toml", folder_path.to_str()?);
@@ -290,7 +287,7 @@ impl Language {
 
     // Creates a new Tera instance from real files in the filesystem
     // as opposed to Strings embedded in the binary.
-    fn attach_tera_from_user_config(&mut self, config_path: &PathBuf) -> Result<()> {
+    fn attach_tera_from_user_config(&mut self, config_path: &Path) -> Result<()> {
         self.tera = Tera::new(
             config_path
                 .join(&self.name)
