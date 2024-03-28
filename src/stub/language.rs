@@ -193,6 +193,11 @@ impl Language {
     }
 
     pub fn find_in_user_config(name: &str, config_path: &PathBuf) -> Result<Option<Language>> {
+        // If user does not have a config directory carry on without error
+        if !config_path.exists() {
+            return Ok(None);
+        }
+
         match Self::user_config_lang_by_name(&name.to_lowercase(), config_path)? {
             Some(lang) => Ok(Some(lang)),
             None => Ok(Self::user_config_lang_by_alias(&name.to_lowercase(), config_path)?)
@@ -226,7 +231,6 @@ impl Language {
                 let lang: Language = toml::from_str::<Language>(&config_file_content).ok()?;
 
                 if lang.aliases.clone()?.contains(&name.to_string()) {
-
                     Some(lang)
                 } else {
                     None
