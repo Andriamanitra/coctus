@@ -1,15 +1,17 @@
-use std::{fs, path::PathBuf};
+use std::fs;
+use std::path::PathBuf;
 
 use anyhow::{anyhow, Context, Result};
+use include_dir::include_dir;
 use lazy_static::lazy_static;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
-use include_dir::include_dir;
 use tera::Tera;
 
 use crate::stub::VariableCommand;
 
-const HARDCODED_TEMPLATE_DIR: include_dir::Dir<'static> = include_dir!("$CARGO_MANIFEST_DIR/config/stub_templates");
+const HARDCODED_TEMPLATE_DIR: include_dir::Dir<'static> =
+    include_dir!("$CARGO_MANIFEST_DIR/config/stub_templates");
 
 lazy_static! {
     static ref SC_WORD_BREAK: Regex = Regex::new(r"([a-z])([A-Z])").unwrap();
@@ -125,12 +127,13 @@ impl Language {
         }
     }
 
-    /// Looks for Language definition in hardcoded stub templates 
+    /// Looks for Language definition in hardcoded stub templates
     /// compiled into the binary using the `include_dir` crate.
     ///
     /// It returns a `Result<Option<_>>` in order to differentiate from errors
-    /// that ought to pause execution and be reported to the user (`Err`), or simply
-    /// failure to find a configuration that matches the input query (`None`).
+    /// that ought to pause execution and be reported to the user (`Err`), or
+    /// simply failure to find a configuration that matches the input query
+    /// (`None`).
     ///
     /// Err scenarios include:
     /// - An empty `stub_config.toml`
@@ -138,10 +141,8 @@ impl Language {
     /// - Failure to read hardcoded template "files"
     /// - Tera build_inheritance_chains returning `Err`
     pub fn from_hardcoded_config(input_lang_name: &str) -> Result<Option<Self>> {
-        Ok(
-            Self::hardcoded_lang_by_name(&input_lang_name.to_lowercase())?
-                .or(Self::hardcoded_lang_by_alias(&input_lang_name.to_lowercase())?)
-        )
+        Ok(Self::hardcoded_lang_by_name(&input_lang_name.to_lowercase())?
+            .or(Self::hardcoded_lang_by_alias(&input_lang_name.to_lowercase())?))
     }
 
     // Tries to find a folder in the binary-embedded `config` folder
@@ -149,7 +150,8 @@ impl Language {
     fn hardcoded_lang_by_name(input_lang_name: &str) -> Result<Option<Language>> {
         match HARDCODED_TEMPLATE_DIR.get_file(&format!("{input_lang_name}/stub_config.toml")) {
             Some(config_file) => {
-                let config_file_content = config_file.contents_utf8()
+                let config_file_content = config_file
+                    .contents_utf8()
                     .context(format!("Could not get contents of config file for {}", input_lang_name))?;
 
                 let mut lang: Language = toml::from_str(config_file_content)
@@ -159,7 +161,7 @@ impl Language {
 
                 Ok(Some(lang))
             }
-            None => Ok(None)
+            None => Ok(None),
         }
     }
 
@@ -187,37 +189,39 @@ impl Language {
         }
     }
 
-    // Creates a new Tera instance from embedded Strings which Tera does not really support.
-    // Reads every file into a string as a workaround and uses raw templates.
+    // Creates a new Tera instance from embedded Strings which Tera does not really
+    // support. Reads every file into a string as a workaround and uses raw
+    // templates.
     fn attach_tera_from_embedded_config(&mut self) -> Result<()> {
-        let template_files = HARDCODED_TEMPLATE_DIR.find(&format!("{}/*.jinja", self.name))
+        let template_files = HARDCODED_TEMPLATE_DIR
+            .find(&format!("{}/*.jinja", self.name))
             .context("Could not read embedded template files")?
             .filter_map(|dir_entry| {
                 let file = dir_entry.as_file()?;
 
-                Some((
-                    file.path().file_name()?.to_str()?,
-                    file.contents_utf8()?
-                ))
+                Some((file.path().file_name()?.to_str()?, file.contents_utf8()?))
             });
 
         self.tera = Tera::default();
 
-        self.tera.add_raw_templates(template_files)
+        self.tera
+            .add_raw_templates(template_files)
             .context("Failed to load templates into Tera, this should not have happened")?;
 
-        self.tera.build_inheritance_chains()
+        self.tera
+            .build_inheritance_chains()
             .context("Failed to build tera inheritance chains, this should not have happened")?;
 
         Ok(())
     }
 
-    /// Looks for Language definition in stub templates in the user's 
+    /// Looks for Language definition in stub templates in the user's
     /// config directory (i. e. `~/.config/clash/stub_templates/` for linux).
     ///
     /// It returns a `Result<Option<_>>` in order to differentiate from errors
-    /// that ought to pause execution and be reported to the user (`Err`), or simply
-    /// failure to find a configuration that matches the input query (`None`).
+    /// that ought to pause execution and be reported to the user (`Err`), or
+    /// simply failure to find a configuration that matches the input query
+    /// (`None`).
     ///
     /// Err scenarios include:
     /// - An empty `stub_config.toml`
@@ -232,13 +236,16 @@ impl Language {
 
         match Self::user_config_lang_by_name(&input_lang_name.to_lowercase(), config_path)? {
             Some(lang) => Ok(Some(lang)),
-            None => Ok(Self::user_config_lang_by_alias(&input_lang_name.to_lowercase(), config_path)?)
+            None => Ok(Self::user_config_lang_by_alias(&input_lang_name.to_lowercase(), config_path)?),
         }
     }
 
     // Tries to find a folder in the user config dir
     // that matches `input_lang_name` and parse its `stub_config.toml`
-    fn user_config_lang_by_name<'a>(input_lang_name: &'a str, config_path: &PathBuf) -> Result<Option<Language>> {
+    fn user_config_lang_by_name<'a>(
+        input_lang_name: &'a str,
+        config_path: &PathBuf,
+    ) -> Result<Option<Language>> {
         let lang_dir = config_path.join(input_lang_name);
 
         if lang_dir.is_dir() {
@@ -258,21 +265,23 @@ impl Language {
 
     // Looks through every template folder in the user config dir and
     // loads them until it finds that has `input_lang_name` listed as an alias
-    fn user_config_lang_by_alias<'a>(input_lang_name: &'a str, config_path: &PathBuf) -> Result<Option<Language>> {
-        let lang_result = std::fs::read_dir(config_path)?
-            .find_map(|folder| {
-                let folder_path = folder.ok()?.path();
-                let language_config_filepath = format!("{}/stub_config.toml", folder_path.to_str()?);
-                let config_file_content = fs::read_to_string(language_config_filepath).ok()?;
-                
-                let lang: Language = toml::from_str::<Language>(&config_file_content).ok()?;
+    fn user_config_lang_by_alias<'a>(
+        input_lang_name: &'a str,
+        config_path: &PathBuf,
+    ) -> Result<Option<Language>> {
+        let lang_result = std::fs::read_dir(config_path)?.find_map(|folder| {
+            let folder_path = folder.ok()?.path();
+            let language_config_filepath = format!("{}/stub_config.toml", folder_path.to_str()?);
+            let config_file_content = fs::read_to_string(language_config_filepath).ok()?;
 
-                if lang.aliases.clone()?.contains(&input_lang_name.to_string()) {
-                    Some(lang)
-                } else {
-                    None
-                }
-            });
+            let lang: Language = toml::from_str::<Language>(&config_file_content).ok()?;
+
+            if lang.aliases.clone()?.contains(&input_lang_name.to_string()) {
+                Some(lang)
+            } else {
+                None
+            }
+        });
 
         if let Some(mut lang) = lang_result {
             lang.attach_tera_from_user_config(config_path)?;
@@ -286,9 +295,13 @@ impl Language {
     // as opposed to Strings embedded in the binary
     fn attach_tera_from_user_config(&mut self, config_path: &PathBuf) -> Result<()> {
         self.tera = Tera::new(
-            config_path.join(&self.name).join("*.jinja").to_str()
-                .ok_or(anyhow!("Template file name could not be converted to str"))?
-        ).context("Failed to create Tera instance")?;
+            config_path
+                .join(&self.name)
+                .join("*.jinja")
+                .to_str()
+                .ok_or(anyhow!("Template file name could not be converted to str"))?,
+        )
+        .context("Failed to create Tera instance")?;
 
         self.tera.build_inheritance_chains()?;
 

@@ -46,7 +46,8 @@ impl Renderer {
         });
         context.insert("format_symbols", &format_symbols);
 
-        self.lang.tera
+        self.lang
+            .tera
             .render(&format!("{template_name}.{}.jinja", self.lang.source_file_ext), context)
             .with_context(|| format!("Failed to render {} template.", template_name))
             .unwrap()
