@@ -224,11 +224,11 @@ impl App {
             .get_one::<String>("PROGRAMMING_LANGUAGE")
             .context("Should have a programming language")?;
 
-        Ok(
-            Language::find_in_user_config(lang_arg.as_str(), &self.stub_templates_dir)
-                .context("Failed to load language from config dir")?
-                .unwrap_or_else(|| Language::try_from(lang_arg.as_str()).unwrap())
-        )
+        match Language::find_in_user_config(lang_arg.as_str(), &self.stub_templates_dir)
+            .context("Failed to load language from config dir")? {
+            Some(lang) => Ok(lang),
+            None => Language::from_hardcoded_config(lang_arg.as_str())?.ok_or(anyhow!("No stub for lang '{}'", lang_arg.as_str()))
+        }
     }
 
     fn clashes(&self) -> Result<std::fs::ReadDir> {

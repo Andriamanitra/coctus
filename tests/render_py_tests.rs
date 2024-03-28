@@ -1,7 +1,7 @@
 use clashlib::stub::{self, Language};
 
 fn test_stub_builder(generator: &str, expected: &str) {
-    let lang = Language::try_from("python").unwrap();
+    let lang = Language::from_hardcoded_config("python").unwrap().unwrap();
     let received = stub::generate(lang, generator).unwrap().as_str().trim().to_string();
     let expected = expected.trim();
 

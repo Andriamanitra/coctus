@@ -133,7 +133,7 @@ mod tests {
 
     #[test]
     fn test_simple_code_generation() {
-        let lang = Language::try_from("ruby").unwrap();
+        let lang = Language::from_hardcoded_config("ruby").unwrap().unwrap();
         let generator = "read m:int n:int\nwrite result";
         let received = generate(lang, generator).unwrap();
         let expected = "m, n = gets.split.map(&:to_i)\nputs \"result\"";
@@ -200,7 +200,7 @@ write join("hello", a, "planet")"##;
 
     #[test]
     fn test_reference_stub_ruby() {
-        let lang = Language::try_from("ruby").unwrap();
+        let lang = Language::from_hardcoded_config("ruby").unwrap().unwrap();
         let received = generate(lang, REFERENCE_STUB).unwrap();
         let expected = r##"# Live long
 # and prosper
@@ -264,13 +264,13 @@ puts "hello #{a} planet""##;
     // Just test that it compiles
     #[test]
     fn test_reference_stub_rust() {
-        let lang = Language::try_from("rust").unwrap();
+        let lang = Language::from_hardcoded_config("rust").unwrap().unwrap();
         generate(lang, REFERENCE_STUB).unwrap();
     }
 
     #[test]
     fn test_reference_stub_c() {
-        let lang = Language::try_from("C").unwrap();
+        let lang = Language::from_hardcoded_config("C").unwrap().unwrap();
         generate(lang, REFERENCE_STUB).unwrap();
     }
 }
