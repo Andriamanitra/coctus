@@ -200,13 +200,15 @@ impl std::fmt::Display for PublicHandle {
 struct App {
     clash_dir: PathBuf,
     current_clash_file: PathBuf,
+    stub_templates_dir: PathBuf,
 }
 
 impl App {
-    fn new(data_dir: &std::path::Path) -> App {
+    fn new(data_dir: &std::path::Path, config_dir: &std::path::Path) -> App {
         App {
             clash_dir: data_dir.join("clashes"),
             current_clash_file: data_dir.join("current"),
+            stub_templates_dir: config_dir.join("stub_templates"),
         }
     }
 
@@ -222,7 +224,11 @@ impl App {
             .get_one::<String>("PROGRAMMING_LANGUAGE")
             .context("Should have a programming language")?;
 
-        Language::try_from(lang_arg.as_str())
+        Ok(
+            Language::find_in_user_config(lang_arg.as_str(), &self.stub_templates_dir)
+                .context("Failed to load language from config dir")?
+                .unwrap_or_else(|| Language::try_from(lang_arg.as_str()).unwrap())
+        )
     }
 
     fn clashes(&self) -> Result<std::fs::ReadDir> {
@@ -528,7 +534,7 @@ fn main() -> Result<()> {
     let project_dirs =
         ProjectDirs::from("com", "Clash CLI", "clash").expect("Unable to find project directory");
 
-    let app = App::new(project_dirs.data_dir());
+    let app = App::new(project_dirs.data_dir(), project_dirs.config_dir());
 
     match cli().get_matches().subcommand() {
         Some(("show", args)) => app.show(args),
