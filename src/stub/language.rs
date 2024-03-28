@@ -4,8 +4,11 @@ use anyhow::{anyhow, Context, Result};
 use lazy_static::lazy_static;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
+use include_dir::include_dir;
 
 use crate::stub::VariableCommand;
+
+const HARDCODED_TEMPLATE_DIR: include_dir::Dir<'static> = include_dir!("$CARGO_MANIFEST_DIR/config/stub_templates");
 
 lazy_static! {
     static ref SC_WORD_BREAK: Regex = Regex::new(r"([a-z])([A-Z])").unwrap();
@@ -123,13 +126,13 @@ impl TryFrom<&str> for Language {
     type Error = anyhow::Error;
 
     fn try_from(value: &str) -> Result<Self, Self::Error> {
-        let lang_folders: Vec<String> = std::fs::read_dir("config/stub_templates/")
-            .context("Should have stub_templates directiory")?
-            .map(|read_dir| read_dir.unwrap().file_name().into_string().expect("Template path must be UTF"))
-            .collect();
+        // let lang_folders: Vec<String> = std::fs::read_dir("config/stub_templates/")
+        //     .context("Should have stub_templates directiory")?
+        //     .map(|read_dir| read_dir.unwrap().file_name().into_string().expect("Template path must be UTF"))
+        //     .collect();
 
-        Self::find_lang_by_name(&value.to_lowercase(), &lang_folders)?
-            .or(Self::find_lang_by_alias(&value.to_lowercase(), &lang_folders))
+        Self::find_hardcoded_lang_by_name(&value.to_lowercase())?
+            .or(Self::find_hardcoded_lang_by_alias(&value.to_lowercase()))
             .ok_or(anyhow!("Unsupported language: {}", value))
     }
 }
@@ -137,6 +140,34 @@ impl TryFrom<&str> for Language {
 impl Language {
     pub fn template_glob(&self) -> String {
         format!("config/stub_templates/{}/*.{}.jinja", self.name, self.source_file_ext)
+    }
+
+    fn find_hardcoded_lang_by_name(name: &str) -> Result<Option<Language>> {
+        match HARDCODED_TEMPLATE_DIR.get_file(&format!("{name}/stub_config.toml")) {
+            Some(config_file) => {
+                let config_file_content = config_file.contents_utf8()
+                    .context(format!("No stub configuration exists for {}", name))?;
+
+                Ok(toml::from_str(config_file_content)
+                    .context("There was an error loading the stub configuration")?)
+            }
+            None => Ok(None)
+        }
+    }
+
+    fn find_hardcoded_lang_by_alias(name: &str) -> Option<Language> {
+        let mut config_files = HARDCODED_TEMPLATE_DIR.find("*/stub_config.toml").ok()?;
+
+        config_files.find_map(|dir_entry| {
+            let config_file = dir_entry.as_file()?;
+            let lang: Self = toml::from_str(config_file.contents_utf8()?).ok()?;
+
+            if lang.aliases.clone()?.contains(&name.to_string()) {
+                Some(lang)
+            } else {
+                None
+            }
+        })
     }
 
     fn find_lang_by_name<'a>(name: &'a str, lang_folders: &'a [String]) -> Result<Option<Language>> {
