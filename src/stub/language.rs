@@ -5,6 +5,7 @@ use lazy_static::lazy_static;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use include_dir::include_dir;
+use tera::Tera;
 
 use crate::stub::VariableCommand;
 
@@ -73,6 +74,9 @@ pub struct Language {
     pub type_tokens: TypeTokens,
     pub keywords: Vec<String>,
     pub aliases: Option<Vec<String>>,
+
+    #[serde(skip_deserializing)]
+    pub tera: Tera,
 }
 
 fn is_uppercase_string(string: &str) -> bool {
@@ -126,11 +130,6 @@ impl TryFrom<&str> for Language {
     type Error = anyhow::Error;
 
     fn try_from(value: &str) -> Result<Self, Self::Error> {
-        // let lang_folders: Vec<String> = std::fs::read_dir("config/stub_templates/")
-        //     .context("Should have stub_templates directiory")?
-        //     .map(|read_dir| read_dir.unwrap().file_name().into_string().expect("Template path must be UTF"))
-        //     .collect();
-
         Self::find_hardcoded_lang_by_name(&value.to_lowercase())?
             .or(Self::find_hardcoded_lang_by_alias(&value.to_lowercase()))
             .ok_or(anyhow!("Unsupported language: {}", value))
@@ -148,11 +147,38 @@ impl Language {
                 let config_file_content = config_file.contents_utf8()
                     .context(format!("No stub configuration exists for {}", name))?;
 
-                Ok(toml::from_str(config_file_content)
-                    .context("There was an error loading the stub configuration")?)
+                let mut lang: Language = toml::from_str(config_file_content)
+                    .context("There was an error loading the stub configuration")?;
+
+                lang.build_hardcoded_tera()?;
+
+                Ok(Some(lang))
             }
             None => Ok(None)
         }
+    }
+
+    fn build_hardcoded_tera(&mut self) -> Result<()> {
+        let template_files = HARDCODED_TEMPLATE_DIR.find(&format!("{}/*.jinja", self.name))
+            .context("Could not read embedded template files")?
+            .filter_map(|dir_entry| {
+                let file = dir_entry.as_file()?;
+
+                Some((
+                    file.path().file_name()?.to_str()?,
+                    file.contents_utf8()?
+                ))
+            });
+
+        self.tera = Tera::default();
+
+        self.tera.add_raw_templates(template_files)
+            .context("Failed to load templates into Tera, this should not have happened")?;
+
+        self.tera.build_inheritance_chains()
+            .context("Failed to build tera inheritance chains, this should not have happened")?;
+
+        Ok(())
     }
 
     fn find_hardcoded_lang_by_alias(name: &str) -> Option<Language> {
@@ -160,9 +186,10 @@ impl Language {
 
         config_files.find_map(|dir_entry| {
             let config_file = dir_entry.as_file()?;
-            let lang: Self = toml::from_str(config_file.contents_utf8()?).ok()?;
+            let mut lang: Self = toml::from_str(config_file.contents_utf8()?).ok()?;
 
             if lang.aliases.clone()?.contains(&name.to_string()) {
+                lang.build_hardcoded_tera().ok()?;
                 Some(lang)
             } else {
                 None

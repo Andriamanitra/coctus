@@ -1,7 +1,7 @@
 use anyhow::{Context as _, Result}; // To distinguish it from tera::Context
 use itertools::Itertools;
 use serde_json::json;
-use tera::{Context, Tera};
+use tera::Context;
 
 use super::{Cmd, JoinTerm, Language, Stub, VariableCommand};
 
@@ -15,7 +15,6 @@ pub fn render_stub(lang: Language, stub: Stub, debug_mode: bool) -> Result<Strin
 }
 
 struct Renderer {
-    tera: Tera,
     lang: Language,
     stub: Stub,
     debug_mode: bool,
@@ -23,11 +22,8 @@ struct Renderer {
 
 impl Renderer {
     fn new(lang: Language, stub: Stub, debug_mode: bool) -> Result<Renderer> {
-        let tera = Tera::new(&lang.template_glob())?;
-
         Ok(Self {
             lang,
-            tera,
             stub,
             debug_mode,
         })
@@ -50,7 +46,7 @@ impl Renderer {
         });
         context.insert("format_symbols", &format_symbols);
 
-        self.tera
+        self.lang.tera
             .render(&format!("{template_name}.{}.jinja", self.lang.source_file_ext), context)
             .with_context(|| format!("Failed to render {} template.", template_name))
             .unwrap()
