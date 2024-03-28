@@ -146,7 +146,7 @@ impl Language {
     }
 
     // Tries to find a folder in the binary-embedded `config` folder
-    // and parse its `stub_config.toml`
+    // and parse its `stub_config.toml`.
     fn hardcoded_lang_by_name(input_lang_name: &str) -> Result<Option<Language>> {
         match HARDCODED_TEMPLATE_DIR.get_file(&format!("{input_lang_name}/stub_config.toml")) {
             Some(config_file) => {
@@ -165,8 +165,8 @@ impl Language {
         }
     }
 
-    // Looks through every template folder in the binary-embedded Strings
-    // loads them until it finds that has `input_lang_name` listed as an alias
+    // Looks through every template folder in the binary-embedded Strings and
+    // loads them until it finds one that has `input_lang_name` listed as an alias.
     fn hardcoded_lang_by_alias(input_lang_name: &str) -> Result<Option<Language>> {
         let mut config_files = HARDCODED_TEMPLATE_DIR.find("*/stub_config.toml")?;
 
@@ -241,7 +241,7 @@ impl Language {
     }
 
     // Tries to find a folder in the user config dir
-    // that matches `input_lang_name` and parse its `stub_config.toml`
+    // that matches `input_lang_name` and parse its `stub_config.toml`.
     fn user_config_lang_by_name<'a>(
         input_lang_name: &'a str,
         config_path: &PathBuf,
@@ -264,7 +264,7 @@ impl Language {
     }
 
     // Looks through every template folder in the user config dir and
-    // loads them until it finds that has `input_lang_name` listed as an alias
+    // loads them until it finds one that has `input_lang_name` listed as an alias.
     fn user_config_lang_by_alias(input_lang_name: &str, config_path: &PathBuf) -> Result<Option<Language>> {
         let lang_result = std::fs::read_dir(config_path)?.find_map(|folder| {
             let folder_path = folder.ok()?.path();
@@ -289,7 +289,7 @@ impl Language {
     }
 
     // Creates a new Tera instance from real files in the filesystem
-    // as opposed to Strings embedded in the binary
+    // as opposed to Strings embedded in the binary.
     fn attach_tera_from_user_config(&mut self, config_path: &PathBuf) -> Result<()> {
         self.tera = Tera::new(
             config_path
