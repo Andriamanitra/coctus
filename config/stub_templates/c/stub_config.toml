@@ -1,11 +1,5 @@
 name = "c"
-variable_format = "snake_case"
 source_file_ext = "c"
-allow_uppercase_vars = false
-# TODO
-keywords = [
-  "for" 
-]
 
 [type_tokens]
 Int = "int"
@@ -14,3 +8,11 @@ Float = "float"
 Bool = "int"
 String = "char"
 Word = "char"
+
+[variable_name_options]
+casing = "snake_case"
+allow_uppercase_vars = false
+# TODO
+keywords = [
+  "for" 
+]

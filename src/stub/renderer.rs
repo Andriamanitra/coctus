@@ -100,7 +100,7 @@ impl Renderer {
             .cloned()
             .map(|mut term| {
                 if term.is_variable {
-                    term.name = self.lang.transform_variable_name(&term.name);
+                    term.name = self.lang.variable_name_options.transform_variable_name(&term.name);
                 }
                 term
             })
@@ -121,7 +121,7 @@ impl Renderer {
 
     fn render_read_one(&self, var: &VariableCommand) -> String {
         let mut context = Context::new();
-        let var = self.lang.transform_variable_command(var);
+        let var = self.lang.variable_name_options.transform_variable_command(var);
 
         context.insert("var", &var);
         context.insert("type_tokens", &self.lang.type_tokens);
@@ -131,7 +131,10 @@ impl Renderer {
 
     fn render_read_many(&self, vars: &[VariableCommand]) -> String {
         let mut context = Context::new();
-        let vars = vars.iter().map(|var| self.lang.transform_variable_command(var)).collect::<Vec<_>>();
+        let vars = vars
+            .iter()
+            .map(|var| self.lang.variable_name_options.transform_variable_command(var))
+            .collect::<Vec<_>>();
 
         let types: Vec<_> = vars.iter().map(|r| &r.var_type).unique().collect();
 
@@ -149,7 +152,7 @@ impl Renderer {
     fn render_loop(&self, count_var: &str, cmd: &Cmd, nesting_depth: usize) -> String {
         let mut context = Context::new();
         let inner_text = self.render_command(cmd, nesting_depth + 1);
-        let cased_count_var = self.lang.transform_variable_name(count_var);
+        let cased_count_var = self.lang.variable_name_options.transform_variable_name(count_var);
         let index_ident = ALPHABET[nesting_depth];
         context.insert("count_var", &cased_count_var);
         context.insert("inner", &inner_text.lines().collect::<Vec<&str>>());
@@ -159,11 +162,14 @@ impl Renderer {
     }
 
     fn render_loopline(&self, count_var: &str, vars: &[VariableCommand], nesting_depth: usize) -> String {
-        let vars = vars.iter().map(|var| self.lang.transform_variable_command(var)).collect::<Vec<_>>();
+        let vars = vars
+            .iter()
+            .map(|var| self.lang.variable_name_options.transform_variable_command(var))
+            .collect::<Vec<_>>();
 
         let mut context = Context::new();
 
-        let cased_count_var = self.lang.transform_variable_name(count_var);
+        let cased_count_var = self.lang.variable_name_options.transform_variable_name(count_var);
         let index_ident = ALPHABET[nesting_depth];
 
         context.insert("count_var", &cased_count_var);

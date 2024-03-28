@@ -2,12 +2,6 @@ name = "ruby"
 variable_format = "snake_case"
 source_file_ext = "rb"
 allow_uppercase_vars = false
-keywords = [
-  "__ENCODING__", "__LINE__", "__FILE__", "BEGIN", "END", "alias", "and", "begin", "break", "case",
-  "class", "def", "defined", "do", "else", "elsif", "end", "ensure", "false", "for",
-  "if", "in", "module", "next", "nil", "not", "or", "redo", "rescue", "retry", "return",
-  "self", "super", "then", "true", "undef", "unless", "until", "when", "while", "yield"
-]
 aliases = ["rb"]
 
 [type_tokens]
@@ -16,3 +10,12 @@ Long = "to_i"
 Float = "to_f"
 Bool = "to_bool"
 
+[variable_name_options]
+casing = "snake_case"
+allow_uppercase_vars = false
+keywords = [
+  "__ENCODING__", "__LINE__", "__FILE__", "BEGIN", "END", "alias", "and", "begin", "break", "case",
+  "class", "def", "defined", "do", "else", "elsif", "end", "ensure", "false", "for",
+  "if", "in", "module", "next", "nil", "not", "or", "redo", "rescue", "retry", "return",
+  "self", "super", "then", "true", "undef", "unless", "until", "when", "while", "yield"
+]
