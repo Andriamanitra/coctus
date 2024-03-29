@@ -235,7 +235,7 @@ impl App {
         //
         // where the user config dir is in `~/.config/clash` (Linux)
         // and the embedded templates are under `config/stub_templates` in this repo
-        match Language::find_in_user_config(lang_arg.as_str(), &self.stub_templates_dir)
+        match Language::from_user_config(lang_arg.as_str(), &self.stub_templates_dir)
             .context("Unrecoverable error loaing language from user config dir")?
         {
             Some(lang) => Ok(lang),

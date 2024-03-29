@@ -139,10 +139,11 @@ impl Language {
     /// - An empty `stub_config.toml`
     /// - serde Deserialize failure
     /// - Failure to read hardcoded template "files"
-    /// - Tera build_inheritance_chains returning `Err`
     pub fn from_hardcoded_config(input_lang_name: &str) -> Result<Option<Self>> {
-        Ok(Self::hardcoded_lang_by_name(&input_lang_name.to_lowercase())?
-            .or(Self::hardcoded_lang_by_alias(&input_lang_name.to_lowercase())?))
+        match Self::hardcoded_lang_by_name(&input_lang_name.to_lowercase())? {
+            Some(lang) => Ok(Some(lang)),
+            None => Self::hardcoded_lang_by_alias(&input_lang_name.to_lowercase())
+        }
     }
 
     // Tries to find a folder in the binary-embedded `config` folder
@@ -208,10 +209,6 @@ impl Language {
             .add_raw_templates(template_files)
             .context("Failed to load templates into Tera, this should not have happened")?;
 
-        self.tera
-            .build_inheritance_chains()
-            .context("Failed to build tera inheritance chains, this should not have happened")?;
-
         Ok(())
     }
 
@@ -227,8 +224,7 @@ impl Language {
     /// - An empty `stub_config.toml`
     /// - serde Deserialize failure
     /// - Failure to convert folder file name to str from OsStr
-    /// - Tera build_inheritance_chains returning `Err`
-    pub fn find_in_user_config(input_lang_name: &str, config_path: &Path) -> Result<Option<Language>> {
+    pub fn from_user_config(input_lang_name: &str, config_path: &Path) -> Result<Option<Language>> {
         // If user does not have a config directory carry on without error
         if !config_path.exists() {
             return Ok(None);
@@ -296,8 +292,6 @@ impl Language {
                 .ok_or(anyhow!("Template file name could not be converted to str"))?,
         )
         .context("Failed to create Tera instance")?;
-
-        self.tera.build_inheritance_chains()?;
 
         Ok(())
     }
