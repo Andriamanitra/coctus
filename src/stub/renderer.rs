@@ -1,29 +1,31 @@
 use anyhow::{Context as _, Result}; // To distinguish it from tera::Context
 use itertools::Itertools;
 use serde_json::json;
-use tera::Context;
+use tera::{Context, Tera};
 
-use super::{Cmd, JoinTerm, Language, Stub, VariableCommand};
+use super::{Cmd, JoinTerm, Language, Stub, VariableCommand, StubConfig};
 
 const ALPHABET: [char; 18] = [
     'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
 ];
 
-pub fn render_stub(lang: Language, stub: Stub, debug_mode: bool) -> Result<String> {
-    let renderer = Renderer::new(lang, stub, debug_mode)?;
+pub fn render_stub(config: StubConfig, stub: Stub, debug_mode: bool) -> Result<String> {
+    let renderer = Renderer::new(config, stub, debug_mode)?;
     Ok(renderer.render())
 }
 
 struct Renderer {
+    tera: Tera,
     lang: Language,
     stub: Stub,
     debug_mode: bool,
 }
 
 impl Renderer {
-    fn new(lang: Language, stub: Stub, debug_mode: bool) -> Result<Renderer> {
+    fn new(config: StubConfig, stub: Stub, debug_mode: bool) -> Result<Renderer> {
         Ok(Self {
-            lang,
+            lang: config.language,
+            tera: config.tera,
             stub,
             debug_mode,
         })
@@ -46,8 +48,7 @@ impl Renderer {
         });
         context.insert("format_symbols", &format_symbols);
 
-        self.lang
-            .tera
+        self.tera
             .render(&format!("{template_name}.{}.jinja", self.lang.source_file_ext), context)
             .with_context(|| format!("Failed to render {} template.", template_name))
             .unwrap()

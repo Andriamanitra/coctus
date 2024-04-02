@@ -1,8 +1,8 @@
-use clashlib::stub::{self, Language};
+use clashlib::stub::{self, StubConfig};
 
 fn test_stub_builder(generator: &str, expected: &str) {
-    let lang = Language::from_hardcoded_config("python").unwrap().unwrap();
-    let received = stub::generate(lang, generator).unwrap().as_str().trim().to_string();
+    let cfg = StubConfig::find_hardcoded_config("python").unwrap();
+    let received = stub::generate(cfg, generator).unwrap().as_str().trim().to_string();
     let expected = expected.trim();
 
     assert_eq!(expected.lines().count(), received.lines().count());

@@ -1,19 +1,21 @@
 pub mod language;
+pub mod stub_config;
 mod parser;
 mod renderer;
 
 use anyhow::Result;
 pub use language::Language;
+pub use stub_config::StubConfig;
 use serde::Serialize;
 
-pub fn generate(lang: Language, generator: &str) -> Result<String> {
+pub fn generate(config: StubConfig, generator: &str) -> Result<String> {
     let stub = parser::parse_generator_stub(generator);
 
     // eprint!("=======\n{:?}\n======\n", generator);
-    eprint!("=======\n{}\n======\n", renderer::render_stub(lang.clone(), stub.clone(), true)?);
+    eprint!("=======\n{}\n======\n", renderer::render_stub(config.clone(), stub.clone(), true)?);
     // eprint!("=======\n{:?}\n======\n", stub);
 
-    let output_str = renderer::render_stub(lang.clone(), stub, false)?;
+    let output_str = renderer::render_stub(config.clone(), stub, false)?;
 
     Ok(output_str.as_str().trim().to_string())
 }
@@ -133,9 +135,9 @@ mod tests {
 
     #[test]
     fn test_simple_code_generation() {
-        let lang = Language::from_hardcoded_config("ruby").unwrap().unwrap();
+        let cfg = StubConfig::find_hardcoded_config("ruby").unwrap();
         let generator = "read m:int n:int\nwrite result";
-        let received = generate(lang, generator).unwrap();
+        let received = generate(cfg, generator).unwrap();
         let expected = "m, n = gets.split.map(&:to_i)\nputs \"result\"";
 
         assert_eq!(received, expected);
@@ -200,8 +202,8 @@ write join("hello", a, "planet")"##;
 
     #[test]
     fn test_reference_stub_ruby() {
-        let lang = Language::from_hardcoded_config("ruby").unwrap().unwrap();
-        let received = generate(lang, REFERENCE_STUB).unwrap();
+        let cfg = StubConfig::find_hardcoded_config("ruby").unwrap();
+        let received = generate(cfg, REFERENCE_STUB).unwrap();
         let expected = r##"# Live long
 # and prosper
 # and a line with spaces both sides
@@ -264,13 +266,13 @@ puts "hello #{a} planet""##;
     // Just test that it compiles
     #[test]
     fn test_reference_stub_rust() {
-        let lang = Language::from_hardcoded_config("rust").unwrap().unwrap();
-        generate(lang, REFERENCE_STUB).unwrap();
+        let cfg = StubConfig::find_hardcoded_config("rust").unwrap();
+        generate(cfg, REFERENCE_STUB).unwrap();
     }
 
     #[test]
     fn test_reference_stub_c() {
-        let lang = Language::from_hardcoded_config("C").unwrap().unwrap();
-        generate(lang, REFERENCE_STUB).unwrap();
+        let cfg = StubConfig::find_hardcoded_config("c").unwrap();
+        generate(cfg, REFERENCE_STUB).unwrap();
     }
 }

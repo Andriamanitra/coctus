@@ -6,7 +6,7 @@ use anyhow::{anyhow, Context, Result};
 use clap::ArgMatches;
 use clashlib::clash::{Clash, TestCase};
 use clashlib::outputstyle::OutputStyle;
-use clashlib::stub::Language;
+use clashlib::stub::StubConfig;
 use clashlib::{solution, stub};
 use directories::ProjectDirs;
 use rand::seq::IteratorRandom;
@@ -219,29 +219,12 @@ impl App {
         PublicHandle::from_str(&content)
     }
 
-    fn programming_language_from_args(&self, args: &ArgMatches) -> Result<Language> {
+    fn build_stub_config(&self, args: &ArgMatches) -> Result<StubConfig> {
         let lang_arg = args
             .get_one::<String>("PROGRAMMING_LANGUAGE")
             .context("Should have a programming language")?;
 
-        // Language definitions can be stored in multiple locations.
-        // This code checks the following locations (earlier items take precedence)
-        // - in the user config dir: `stub_templates/#{lang_arg}/stub_config.toml`
-        // - in the user config dir: `stub_templates/*/stub_config.toml` where
-        //   `lang_arg` is an alias
-        // - in embedded templates: `stub_templates/#{lang_arg}/stub_config.toml`
-        // - in embedded templates: `stub_templates/*/stub_config.toml` where `lang_arg`
-        //   is an alias
-        //
-        // where the user config dir is in `~/.config/clash` (Linux)
-        // and the embedded templates are under `config/stub_templates` in this repo
-        match Language::from_user_config(lang_arg.as_str(), &self.stub_templates_dir)
-            .context("Unrecoverable error loaing language from user config dir")?
-        {
-            Some(lang) => Ok(lang),
-            None => Language::from_hardcoded_config(lang_arg.as_str())?
-                .ok_or(anyhow!("No stub for lang '{}'", lang_arg.as_str())),
-        }
+        StubConfig::find_stub_config(lang_arg.as_str(), &self.stub_templates_dir)
     }
 
     fn clashes(&self) -> Result<std::fs::ReadDir> {
@@ -503,14 +486,14 @@ impl App {
     }
 
     fn generate_stub(&self, args: &ArgMatches) -> Result<()> {
-        let language = self.programming_language_from_args(args)?;
+        let config = self.build_stub_config(args)?;
         let handle = self
             .current_handle()
             .expect("You must have a current clash to generate stubs. Please use clash next");
         let clash = self.read_clash(&handle)?;
         let stub_generator = clash.stub_generator().expect("Clash provides no input stub generator");
 
-        let stub_string = stub::generate(language, stub_generator)?;
+        let stub_string = stub::generate(config, stub_generator)?;
 
         println!("{stub_string}");
         Ok(())
