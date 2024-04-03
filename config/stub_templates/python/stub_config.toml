@@ -1,6 +1,5 @@
 name = "python"
 source_file_ext = "py"
-aliases = ["py"]
 
 [type_tokens]
 Int = "int"

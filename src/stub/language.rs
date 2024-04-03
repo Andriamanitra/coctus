@@ -20,6 +20,4 @@ pub struct Language {
     pub variable_name_options: VariableNameOptions,
     pub source_file_ext: String,
     pub type_tokens: TypeTokens,
-    pub aliases: Option<Vec<String>>,
 }
-

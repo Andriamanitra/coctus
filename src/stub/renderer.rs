@@ -3,7 +3,7 @@ use itertools::Itertools;
 use serde_json::json;
 use tera::{Context, Tera};
 
-use super::{Cmd, JoinTerm, Language, Stub, VariableCommand, StubConfig};
+use super::{Cmd, JoinTerm, Language, Stub, StubConfig, VariableCommand};
 
 const ALPHABET: [char; 18] = [
     'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',

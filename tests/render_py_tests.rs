@@ -1,7 +1,7 @@
 use clashlib::stub::{self, StubConfig};
 
 fn test_stub_builder(generator: &str, expected: &str) {
-    let cfg = StubConfig::find_hardcoded_config("python").unwrap();
+    let cfg = StubConfig::read_from_embedded("python").unwrap();
     let received = stub::generate(cfg, generator).unwrap().as_str().trim().to_string();
     let expected = expected.trim();
 

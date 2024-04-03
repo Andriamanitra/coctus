@@ -1,12 +1,12 @@
 pub mod language;
-pub mod stub_config;
 mod parser;
 mod renderer;
+pub mod stub_config;
 
 use anyhow::Result;
 pub use language::Language;
-pub use stub_config::StubConfig;
 use serde::Serialize;
+pub use stub_config::StubConfig;
 
 pub fn generate(config: StubConfig, generator: &str) -> Result<String> {
     let stub = parser::parse_generator_stub(generator);
@@ -135,7 +135,7 @@ mod tests {
 
     #[test]
     fn test_simple_code_generation() {
-        let cfg = StubConfig::find_hardcoded_config("ruby").unwrap();
+        let cfg = StubConfig::read_from_embedded("ruby").unwrap();
         let generator = "read m:int n:int\nwrite result";
         let received = generate(cfg, generator).unwrap();
         let expected = "m, n = gets.split.map(&:to_i)\nputs \"result\"";
@@ -202,7 +202,7 @@ write join("hello", a, "planet")"##;
 
     #[test]
     fn test_reference_stub_ruby() {
-        let cfg = StubConfig::find_hardcoded_config("ruby").unwrap();
+        let cfg = StubConfig::read_from_embedded("ruby").unwrap();
         let received = generate(cfg, REFERENCE_STUB).unwrap();
         let expected = r##"# Live long
 # and prosper
@@ -266,13 +266,13 @@ puts "hello #{a} planet""##;
     // Just test that it compiles
     #[test]
     fn test_reference_stub_rust() {
-        let cfg = StubConfig::find_hardcoded_config("rust").unwrap();
+        let cfg = StubConfig::read_from_embedded("rust").unwrap();
         generate(cfg, REFERENCE_STUB).unwrap();
     }
 
     #[test]
     fn test_reference_stub_c() {
-        let cfg = StubConfig::find_hardcoded_config("c").unwrap();
+        let cfg = StubConfig::read_from_embedded("c").unwrap();
         generate(cfg, REFERENCE_STUB).unwrap();
     }
 }
