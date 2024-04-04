@@ -17,6 +17,17 @@ pub struct StubConfig {
 }
 
 impl StubConfig {
+    /// This function is responsible for searching locations where language
+    /// config files can be stored.
+    ///
+    /// Language config files are stored in: (ordered by precedence)
+    /// 1. The user config dir: `stub_templates/#{lang_arg}/stub_config.toml`
+    /// 2. This repo, embedded into the binary:
+    ///    `config/stub_templates/#{lang_arg}/stub_config.toml`
+    ///
+    /// where the user config dir is in `~/.config/clash` (Linux, see the
+    /// [directories documentation](https://docs.rs/directories/latest/directories/struct.ProjectDirs.html#method.config_dir)
+    /// for others).
     pub fn find_stub_config(lang_name: &str, config_path: &Path) -> Result<Self> {
         let user_config_lang_dir = config_path.join(lang_name);
 
