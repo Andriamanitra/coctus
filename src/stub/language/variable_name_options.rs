@@ -5,7 +5,7 @@ use serde::Deserialize;
 use crate::stub::VariableCommand;
 
 lazy_static! {
-    static ref SC_WORD_BREAK: Regex = Regex::new(r"([a-z])([A-Z])").unwrap();
+    static ref SC_WORD_BREAK: Regex = Regex::new(r"([a-z])([A-Z0-9])").unwrap();
     static ref PC_WORD_BREAK: Regex = Regex::new(r"([A-Z]*)([A-Z][a-z])").unwrap();
     static ref PC_WORD_END: Regex = Regex::new(r"([A-Z])([A-Z]*$)").unwrap();
 }
