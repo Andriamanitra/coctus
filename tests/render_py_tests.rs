@@ -441,6 +441,32 @@ for i in range(x_count):
 }
 
 #[test]
+fn test_loops_spaces_and_newlines() {
+    let generator = r##"read n:int
+loop  
+  n    
+    
+
+  loop 4 
+write thing
+
+loop n    
+  loop 4      
+  loopline
+n x:int"##;
+    let expected = r##"n = int(input())
+for i in range(n):
+    for j in range(4):
+        print("thing")
+for i in range(n):
+    for j in range(4):
+        for k in input().split():
+            x = int(k)
+"##;
+    test_stub_builder(generator, expected);
+}
+
+#[test]
 fn test_stub_variable_length() {
     let generator = r##"read n:int
 read k:string(n)

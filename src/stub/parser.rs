@@ -117,8 +117,7 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_loop(&mut self) -> Cmd {
-        match self.next_token_past_newline() {
-            Some("\n") => panic!("Could not find count identifier for loop"),
+        match self.first_non_whitespace_token() {
             None => panic!("Unexpected end of input: Loop stub not provided with loop count"),
             Some(other) => Cmd::Loop {
                 count_var: String::from(other),
@@ -128,8 +127,7 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_loopable(&mut self) -> Cmd {
-        match self.next_token_past_newline() {
-            Some("\n") => panic!("Loop not provided with command"),
+        match self.first_non_whitespace_token() {
             Some("read") => self.parse_read(),
             Some("write") => self.parse_write(),
             Some("loopline") => self.parse_loopline(),
@@ -140,8 +138,7 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_loopline(&mut self) -> Cmd {
-        match self.next_token_past_newline() {
-            Some("\n") => panic!("Could not find count identifier for loopline"),
+        match self.first_non_whitespace_token() {
             None => panic!("Unexpected end of input: Loopline stub not provided with count identifier"),
             Some(other) => Cmd::LoopLine {
                 count_var: other.to_string(),
@@ -254,12 +251,13 @@ impl<'a> Parser<'a> {
         self.token_stream.next()
     }
 
-    fn next_token_past_newline(&mut self) -> Option<&'a str> {
-        match self.next_token() {
-            Some("\n") => self.next_token(),
-            Some("") => self.next_token_past_newline(),
-            token => token,
+    fn first_non_whitespace_token(&mut self) -> Option<&'a str> {
+        while let Some(token) = self.token_stream.next() {
+            if token != "\n" && token != "" {
+                return Some(token);
+            }
         }
+        None
     }
 
     fn rest_of_line(&mut self) -> Option<String> {
