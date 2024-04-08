@@ -441,7 +441,7 @@ for i in range(x_count):
 }
 
 #[test]
-fn test_loops_spaces_and_newlines() {
+fn test_stub_loops_spaces_and_newlines() {
     let generator = r##"read n:int
 loop  
   n    
@@ -481,6 +481,69 @@ k = input()  # this string is n-sized (irrelevant in python but be wary!)
 for i in range(n):
     a = input()
 print("answer")
+"##;
+
+    test_stub_builder(generator, expected);
+}
+
+#[test]
+fn test_stub_summary() {
+    let generator = r##"read anInt:int
+read aFloat:float
+read Long:long
+read aWord:word(1)
+read boolean:bool
+read ABC1ABc1aBC1AbC1abc1:int
+read STRING:string(256)
+read anInt2:int aFloat2:float Long2:long aWord2:word(1) boolean2:bool
+loop anInt read x:int
+loop anInt read x:int f:float
+loopline anInt x:int
+loopline anInt x:int f:float
+write result
+
+write join(anInt, aFloat, "literal", boolean)
+
+STATEMENT
+This is the statement
+
+INPUT
+anInt: An input comment over anInt
+
+OUTPUT
+An output comment
+"##;
+    let expected = r##"# This is the statement
+
+an_int = int(input())  # An input comment over anInt
+a_float = float(input())
+long = int(input())
+a_word = input()
+boolean = input() != "0"
+abc1abc_1a_bc1ab_c1abc_1 = int(input())
+string = input()
+inputs = input().split()
+an_int_2 = int(inputs[0])
+a_float_2 = float(inputs[1])
+long_2 = int(inputs[2])
+a_word_2 = inputs[3]
+boolean_2 = inputs[4] != "0"
+for i in range(an_int):
+    x = int(input())
+for i in range(an_int):
+    inputs = input().split()
+    x = int(inputs[0])
+    f = float(inputs[1])
+for i in input().split():
+    x = int(i)
+inputs = input().split()
+for i in range(an_int):
+    x = int(inputs[2*i])
+    f = float(inputs[2*i+1])
+# An output comment
+print("result")
+# An output comment
+print(str(an_int) + " " + str(a_float) + " literal " + str(boolean))
 "##;
 
     test_stub_builder(generator, expected);

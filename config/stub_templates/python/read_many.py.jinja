@@ -29,7 +29,9 @@
 inputs = input().split()
 {%- for var in vars %}
 {% if var.var_type == "String" or var.var_type == "Word" -%}
-    {%- set assign = "inputs[" ~ loop.index0  ~ "]" -%}
+    {%- set assign = "inputs[" ~ loop.index0 ~ "]" -%}
+{%- elif var.var_type == "Bool" -%}
+    {%- set assign = "inputs[" ~ loop.index0 ~ "]" ~ type_tokens[var.var_type] -%}
 {% else -%}
     {%- set assign = type_tokens[var.var_type] ~ "(inputs[" ~ loop.index0 ~ "])" -%}
 {% endif -%}
