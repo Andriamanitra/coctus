@@ -11,10 +11,25 @@
   {%- if term.is_variable %}
     {%- set ref = "TODO" -%}
   {%- else -%}
-    {%- set ref = term.name -%}
+    {%- set ref = term.ident -%}
   {%- endif -%}
   {%- set_global joined_terms = joined_terms | concat(with=ref) -%}
 {%- endfor -%}
 {%- set fmt_joined_terms = joined_terms | join(sep=" ") -%}
 
-printf("{{ fmt_joined_terms }}");
+{%- set_global types = [] -%}
+{%- set_global var_refs = [] -%}
+{%- for var in terms -%}
+  {# var_type is None when the term is a literal #}
+  {%- if var.var_type -%}
+    {%- set_global var_refs = var_refs | concat(with=var.ident) -%}
+  {%- endif -%}
+
+  {%- if var.var_type -%}
+    {%- set_global types = types | concat(with=format_symbols[var.var_type]) -%}
+  {%- else -%}
+    {%- set_global types = types | concat(with=var.ident) -%}
+  {%- endif -%}
+{%- endfor -%}
+
+printf("{{ types | join(sep=" ") }}\n", {{ var_refs | join(sep=", ") }});

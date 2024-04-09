@@ -62,8 +62,8 @@ fn parse_write_returns_write_joins() {
     let Cmd::WriteJoin { join_terms, .. } = parser.parse_write() else { panic!() };
 
     let [
-        JoinTerm { name: first_term,  .. }, 
-        JoinTerm { name: second_term, .. }
+        JoinTerm { ident: first_term,  .. }, 
+        JoinTerm { ident: second_term, .. }
     ] = join_terms.as_slice() else { panic!() };
 
     assert_eq!(first_term, "hello");

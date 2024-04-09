@@ -88,22 +88,25 @@ impl VariableCommand {
 
 #[derive(Serialize, Clone, Debug)]
 pub struct JoinTerm {
-    pub name: String,
+    pub ident: String,
     pub is_variable: bool,
+    pub var_type: Option<VarType>,
 }
 
 impl JoinTerm {
-    pub fn new_literal(name: String) -> Self {
+    pub fn new_literal(ident: String) -> Self {
         Self {
-            name,
+            ident,
             is_variable: false,
+            var_type: None,
         }
     }
 
-    pub fn new_variable(name: String) -> Self {
+    pub fn new_variable(ident: String) -> Self {
         Self {
-            name,
+            ident,
             is_variable: true,
+            var_type: None,
         }
     }
 }

@@ -101,13 +101,14 @@ impl Renderer {
             .cloned()
             .map(|mut term| {
                 if term.is_variable {
-                    term.name = self.lang.variable_name_options.transform_variable_name(&term.name);
+                    term.ident = self.lang.variable_name_options.transform_variable_name(&term.ident);
                 }
                 term
             })
             .collect();
 
         context.insert("terms", &terms);
+        context.insert("type_tokens", &self.lang.type_tokens);
         context.insert("output_comments", output_comments);
 
         self.tera_render("write_join", &mut context)
