@@ -53,7 +53,7 @@ impl<'a> Parser<'a> {
                     read_pairings.insert(var_cmd.ident.clone(), var_cmd.var_type);
                 }
             }
-        }        
+        }
         for cmd in &mut stub.commands {
             if let Cmd::WriteJoin { join_terms, output_comment: _ } = cmd {
                 for term in join_terms.iter_mut() {
@@ -63,7 +63,7 @@ impl<'a> Parser<'a> {
                 }
             }
         }
-        
+
         stub
     }
 
