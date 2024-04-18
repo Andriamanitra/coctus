@@ -1,9 +1,13 @@
-puts "
+{%- set_global types = [] -%}
+{%- set_global term_refs = [] -%}
 {%- for term in terms -%}
-  {%- if term.is_variable -%}
-    {{- '#{' }}{{ term.ident }}{{ '}' -}}
+  {# var_type is None when the term is a literal #}
+  {%- if term.var_type -%}
+    {%- set_global term_refs = term_refs | concat(with=term.ident) -%}
+    {%- set_global types = types | concat(with="{}") -%}
   {%- else -%}
-    {{- term.ident -}}
+    {%- set_global types = types | concat(with=term.ident) -%}
   {%- endif -%}
-  {% if loop.last == false %} {% endif %}
-{%- endfor -%}"
+{%- endfor -%}
+
+println!("{{ types | join(sep=" ") }}", {{ term_refs | join(sep=", ") }});
