@@ -1,7 +1,3 @@
-{% if debug_mode -%}
----- 🇷 EAD_ONE: {{ var.var_type }}
-{% endif %}
-
 {%- if var.var_type == "String" -%}
   {% set method = ".chomp" %}
 {%- elif var.var_type == "Word" -%}

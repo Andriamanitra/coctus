@@ -1,12 +1,3 @@
-{%- if debug_mode -%}
----- 🇱 OOPLINE
-{%- if vars | length == 1 -%} 
-  (SINGLE_TYPE)
-{% else -%}
-  (MULTIPLE_TYPE)
-{% endif -%}
-{% endif -%}
-
 {%- if vars | length == 1 -%} 
 {# SINGLE_TYPE #}
 {%- set var = vars[0] -%}

@@ -9,8 +9,8 @@ const ALPHABET: [char; 18] = [
     'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
 ];
 
-pub fn render_stub(config: StubConfig, stub: Stub, debug_mode: bool) -> Result<String> {
-    let renderer = Renderer::new(config, stub, debug_mode)?;
+pub fn render_stub(config: StubConfig, stub: Stub) -> Result<String> {
+    let renderer = Renderer::new(config, stub)?;
     Ok(renderer.render())
 }
 
@@ -18,22 +18,18 @@ struct Renderer {
     tera: Tera,
     lang: Language,
     stub: Stub,
-    debug_mode: bool,
 }
 
 impl Renderer {
-    fn new(config: StubConfig, stub: Stub, debug_mode: bool) -> Result<Renderer> {
+    fn new(config: StubConfig, stub: Stub) -> Result<Renderer> {
         Ok(Self {
             lang: config.language,
             tera: config.tera,
             stub,
-            debug_mode,
         })
     }
 
     fn tera_render(&self, template_name: &str, context: &mut Context) -> String {
-        context.insert("debug_mode", &self.debug_mode);
-
         // Since these are (generally) shared across languages, it makes sense to
         // store it in the "global" context instead of accepting it as parameters.
         let format_symbols = json!({

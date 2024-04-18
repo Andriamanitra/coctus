@@ -1,12 +1,3 @@
-{%- if debug_mode -%}
----- 🇷 EAD_MANY
-{%- if single_type -%} 
-  (SINGLE_TYPE)
-{% else -%}
-  (MULTIPLE_TYPE)
-{% endif -%}
-{% endif -%}
-
 {%- for var in vars %}
 {%- if var.input_comment -%}// {{ var.ident }}: {{ var.input_comment }}
 {% endif -%}

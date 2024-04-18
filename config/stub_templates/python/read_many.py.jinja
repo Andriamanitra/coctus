@@ -1,12 +1,3 @@
-{%- if debug_mode -%}
----- 🇷 EAD_MANY
-{%- if single_type -%} 
-  (SINGLE_TYPE)
-{% else -%}
-  (MULTIPLE_TYPE)
-{% endif -%}
-{% endif -%}
-
 {%- set_global names = vars | map(attribute="ident") | join(sep=", ") -%}
 
 {%- if single_type -%}

@@ -3,12 +3,6 @@ use std::io;
 macro_rules! parse_input {
     ($x:expr, $t:ident) => ($x.trim().parse::<$t>().unwrap())
 }
-{% if debug_mode %}
----- 🇲 AIN
-{% endif -%}
-{% if debug_mode -%}
----- 🇸 TATEMENT
-{% endif -%}
 
 {%- for line in statement %}
 // {{ line }}

@@ -12,10 +12,9 @@ pub fn generate(config: StubConfig, generator: &str) -> Result<String> {
     let stub = parser::parse_generator_stub(generator);
 
     // eprint!("=======\n{:?}\n======\n", generator);
-    eprint!("=======\n{}\n======\n", renderer::render_stub(config.clone(), stub.clone(), true)?);
     // eprint!("=======\n{:?}\n======\n", stub);
 
-    let output_str = renderer::render_stub(config.clone(), stub, false)?;
+    let output_str = renderer::render_stub(config.clone(), stub)?;
 
     Ok(output_str.as_str().trim().to_string())
 }

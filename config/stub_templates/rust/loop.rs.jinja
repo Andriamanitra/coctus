@@ -1,7 +1,3 @@
-{%- if debug_mode -%}
-# LOOP
-{% endif -%}
-
 for {{ index_ident }} in 0..{{ count_var }} as usize {
 {%- for line in inner %}
     {{line}}

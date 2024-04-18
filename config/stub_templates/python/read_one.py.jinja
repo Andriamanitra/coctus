@@ -1,7 +1,3 @@
-{% if debug_mode -%}
----- 🇷 EAD_ONE: {{ var.var_type }}
-{% endif %}
-
 {%- if var.var_type == "String" or var.var_type == "Word" -%}
     {%- set fn = "input()" -%}
 {%- elif var.var_type == "Bool" -%}
