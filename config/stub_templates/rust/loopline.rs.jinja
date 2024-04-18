@@ -4,10 +4,11 @@
 let mut inputs = String::new();
 io::stdin().read_line(&mut inputs).unwrap();
 for {{ index_ident }} in inputs.split_whitespace() {
-    let {{ var.ident }} = parse_input!({{ index_ident }}, {{type_tokens[var.var_type]}});
+    let {{ var.ident }} = parse_input!({{ index_ident }}, {{ type_tokens[var.var_type] }});
 }
 
 {%- else -%}
+{%- set vars_length = vars | length -%}
 
 let mut input_line = String::new();
 io::stdin().read_line(&mut input_line).unwrap();
@@ -19,8 +20,8 @@ for {{ index_ident }} in 0..{{ count_var }} as usize {
     {%- else -%}
         {%- set idx = "+" ~ loop.index0 -%}
     {%- endif -%}
-    {%- set fn = "inputs[2*" ~ index_ident ~ idx ~ "]" %}
-    let {{ var.ident }} = parse_input!({{ fn }}, {{type_tokens[var.var_type]}});
+    {%- set fn = "inputs[" ~ vars_length ~ "*" ~ index_ident ~ idx ~ "]" %}
+    let {{ var.ident }} = parse_input!({{ fn }}, {{ type_tokens[var.var_type] }});
 {%- endfor %}
 }
 {%- endif %}
