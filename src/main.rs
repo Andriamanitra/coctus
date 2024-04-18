@@ -502,16 +502,18 @@ loopline anInt x:int
 loopline anInt x:int f:float
 write result
 
-write join(anInt, aFloat, "literal", boolean)
+OUTPUT
+An output comment
+
+write join(anInt, aFloat, Long, boolean)
+
+write join(aWord, "literal", STRING)
 
 STATEMENT
 This is the statement
 
 INPUT
 anInt: An input comment over anInt
-
-OUTPUT
-An output comment
 "##;
 
         let stub_generator = if args.get_flag("debug") {

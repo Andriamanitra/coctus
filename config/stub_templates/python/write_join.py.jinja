@@ -5,9 +5,13 @@
 {%- set_global out = "" -%}
 {%- for term in terms -%}
   {%- if term.is_variable -%}
-    {%- set_global out = out ~ "str(" ~ term.name ~ ")" -%}
+    {%- if term.var_type == "String" or term.var_type == "Word" -%}
+      {%- set_global out = out ~ term.ident -%}
+    {%- else -%}
+      {%- set_global out = out ~ "str(" ~ term.ident ~ ")" -%}
+    {%- endif -%}
   {%- else -%}
-    {%- set_global out = out ~ '"' ~ term.name ~ '"' -%}
+    {%- set_global out = out ~ '"' ~ term.ident ~ '"' -%}
   {%- endif -%}
   {%- if loop.last == false -%}
     {%- set_global out = out ~ ' + " " + ' -%}

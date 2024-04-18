@@ -5,9 +5,9 @@
 puts "
 {%- for term in terms -%}
   {%- if term.is_variable -%}
-    {{- '#{' }}{{ term.name }}{{ '}' -}}
+    {{- '#{' }}{{ term.ident }}{{ '}' -}}
   {%- else -%}
-    {{- term.name -}}
+    {{- term.ident -}}
   {%- endif -%}
   {% if loop.last == false %} {% endif %}
 {%- endfor -%}"

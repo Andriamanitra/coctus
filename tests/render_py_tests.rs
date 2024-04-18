@@ -502,16 +502,18 @@ loopline anInt x:int
 loopline anInt x:int f:float
 write result
 
-write join(anInt, aFloat, "literal", boolean)
+OUTPUT
+An output comment
+
+write join(anInt, aFloat, Long, boolean)
+
+write join(aWord, "literal", STRING)
 
 STATEMENT
 This is the statement
 
 INPUT
 anInt: An input comment over anInt
-
-OUTPUT
-An output comment
 "##;
     let expected = r##"# This is the statement
 
@@ -542,8 +544,8 @@ for i in range(an_int):
     f = float(inputs[2*i+1])
 # An output comment
 print("result")
-# An output comment
-print(str(an_int) + " " + str(a_float) + " literal " + str(boolean))
+print(str(an_int) + " " + str(a_float) + " " + str(long) + " " + str(boolean))
+print(a_word + " literal " + string)
 "##;
 
     test_stub_builder(generator, expected);
