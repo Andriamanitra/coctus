@@ -153,6 +153,7 @@ fn cli() -> clap::Command {
                 .alias("gen")
                 .about("Generate input handling code for a given language")
                 .arg(arg!(<PROGRAMMING_LANGUAGE> "programming language of the solution stub"))
+                .arg(arg!(--"debug" "generate the stub for the reference generator"))
                 .after_help(
                     "Prints boilerplate code for the input of the current clash.\
                     \nIntended to be piped to a file.\
@@ -487,13 +488,44 @@ impl App {
 
     fn generate_stub(&self, args: &ArgMatches) -> Result<()> {
         let config = self.build_stub_config(args)?;
-        let handle = self
-            .current_handle()
-            .expect("You must have a current clash to generate stubs. Please use clash next");
-        let clash = self.read_clash(&handle)?;
-        let stub_generator = clash.stub_generator().expect("Clash provides no input stub generator");
+        let reference_generator = r##"read anInt:int
+read aFloat:float
+read Long:long
+read aWord:word(1)
+read boolean:bool
+read ABC1ABc1aBC1AbC1abc1:int
+read STRING:string(256)
+read anInt2:int aFloat2:float Long2:long aWord2:word(1) boolean2:bool
+loop anInt read x:int
+loop anInt read x:int f:float
+loopline anInt x:int
+loopline anInt x:int f:float
+write result
 
-        let stub_string = stub::generate(config, stub_generator)?;
+write join(anInt, aFloat, "literal", boolean)
+
+STATEMENT
+This is the statement
+
+INPUT
+anInt: An input comment over anInt
+
+OUTPUT
+An output comment
+"##;
+
+        let stub_generator = if args.get_flag("debug") {
+            reference_generator.to_owned()
+        } else {
+            let handle = self
+                .current_handle()
+                .expect("You must have a current clash to generate stubs. Please use clash next");
+            let clash = self.read_clash(&handle)?;
+            let stub_generator_str = clash.stub_generator().expect("Clash provides no input stub generator");
+            stub_generator_str.to_owned()
+        };
+
+        let stub_string = stub::generate(config, &stub_generator)?;
 
         println!("{stub_string}");
         Ok(())
