@@ -19,8 +19,11 @@ test-painting:
     cargo test --quiet painting -- --nocapture --test-threads=1
 
 # Print unformatted statement (requires clash & jq)
-raw-statement HANDLE:
-    clash json {{HANDLE}} | jq .lastVersion.data.statement
+raw-statement HANDLE='':
+    @clash json {{HANDLE}} | jq -r .lastVersion.data.statement
+
+raw-stub HANDLE='':
+    @clash json {{HANDLE}} | jq -r .lastVersion.data.stubGenerator
 
 # Check if clashes look good
 check-all: check-outdated check-mono check-nested check-nested-self check-not-matching
@@ -49,79 +52,6 @@ check-nested-self:
 # Check not matching tags
 check-not-matching:
     cargo run --quiet -- show 7040402a6fe461068f5cf5296607c184d043a | less -R
-
-###################
-# HERE BE DRAGONS #
-###################
-
-# Change this to your favorite text-editor
-editor := "code"
-
-build  := "cargo build --quiet --release"
-binary := "./target/release/clash"
-
-launch-rb:
-    {{editor}} tmp.rb
-    {{build}}
-    ls *.rb | entr -p {{binary}} run --command "ruby tmp.rb"
-
-launch-new-rb:
-    {{editor}} tmp.rb
-    {{build}}
-    {{binary}} next
-    {{binary}} show
-    {{binary}} generate-stub ruby > tmp.rb
-    ls *.rb | entr -p {{binary}} run --command "ruby tmp.rb"
-
-launch-py:
-    {{editor}} tmp.py
-    {{build}}
-    ls *.py | entr -p {{binary}} run --command "python3 tmp.py"
-
-launch-new-py:
-    {{editor}} tmp.py
-    {{build}}
-    {{binary}} next
-    {{binary}} show
-    {{binary}} generate-stub python > tmp.py
-    ls *.py | entr -p {{binary}} run --command "python3 tmp.py"
-
-launch-c:
-    {{editor}} tmp.c
-    {{build}}
-    ls *.c | entr -p {{binary}} run \
-    --build-command "gcc -o tmp tmp.c" --command "./tmp"
-
-launch-new-c:
-    {{editor}} tmp.c
-    {{build}}
-    {{binary}} next
-    {{binary}} show
-    {{binary}} generate-stub c > tmp.c
-    ls *.c | entr -p {{binary}} run \
-    --build-command "gcc -o tmp tmp.c" --command "./tmp"
-
-# Requires Cargo.toml to look be like this:
-# [package]
-# name = "clash"
-# version = "0.1.0"
-# edition = "2021"
-# default-run = "clash"
-
-# [[bin]]
-# name = "tmp"
-# path = "tmp.rs"
-launch-rs:
-    {{editor}} tmp.rs
-    {{build}}
-    ls *.rs | entr -p {{binary}} run \
-    --build-command "cargo build --bin tmp" --command "./target/debug/tmp"
-
-launch-rs-debug:
-    {{editor}} tmp.rs
-    {{build}}
-    ls *.rs | entr -p sh -c 'export RUST_BACKTRACE=1; {{binary}} run \
-    --build-command "cargo build --release --bin tmp" --command "./target/release/tmp"'
 
 # Test the stub generator with a random clash in LANG
 test-stub LANG:
