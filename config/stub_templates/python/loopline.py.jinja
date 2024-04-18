@@ -19,6 +19,7 @@ for {{ index_ident }} in input().split():
 {%- endif -%}
 {# MULTIPLE_TYPE #}
 {%- else -%}
+{%- set vars_length = vars | length -%}
 
 inputs = input().split()
 for {{ index_ident }} in range({{ count_var }}):
@@ -29,9 +30,9 @@ for {{ index_ident }} in range({{ count_var }}):
         {%- set idx = "+" ~ loop.index0 -%}
     {%- endif -%}
     {%- if var.var_type == "String" or var.var_type == "Word" -%}
-        {%- set fn = "inputs[2*" ~ index_ident ~ idx ~ "]" -%}
+        {%- set fn = "inputs[" ~ vars_length ~ "*" ~ index_ident ~ idx ~ "]" -%}
     {%- else -%}
-        {%- set fn = type_tokens[var.var_type] ~ "(inputs[2*" ~ index_ident ~ idx ~ "])" -%}
+        {%- set fn = type_tokens[var.var_type] ~ "(inputs[" ~ vars_length ~ "*" ~ index_ident ~ idx ~ "])" -%}
     {%- endif %}
     {{ var.ident }} = {{ fn }}
 {%- endfor %}

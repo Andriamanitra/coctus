@@ -500,7 +500,8 @@ loop anInt read x:int
 loop anInt read x:int f:float
 loop anInt loop anInt read x:int y:int
 loopline anInt x:int
-loopline anInt x:int f:float
+loopline anInt w:word(50)
+loopline anInt x:int f:float w:word(50)
 write result
 
 OUTPUT
@@ -542,10 +543,13 @@ for i in range(an_int):
         x, y = [int(k) for k in input().split()]
 for i in input().split():
     x = int(i)
+for w in input().split():
+    pass
 inputs = input().split()
 for i in range(an_int):
-    x = int(inputs[2*i])
-    f = float(inputs[2*i+1])
+    x = int(inputs[3*i])
+    f = float(inputs[3*i+1])
+    w = inputs[3*i+2]
 # An output comment
 print("result")
 print(str(an_int) + " " + str(a_float) + " " + str(long) + " " + str(boolean))

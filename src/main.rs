@@ -500,7 +500,8 @@ loop anInt read x:int
 loop anInt read x:int f:float
 loop anInt loop anInt read x:int y:int
 loopline anInt x:int
-loopline anInt x:int f:float
+loopline anInt w:word(50)
+loopline anInt x:int f:float w:word(50)
 write result
 
 OUTPUT
