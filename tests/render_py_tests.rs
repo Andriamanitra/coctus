@@ -498,6 +498,7 @@ read STRING:string(256)
 read anInt2:int aFloat2:float Long2:long aWord2:word(1) boolean2:bool
 loop anInt read x:int
 loop anInt read x:int f:float
+loop anInt loop anInt read x:int y:int
 loopline anInt x:int
 loopline anInt x:int f:float
 write result
@@ -536,6 +537,9 @@ for i in range(an_int):
     inputs = input().split()
     x = int(inputs[0])
     f = float(inputs[1])
+for i in range(an_int):
+    for j in range(an_int):
+        x, y = [int(k) for k in input().split()]
 for i in input().split():
     x = int(i)
 inputs = input().split()

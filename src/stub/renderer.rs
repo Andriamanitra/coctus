@@ -68,7 +68,7 @@ impl Renderer {
 
     fn render_command(&self, cmd: &Cmd, nesting_depth: usize) -> String {
         match cmd {
-            Cmd::Read(vars) => self.render_read(vars),
+            Cmd::Read(vars) => self.render_read(vars, nesting_depth),
             Cmd::Write {
                 lines,
                 output_comment,
@@ -114,10 +114,10 @@ impl Renderer {
         self.tera_render("write_join", &mut context)
     }
 
-    fn render_read(&self, vars: &Vec<VariableCommand>) -> String {
+    fn render_read(&self, vars: &Vec<VariableCommand>, nesting_depth: usize) -> String {
         match vars.as_slice() {
             [var] => self.render_read_one(var),
-            _ => self.render_read_many(vars),
+            _ => self.render_read_many(vars, nesting_depth),
         }
     }
 
@@ -131,7 +131,7 @@ impl Renderer {
         self.tera_render("read_one", &mut context)
     }
 
-    fn render_read_many(&self, vars: &[VariableCommand]) -> String {
+    fn render_read_many(&self, vars: &[VariableCommand], nesting_depth: usize) -> String {
         let mut context = Context::new();
         let vars = vars
             .iter()
@@ -139,14 +139,16 @@ impl Renderer {
             .collect::<Vec<_>>();
 
         let types: Vec<_> = vars.iter().map(|r| &r.var_type).unique().collect();
-
         match types.as_slice() {
             [single_type] => context.insert("single_type", single_type),
             _ => context.insert("single_type", &false),
         }
 
+        let index_ident = ALPHABET[nesting_depth];
+
         context.insert("vars", &vars);
         context.insert("type_tokens", &self.lang.type_tokens);
+        context.insert("index_ident", &index_ident);
 
         self.tera_render("read_many", &mut context)
     }

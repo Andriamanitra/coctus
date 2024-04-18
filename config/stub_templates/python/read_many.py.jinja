@@ -20,7 +20,7 @@
 {%- if type == "String" or type == "Word" -%}
     {%- set assign = "input().split()" -%}
 {%- else -%}
-    {%- set assign = "[" ~ type_tokens[type] ~ "(i) for i in input().split()]" -%}
+    {%- set assign = "[" ~ type_tokens[type] ~ "(" ~ index_ident ~ ") for " ~ index_ident ~ " in input().split()]" -%}
 {%- endif -%}
 {{ names }} = {{ assign }}
 
