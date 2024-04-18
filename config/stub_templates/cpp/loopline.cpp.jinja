@@ -1,0 +1,6 @@
+for (int i = 0; i < {{ count_var }}; i++) {
+{%- for var in vars %}
+    {{ type_tokens[var.var_type] }} {{ var.ident }};
+    cin >> {{ var.ident }}; cin.ignore();
+{%- endfor %}
+}

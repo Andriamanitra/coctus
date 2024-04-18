@@ -1,0 +1,5 @@
+for (int {{ index_ident }} = 0; {{ index_ident }} < {{ count_var }}; {{ index_ident }}++) {
+{%- for line in inner %}
+    {{line}}
+{%- endfor %}
+}

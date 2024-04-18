@@ -1,0 +1,17 @@
+#include <iostream>
+#include <string>
+#include <vector>
+#include <algorithm>
+
+using namespace std;
+{% for line in statement %}
+// {{ line }}
+{%- endfor %}
+
+int main() {
+    {%- for line in code_lines %}
+    {{ line }}
+    {%- endfor %}
+
+    return 0;
+}

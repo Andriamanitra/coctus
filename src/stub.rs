@@ -278,4 +278,10 @@ puts "hello #{a} planet""##;
         let cfg = StubConfig::read_from_embedded("c").unwrap();
         generate(cfg, REFERENCE_STUB).unwrap();
     }
+
+    #[test]
+    fn test_reference_stub_cpp() {
+        let cfg = StubConfig::read_from_embedded("cpp").unwrap();
+        generate(cfg, REFERENCE_STUB).unwrap();
+    }
 }

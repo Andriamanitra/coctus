@@ -1,0 +1,6 @@
+{%- set type_kw = type_tokens[var.var_type] -%}
+
+{%- if var.input_comment %}// {{ var.input_comment }}
+{% endif -%}
+{{ type_kw }} {{ var.ident }}; 
+cin >> {{ var.ident }}; cin.ignore();
