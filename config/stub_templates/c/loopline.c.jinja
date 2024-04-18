@@ -1,7 +1,3 @@
-{%- if debug_mode -%}
----- 🇱 OOPLINE
-{% endif -%}
-
 for (int i = 0; i < {{ count_var }}; i++) {
 {%- for var in vars %}
     {%- set sym = format_symbols[var.var_type] -%}
