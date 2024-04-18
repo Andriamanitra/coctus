@@ -1,6 +1,9 @@
-{%- if vars | length == 1 -%} 
+{%- set vars_length = vars | length -%}
+
 {# SINGLE_TYPE #}
+{%- if vars_length == 1 -%} 
 {%- set var = vars[0] -%}
+
 {# Special CG case, doesn't make much sense otherwise #}
 {%- if var.var_type == "Word" -%}
 for {{ var.ident }} in input().split():
@@ -19,7 +22,6 @@ for {{ index_ident }} in input().split():
 {%- endif -%}
 {# MULTIPLE_TYPE #}
 {%- else -%}
-{%- set vars_length = vars | length -%}
 
 inputs = input().split()
 for {{ index_ident }} in range({{ count_var }}):

@@ -1,14 +1,26 @@
-{%- if vars | length == 1 -%} 
+{%- set vars_length = vars | length -%}
 
+{# SINGLE_TYPE #}
+{%- if vars_length == 1 -%} 
 {%- set var = vars[0] -%}
+
+{# Special CG case, doesn't make much sense otherwise #}
+{%- if var.var_type == "Word" -%}
+let mut inputs = String::new();
+io::stdin().read_line(&mut inputs).unwrap();;
+for {{ var.ident }} in inputs.split_whitespace() {
+}
+{%- else -%}
+
 let mut inputs = String::new();
 io::stdin().read_line(&mut inputs).unwrap();
 for {{ index_ident }} in inputs.split_whitespace() {
     let {{ var.ident }} = parse_input!({{ index_ident }}, {{ type_tokens[var.var_type] }});
 }
 
+{%- endif -%}
+{# MULTIPLE_TYPE #}
 {%- else -%}
-{%- set vars_length = vars | length -%}
 
 let mut input_line = String::new();
 io::stdin().read_line(&mut input_line).unwrap();
@@ -21,7 +33,11 @@ for {{ index_ident }} in 0..{{ count_var }} as usize {
         {%- set idx = "+" ~ loop.index0 -%}
     {%- endif -%}
     {%- set fn = "inputs[" ~ vars_length ~ "*" ~ index_ident ~ idx ~ "]" %}
+    {%- if var.var_type == "String" or var.var_type == "Word" %}
+    let {{ var.ident }} = {{ fn }}.trim().to_string();
+    {%- else %}
     let {{ var.ident }} = parse_input!({{ fn }}, {{ type_tokens[var.var_type] }});
+    {%- endif -%}
 {%- endfor %}
 }
 {%- endif %}
