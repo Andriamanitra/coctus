@@ -45,22 +45,20 @@ impl<'a> Parser<'a> {
             };
         }
 
-        let mut read_pairings = Vec::new();
+        // Update WriteJoin terms with their respective var_type.
+        let mut read_pairings = std::collections::BTreeMap::new();
         for read_cmd in &stub.commands {
             if let Cmd::Read(var_cmds) = read_cmd {
                 for var_cmd in var_cmds {
-                    read_pairings.push((var_cmd.ident.clone(), var_cmd.var_type.clone()));
+                    read_pairings.insert(var_cmd.ident.clone(), var_cmd.var_type);
                 }
             }
         }        
-
         for cmd in &mut stub.commands {
             if let Cmd::WriteJoin { join_terms, output_comment: _ } = cmd {
                 for term in join_terms.iter_mut() {
-                    for (ident, var_type) in &read_pairings {
-                        if term.ident == *ident {
-                            term.var_type = Some(var_type.clone());
-                        }
+                    if let Some(var_type) = read_pairings.get(&term.ident) {
+                        term.var_type = Some(*var_type);
                     }
                 }
             }

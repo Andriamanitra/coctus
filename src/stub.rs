@@ -37,7 +37,7 @@ impl std::fmt::Debug for Stub {
     }
 }
 
-#[derive(Debug, Clone, Serialize, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, Serialize, PartialEq, Eq, Hash)]
 pub enum VarType {
     Int,
     Float,
