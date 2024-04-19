@@ -495,15 +495,12 @@ impl App {
         let config = self.build_stub_config(args)?;
 
         let stub_generator = match args.get_one::<PathBuf>("from-file") {
-            Some(fname) => {
-                if fname.to_str() == Some("-") {
-                    let mut input = String::new();
-                    std::io::Read::read_to_string(&mut std::io::stdin(), &mut input)?;
-                    input
-                } else {
-                    std::fs::read_to_string(fname)?
-                }
+            Some(fname) if fname.to_str() == Some("-") => {
+                let mut input = String::new();
+                std::io::Read::read_to_string(&mut std::io::stdin(), &mut input)?;
+                input
             }
+            Some(fname) => std::fs::read_to_string(fname)?,
             None if args.get_flag("from-reference") => {
                 let reference_stub = indoc! {r##"
                     read anInt:int
