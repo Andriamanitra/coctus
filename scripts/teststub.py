@@ -51,6 +51,7 @@ def check_stubgen(*, clash_ids: list[str], lang: str, check_cmd: list[str]) -> d
         if run_check.returncode != 0:
             n_errors += 1
             print(f"\nError with stub for clash {cid}")
+            print(f"https://www.codingame.com/contribute/view/{cid}")
             print(SEPARATOR)
             print(run_check.stderr.decode("utf-8"))
             print(SEPARATOR)
