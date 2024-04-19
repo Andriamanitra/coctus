@@ -9,6 +9,7 @@ use clashlib::outputstyle::OutputStyle;
 use clashlib::stub::StubConfig;
 use clashlib::{solution, stub};
 use directories::ProjectDirs;
+use indoc::indoc;
 use rand::seq::IteratorRandom;
 
 #[derive(Clone)]
@@ -152,8 +153,12 @@ fn cli() -> clap::Command {
             Command::new("generate-stub")
                 .alias("gen")
                 .about("Generate input handling code for a given language")
-                .arg(arg!(<PROGRAMMING_LANGUAGE> "programming language of the solution stub"))
-                .arg(arg!(--"debug" "generate the stub for the reference generator"))
+                .arg(arg!(<PROGRAMMING_LANGUAGE> "Programming language of the solution stub"))
+                .arg(
+                    arg!(--"from-file" <STUBFILE> "Generate stub from stubgen file instead of the current clash")
+                        .value_parser(clap::value_parser!(PathBuf))
+                )
+                .arg(arg!(--"from-reference" "Generate stub from a reference stub generator instead of the current clash").conflicts_with("from-file"))
                 .after_help(
                     "Prints boilerplate code for the input of the current clash.\
                     \nIntended to be piped to a file.\
@@ -488,49 +493,60 @@ impl App {
 
     fn generate_stub(&self, args: &ArgMatches) -> Result<()> {
         let config = self.build_stub_config(args)?;
-        let reference_generator = r##"read anInt:int
-read aFloat:float
-read Long:long
-read aWord:word(1)
-read boolean:bool
-read ABC1ABc1aBC1AbC1abc1:int
-read STRING:string(256)
-read anInt2:int aFloat2:float Long2:long aWord2:word(1) boolean2:bool
-loop anInt read x:int
-loop anInt read x:int f:float
-loop anInt loop anInt read x:int y:int
-loopline anInt x:int
-loopline anInt w:word(50)
-loopline anInt x:int f:float w:word(50)
-write result
 
-OUTPUT
-An output comment
+        let stub_generator = match args.get_one::<PathBuf>("from-file") {
+            Some(fname) => {
+                if fname.to_str() == Some("-") {
+                    let mut input = String::new();
+                    std::io::Read::read_to_string(&mut std::io::stdin(), &mut input)?;
+                    input
+                } else {
+                    std::fs::read_to_string(fname)?
+                }
+            }
+            None if args.get_flag("from-reference") => {
+                let reference_stub = indoc! {r##"
+                    read anInt:int
+                    read aFloat:float
+                    read Long:long
+                    read aWord:word(1)
+                    read boolean:bool
+                    read ABC1ABc1aBC1AbC1abc1:int
+                    read STRING:string(256)
+                    read anInt2:int aFloat2:float Long2:long aWord2:word(1) boolean2:bool
+                    loop anInt read x:int
+                    loop anInt read x:int f:float
+                    loop anInt loop anInt read x:int y:int
+                    loopline anInt x:int
+                    loopline anInt w:word(50)
+                    loopline anInt x:int f:float w:word(50)
+                    write result
 
-write join(anInt, aFloat, Long, boolean)
+                    OUTPUT
+                    An output comment
 
-write join(aWord, "literal", STRING)
+                    write join(anInt, aFloat, Long, boolean)
 
-STATEMENT
-This is the statement
+                    write join(aWord, "literal", STRING)
 
-INPUT
-anInt: An input comment over anInt
-"##;
+                    STATEMENT
+                    This is the statement
 
-        let stub_generator = if args.get_flag("debug") {
-            reference_generator.to_owned()
-        } else {
-            let handle = self
-                .current_handle()
-                .expect("You must have a current clash to generate stubs. Please use clash next");
-            let clash = self.read_clash(&handle)?;
-            let stub_generator_str = clash.stub_generator().expect("Clash provides no input stub generator");
-            stub_generator_str.to_owned()
+                    INPUT
+                    anInt: An input comment over anInt
+                "##};
+                reference_stub.to_owned()
+            }
+            None => {
+                let handle = self.current_handle()?;
+                self.read_clash(&handle)?
+                    .stub_generator()
+                    .with_context(|| "Current clash provides no input stub generator")?
+                    .to_owned()
+            }
         };
 
         let stub_string = stub::generate(config, &stub_generator)?;
-
         println!("{stub_string}");
         Ok(())
     }
