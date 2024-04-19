@@ -60,7 +60,6 @@ def check_stubgen(*, clash_ids: list[str], lang: str, check_cmd: list[str]) -> d
             print()
 
     return {
-        "stub_language": lang,
         "num_checked": n_checked,
         "num_skipped": n_skipped,
         "num_errors": n_errors
@@ -77,18 +76,18 @@ def main(n = None):
     if n is not None:
         clash_ids = random.sample(clash_ids, n)
 
-    GCC_CMD = ["gcc", "-fsyntax-only", "-x", "c", "-"]
-    c_results = check_stubgen(clash_ids=clash_ids, lang="c", check_cmd=GCC_CMD)
+    langs_to_check = {
+        "c": ["gcc", "-fsyntax-only", "-x", "c", "-"],
+        "cpp": ["gcc", "-fsyntax-only", "-x", "c++", "-"],
+        "rust": ["rustc", "--emit=metadata", "-"],
+    }
 
-    GCC_CMD = ["gcc", "-fsyntax-only", "-x", "c++", "-"]
-    cpp_results = check_stubgen(clash_ids=clash_ids, lang="cpp", check_cmd=GCC_CMD)
-
-    RUSTC_CMD = ["rustc", "-"]
-    rust_results = check_stubgen(clash_ids=clash_ids, lang="rust", check_cmd=RUSTC_CMD)
-
-    print(c_results)
-    print(cpp_results)
-    print(rust_results)
+    lang_results = {
+        lang: check_stubgen(clash_ids=clash_ids, lang=lang, check_cmd=check_cmd)
+        for lang, check_cmd in langs_to_check.items()
+    }
+    for lang, results in lang_results.items():
+        print(f"{lang}: {results}")
 
 
 if __name__ == "__main__":
