@@ -5,7 +5,7 @@
 {%- set var = vars[0] -%}
 
 {# Special CG case, doesn't make much sense otherwise #}
-{%- if var.var_type == "Word" -%}
+{%- if var.var_type == "Word" or var.var_type == "String" -%}
 let mut inputs = String::new();
 io::stdin().read_line(&mut inputs).unwrap();;
 for {{ var.ident }} in inputs.split_whitespace() {
