@@ -1,0 +1,9 @@
+{%- if var.var_type == "String" -%}
+  {% set method = ".chomp" %}
+{%- elif var.var_type == "Word" -%}
+  {% set method = "" %}
+{%- else -%}
+  {% set method = "." ~ type_tokens[var.var_type] %}
+{%- endif -%}
+
+{{ var.ident }} = gets{{ method }}{% if var.input_comment %} # {{ var.input_comment }}{% endif %}

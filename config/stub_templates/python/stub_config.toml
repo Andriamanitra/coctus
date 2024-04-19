@@ -1,0 +1,17 @@
+name = "python"
+source_file_ext = "py"
+
+[type_tokens]
+Int = "int"
+Long = "int"
+Float = "float"
+Bool = " != \"0\""
+String = "UNUSED"
+Word = "UNUSED"
+
+[variable_name_options]
+casing = "snake_case"
+allow_uppercase_vars = false
+keywords = [
+  "for"
+]

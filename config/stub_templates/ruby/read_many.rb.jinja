@@ -1,0 +1,24 @@
+{%- for var in vars %}
+{%- if var.input_comment -%}# {{ var.ident }}: {{ var.input_comment }}
+{% endif -%}
+{% endfor -%}
+
+{{- vars | map(attribute="ident") | join(sep=", ") }} = gets.split
+
+{%- if single_type -%}
+
+  {%- if single_type != "Word" -%}
+    .map(&:{{ type_tokens[single_type] }})
+  {%- endif -%}
+
+{% else %}
+
+  {%- for var in vars -%}
+    {%- if var.var_type == "String" or var.var_type == "Word" %}
+{{var.ident}} = {{var.ident}}.chomp
+    {%- else %}
+{{var.ident}} = {{var.ident}}.{{ type_tokens[var.var_type] }}
+    {%- endif -%}
+  {%- endfor -%}
+
+{% endif %}

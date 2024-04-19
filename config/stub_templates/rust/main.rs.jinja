@@ -1,0 +1,14 @@
+use std::io;
+
+macro_rules! parse_input {
+    ($x:expr, $t:ident) => ($x.trim().parse::<$t>().unwrap())
+}
+
+{%- for line in statement %}
+// {{ line }}
+{% endfor %}
+fn main() {
+    {%- for line in code_lines %}
+    {{ line }}
+    {%- endfor %}
+}

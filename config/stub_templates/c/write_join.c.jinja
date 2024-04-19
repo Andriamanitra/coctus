@@ -1,0 +1,13 @@
+{%- set_global types = [] -%}
+{%- set_global term_refs = [] -%}
+{%- for term in terms -%}
+  {# var_type is None when the term is a literal #}
+  {%- if term.var_type -%}
+    {%- set_global term_refs = term_refs | concat(with=term.ident) -%}
+    {%- set_global types = types | concat(with=format_symbols[term.var_type]) -%}
+  {%- else -%}
+    {%- set_global types = types | concat(with=term.ident) -%}
+  {%- endif -%}
+{%- endfor -%}
+
+printf("{{ types | join(sep=" ") }}\n", {{ term_refs | join(sep=", ") }});

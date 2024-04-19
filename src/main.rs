@@ -6,7 +6,8 @@ use anyhow::{anyhow, Context, Result};
 use clap::ArgMatches;
 use clashlib::clash::{Clash, TestCase};
 use clashlib::outputstyle::OutputStyle;
-use clashlib::solution;
+use clashlib::stub::StubConfig;
+use clashlib::{solution, stub};
 use directories::ProjectDirs;
 use rand::seq::IteratorRandom;
 
@@ -148,6 +149,20 @@ fn cli() -> clap::Command {
                 )
         )
         .subcommand(
+            Command::new("generate-stub")
+                .alias("gen")
+                .about("Generate input handling code for a given language")
+                .arg(arg!(<PROGRAMMING_LANGUAGE> "programming language of the solution stub"))
+                .arg(arg!(--"debug" "generate the stub for the reference generator"))
+                .after_help(
+                    "Prints boilerplate code for the input of the current clash.\
+                    \nIntended to be piped to a file.\
+                    \nExamples:\
+                    \n  $ clash generate-stub ruby > sol.rb\
+                    \n  $ clash generate-stub bash > sol.sh"
+            )
+        )
+        .subcommand(
             Command::new("generate-shell-completion")
                 .about("Generate shell completion")
                 .arg(arg!(<SHELL>).value_parser(value_parser!(clap_complete::Shell)))
@@ -186,13 +201,15 @@ impl std::fmt::Display for PublicHandle {
 struct App {
     clash_dir: PathBuf,
     current_clash_file: PathBuf,
+    stub_templates_dir: PathBuf,
 }
 
 impl App {
-    fn new(data_dir: &std::path::Path) -> App {
+    fn new(data_dir: &std::path::Path, config_dir: &std::path::Path) -> App {
         App {
             clash_dir: data_dir.join("clashes"),
             current_clash_file: data_dir.join("current"),
+            stub_templates_dir: config_dir.join("stub_templates"),
         }
     }
 
@@ -201,6 +218,14 @@ impl App {
         let content = std::fs::read_to_string(&self.current_clash_file)
             .with_context(|| format!("Unable to read {:?}", &self.current_clash_file))?;
         PublicHandle::from_str(&content)
+    }
+
+    fn build_stub_config(&self, args: &ArgMatches) -> Result<StubConfig> {
+        let lang_arg = args
+            .get_one::<String>("PROGRAMMING_LANGUAGE")
+            .context("Should have a programming language")?;
+
+        StubConfig::find_stub_config(lang_arg.as_str(), &self.stub_templates_dir)
     }
 
     fn clashes(&self) -> Result<std::fs::ReadDir> {
@@ -461,6 +486,55 @@ impl App {
         Ok(())
     }
 
+    fn generate_stub(&self, args: &ArgMatches) -> Result<()> {
+        let config = self.build_stub_config(args)?;
+        let reference_generator = r##"read anInt:int
+read aFloat:float
+read Long:long
+read aWord:word(1)
+read boolean:bool
+read ABC1ABc1aBC1AbC1abc1:int
+read STRING:string(256)
+read anInt2:int aFloat2:float Long2:long aWord2:word(1) boolean2:bool
+loop anInt read x:int
+loop anInt read x:int f:float
+loop anInt loop anInt read x:int y:int
+loopline anInt x:int
+loopline anInt w:word(50)
+loopline anInt x:int f:float w:word(50)
+write result
+
+OUTPUT
+An output comment
+
+write join(anInt, aFloat, Long, boolean)
+
+write join(aWord, "literal", STRING)
+
+STATEMENT
+This is the statement
+
+INPUT
+anInt: An input comment over anInt
+"##;
+
+        let stub_generator = if args.get_flag("debug") {
+            reference_generator.to_owned()
+        } else {
+            let handle = self
+                .current_handle()
+                .expect("You must have a current clash to generate stubs. Please use clash next");
+            let clash = self.read_clash(&handle)?;
+            let stub_generator_str = clash.stub_generator().expect("Clash provides no input stub generator");
+            stub_generator_str.to_owned()
+        };
+
+        let stub_string = stub::generate(config, &stub_generator)?;
+
+        println!("{stub_string}");
+        Ok(())
+    }
+
     fn json(&self, args: &ArgMatches) -> Result<()> {
         let handle = match args.get_one::<PublicHandle>("PUBLIC_HANDLE") {
             Some(h) => h.to_owned(),
@@ -492,7 +566,7 @@ fn main() -> Result<()> {
     let project_dirs =
         ProjectDirs::from("com", "Clash CLI", "clash").expect("Unable to find project directory");
 
-    let app = App::new(project_dirs.data_dir());
+    let app = App::new(project_dirs.data_dir(), project_dirs.config_dir());
 
     match cli().get_matches().subcommand() {
         Some(("show", args)) => app.show(args),
@@ -502,6 +576,7 @@ fn main() -> Result<()> {
         Some(("fetch", args)) => app.fetch(args),
         Some(("showtests", args)) => app.showtests(args),
         Some(("json", args)) => app.json(args),
+        Some(("generate-stub", args)) => app.generate_stub(args),
         Some(("generate-shell-completion", args)) => app.generate_completions(args),
         _ => Err(anyhow!("unimplemented subcommand")),
     }

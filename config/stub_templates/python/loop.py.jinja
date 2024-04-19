@@ -1,0 +1,4 @@
+for {{ index_ident }} in range({{ count_var }}):
+{%- for line in inner %}
+    {{line}}
+{%- endfor %}

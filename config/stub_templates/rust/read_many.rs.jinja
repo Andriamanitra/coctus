@@ -1,0 +1,29 @@
+{%- for var in vars %}
+{%- if var.input_comment -%}// {{ var.ident }}: {{ var.input_comment }}
+{% endif -%}
+{% endfor -%}
+
+let mut input_line = String::new();
+io::stdin().read_line(&mut input_line).unwrap();
+let inputs = input_line.split(" ").collect::<Vec<_>>();
+
+{%- if single_type -%}
+
+{%- for var in vars -%}
+  {%- if var.var_type == "String" or var.var_type == "Word" %}
+let {{var.ident}} = inputs[{{ loop.index - 1 }}].trim().to_string();
+  {%- else %}
+let {{var.ident}} = parse_input!(inputs[{{ loop.index - 1 }}], {{ type_tokens[var.var_type] }});
+  {%- endif %}
+{%- endfor -%}
+
+{%- else %}
+  {%- for var in vars -%}
+    {%- if var.var_type == "String" or var.var_type == "Word" %}
+let {{var.ident}} = inputs[{{ loop.index - 1 }}].trim().to_string();
+    {%- else %}
+let {{var.ident}} = parse_input!(inputs[{{ loop.index - 1 }}], {{ type_tokens[var.var_type] }});
+    {%- endif -%}
+  {%- endfor -%}
+
+{%- endif %}

@@ -1,0 +1,27 @@
+{%- for var in vars %}
+{%- if var.input_comment -%}# {{ var.ident }}: {{ var.input_comment }}
+{% endif -%}
+{% endfor -%}
+
+{# Setup of types (%d, %s etc.) and variable references (& or "") inside the scanf function #}
+{%- set_global types = "" -%}
+{%- set_global cin_msg = "cin" -%}
+{%- for var in vars -%}  
+  {%- set_global cin_msg = cin_msg ~ " >> " ~ var.ident -%}
+  {%- set_global types = types ~ format_symbols[var.var_type] -%}
+{%- endfor -%}
+
+{%- if single_type -%}
+
+{%- set_global type = vars[0].var_type -%}
+{{ type_tokens[type] }} {{ vars | map(attribute="ident") | join(sep=", ") }};
+{{ cin_msg }}; cin.ignore();
+
+{%- else %}
+
+{%- for var in vars -%}
+{{ type_tokens[var.var_type] }} {{ var.ident }};
+{% endfor -%}
+{{ cin_msg }}; cin.ignore();
+
+{%- endif %}

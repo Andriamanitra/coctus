@@ -1,0 +1,9 @@
+{# 
+    NOTE: CG prints the comments to the right if they are only one line long, 
+    and above if multiline. We only do above, regardless of size, for the moment. 
+#}
+{%- for line in output_comments %}
+# {{ line }}
+{% endfor %}
+{%- for line in messages %}puts "{{line}}"
+{% endfor %}

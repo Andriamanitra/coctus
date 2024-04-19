@@ -19,8 +19,11 @@ test-painting:
     cargo test --quiet painting -- --nocapture --test-threads=1
 
 # Print unformatted statement (requires clash & jq)
-raw-statement HANDLE:
-    clash json {{HANDLE}} | jq .lastVersion.data.statement
+raw-statement HANDLE='':
+    @clash json {{HANDLE}} | jq -r .lastVersion.data.statement
+
+raw-stub HANDLE='':
+    @clash json {{HANDLE}} | jq -r .lastVersion.data.stubGenerator
 
 # Check if clashes look good
 check-all: check-outdated check-mono check-nested check-nested-self check-not-matching
@@ -49,3 +52,8 @@ check-nested-self:
 # Check not matching tags
 check-not-matching:
     cargo run --quiet -- show 7040402a6fe461068f5cf5296607c184d043a | less -R
+
+# Test the stub generator with a random clash in LANG
+test-stub LANG:
+    cargo run next
+    cargo run generate-stub {{LANG}}

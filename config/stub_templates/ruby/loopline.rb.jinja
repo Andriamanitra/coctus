@@ -1,0 +1,11 @@
+{%- for var in vars %}
+{%- if var.input_comment -%}# {{ var.ident }}: {{ var.input_comment }}
+{% endif -%}
+{% endfor -%}
+gets.split.each{% if vars | length > 1 %}_slice({{ vars | length }}){% endif %} do |{{ vars | map(attribute="ident") | join(sep=", ") }}|
+{%- for var in vars -%}
+{%- if var.var_type != "Word" %}
+  {{var.ident}} = {{var.ident}}.{{type_tokens[var.var_type]-}}
+{% endif -%}
+{%- endfor %}
+end
