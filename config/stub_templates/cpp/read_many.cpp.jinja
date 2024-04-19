@@ -1,5 +1,5 @@
 {%- for var in vars %}
-{%- if var.input_comment -%}# {{ var.ident }}: {{ var.input_comment }}
+{%- if var.input_comment -%}// {{ var.ident }}: {{ var.input_comment }}
 {% endif -%}
 {% endfor -%}
 

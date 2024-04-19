@@ -48,7 +48,7 @@ impl VariableNameOptions {
     pub fn transform_variable_command(&self, var: &VariableCommand) -> VariableCommand {
         VariableCommand {
             ident: self.transform_variable_name(&var.ident),
-            var_type: var.var_type.clone(),
+            var_type: var.var_type,
             input_comment: var.input_comment.clone(),
             max_length: var.max_length.clone(),
         }

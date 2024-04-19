@@ -412,7 +412,7 @@ impl App {
         std::fs::create_dir_all(&self.clash_dir)?;
         let handles = args
             .get_many::<PublicHandle>("PUBLIC_HANDLE")
-            .with_context(|| format!("Should have many handles"))?;
+            .with_context(|| "Should have many handles")?;
         for handle in handles {
             let http = reqwest::blocking::Client::new();
             let res = http
