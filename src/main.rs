@@ -155,10 +155,10 @@ fn cli() -> clap::Command {
                 .about("Generate input handling code for a given language")
                 .arg(arg!(<PROGRAMMING_LANGUAGE> "Programming language of the solution stub"))
                 .arg(
-                    arg!(--"from-file" <STUBFILE> "Generate stub from stubgen file instead of the current clash")
+                    arg!(--"from-file" <STUBFILE> "Generate stub from a stub generator file instead of the current clash")
                         .value_parser(clap::value_parser!(PathBuf))
                 )
-                .arg(arg!(--"from-reference" "Generate stub from a reference stub generator instead of the current clash").conflicts_with("from-file"))
+                .arg(arg!(--"from-reference" "Generate stub from the reference stub generator instead of the current clash").conflicts_with("from-file"))
                 .after_help(
                     "Prints boilerplate code for the input of the current clash.\
                     \nIntended to be piped to a file.\
