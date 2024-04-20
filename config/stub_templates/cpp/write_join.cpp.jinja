@@ -10,6 +10,6 @@
   {%- endif -%}
 {%- endfor -%}
 
-{%- for line in output_comments -%} # {{ line }}
+{%- for line in output_comments -%} // {{ line }}
 {% endfor -%}
 cout << {{ out | replace(from='" << "', to="") }} << endl;
