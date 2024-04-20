@@ -502,7 +502,7 @@ impl App {
             }
             Some(fname) => std::fs::read_to_string(fname)?,
             None if args.get_flag("from-reference") => {
-                let reference_stub = indoc! {r##"
+                const REFERENCE_STUB: &str = indoc! {r##"
                     read anInt:int
                     read aFloat:float
                     read Long:long
@@ -532,7 +532,7 @@ impl App {
                     INPUT
                     anInt: An input comment over anInt
                 "##};
-                reference_stub.to_owned()
+                REFERENCE_STUB.to_owned()
             }
             None => {
                 let handle = self.current_handle()?;
