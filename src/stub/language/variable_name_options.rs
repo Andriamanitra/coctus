@@ -50,7 +50,7 @@ impl VariableNameOptions {
             ident: self.transform_variable_name(&var.ident),
             var_type: var.var_type,
             input_comment: var.input_comment.clone(),
-            max_length: var.max_length.clone(),
+            max_length: var.max_length.as_ref().map(|s| self.transform_variable_name(s)).to_owned(),
         }
     }
 
