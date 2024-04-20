@@ -1,8 +1,10 @@
 use std::iter;
 
+use anyhow::{anyhow, Result};
+
 use super::{Cmd, JoinTerm, Stub, VarType, VariableCommand};
 
-pub fn parse_generator_stub(generator: &str) -> Stub {
+pub fn parse_generator_stub(generator: &str) -> Result<Stub> {
     Parser::new(generator).parse()
 }
 
@@ -28,7 +30,7 @@ impl<'a> Parser<'a> {
     }
 
     #[rustfmt::skip]
-    fn parse(mut self) -> Stub {
+    fn parse(mut self) -> Result<Stub> {
         let mut stub = Stub::default();
 
         while let Some(token) = self.next_token() {
@@ -40,6 +42,7 @@ impl<'a> Parser<'a> {
                 "OUTPUT"    => self.parse_output_comment(&mut stub.commands),
                 "INPUT"     => self.parse_input_comment(&mut stub.commands),
                 "STATEMENT" => stub.statement = self.parse_text_block(),
+                "gameloop"  => return Err(anyhow!("Gameloop keyword is not supported.")),
                 "\n" | ""   => continue,
                 thing => panic!("Unknown token stub generator: '{}'", thing),
             };
@@ -63,8 +66,8 @@ impl<'a> Parser<'a> {
                 }
             }
         }
-
-        stub
+        
+        Ok(stub)
     }
 
     fn parse_read(&mut self) -> Cmd {
