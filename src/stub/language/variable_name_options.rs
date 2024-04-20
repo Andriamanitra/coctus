@@ -65,8 +65,8 @@ impl VariableNameOptions {
     fn convert(&self, variable_name: &str) -> String {
         match self.casing {
             Casing::SnakeCase => Self::convert_to_snake_case(variable_name),
-            Casing::PascalCase => Self::covert_to_pascal_case(variable_name),
-            Casing::CamelCase => Self::covert_to_camel_case(variable_name),
+            Casing::PascalCase => Self::convert_to_pascal_case(variable_name),
+            Casing::CamelCase => Self::convert_to_camel_case(variable_name),
         }
     }
 
@@ -76,14 +76,13 @@ impl VariableNameOptions {
                 format!("{}_{}", &caps[1], &caps[2].to_lowercase())
             })
             .to_lowercase()
-            .to_string()
     }
 
-    fn covert_to_pascal_case(variable_name: &str) -> String {
+    fn convert_to_pascal_case(variable_name: &str) -> String {
         variable_name[0..1].to_uppercase() + &Self::pascalize(&variable_name[1..])
     }
 
-    fn covert_to_camel_case(variable_name: &str) -> String {
+    fn convert_to_camel_case(variable_name: &str) -> String {
         variable_name[0..1].to_lowercase() + &Self::pascalize(&variable_name[1..])
     }
 
