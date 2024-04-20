@@ -66,7 +66,7 @@ impl<'a> Parser<'a> {
                 }
             }
         }
-        
+
         Ok(stub)
     }
 
