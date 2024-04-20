@@ -34,7 +34,7 @@ def check_stubgen(*, clash_ids: list[str], langs_to_check: dict[str, list[str]])
             run_stubgen = run([CLASH_EXE, "generate-stub", lang], capture_output=True)
             if run_stubgen.returncode != 0:
                 stderr = run_stubgen.stderr.decode("utf-8")
-                if "Clash provides no input stub generator" in stderr:
+                if "provides no input stub generator" in stderr:
                     res["n_skipped"] += 1
                 else:
                     res["n_checked"] += 1
