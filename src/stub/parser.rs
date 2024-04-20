@@ -42,7 +42,7 @@ impl<'a> Parser<'a> {
                 "OUTPUT"    => self.parse_output_comment(&mut stub.commands),
                 "INPUT"     => self.parse_input_comment(&mut stub.commands),
                 "STATEMENT" => stub.statement = self.parse_text_block(),
-                "gameloop"  => return Err(anyhow!("Gameloop keyword is not supported.")),
+                "gameloop"  => return Err(anyhow!("Stub generator does not currently support the 'gameloop' command")),
                 "\n" | ""   => continue,
                 thing => panic!("Unknown token stub generator: '{}'", thing),
             };
