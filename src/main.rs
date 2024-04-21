@@ -1,3 +1,4 @@
+use std::io::Read;
 use std::path::PathBuf;
 use std::process::Command;
 use std::str::FromStr;
@@ -497,7 +498,7 @@ impl App {
         let stub_generator = match args.get_one::<PathBuf>("from-file") {
             Some(fname) if fname.to_str() == Some("-") => {
                 let mut input = String::new();
-                std::io::Read::read_to_string(&mut std::io::stdin(), &mut input)?;
+                std::io::stdin().read_to_string(&mut input)?;
                 input
             }
             Some(fname) => std::fs::read_to_string(fname)?,
