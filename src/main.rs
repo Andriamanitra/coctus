@@ -10,7 +10,6 @@ use clashlib::outputstyle::OutputStyle;
 use clashlib::stub::StubConfig;
 use clashlib::{solution, stub};
 use directories::ProjectDirs;
-use indoc::indoc;
 use rand::seq::IteratorRandom;
 
 #[derive(Clone)]
