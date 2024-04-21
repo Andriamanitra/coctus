@@ -9,7 +9,7 @@ use serde::Serialize;
 pub use stub_config::StubConfig;
 
 pub fn generate(config: StubConfig, generator: &str) -> Result<String> {
-    let stub = parser::parse_generator_stub(generator);
+    let stub = parser::parse_generator_stub(generator)?;
 
     // eprint!("=======\n{:?}\n======\n", generator);
     // eprint!("=======\n{:?}\n======\n", stub);
