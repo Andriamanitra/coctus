@@ -501,9 +501,7 @@ impl App {
                 input
             }
             Some(fname) => std::fs::read_to_string(fname)?,
-            None if args.get_flag("from-reference") => {
-                stub::SIMPLE_REFERENCE_STUB.to_owned()
-            }
+            None if args.get_flag("from-reference") => stub::SIMPLE_REFERENCE_STUB.to_owned(),
             None => {
                 let handle = self.current_handle()?;
                 self.read_clash(&handle)?

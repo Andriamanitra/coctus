@@ -4,10 +4,10 @@ mod renderer;
 pub mod stub_config;
 
 use anyhow::Result;
+use indoc::indoc;
 pub use language::Language;
 use serde::Serialize;
 pub use stub_config::StubConfig;
-use indoc::indoc;
 
 pub fn generate(config: StubConfig, generator: &str) -> Result<String> {
     let stub = parser::parse_generator_stub(generator)?;
@@ -240,7 +240,7 @@ mod tests {
     fn test_reference_stub_ruby() {
         let cfg = StubConfig::read_from_embedded("ruby").unwrap();
         let received = generate(cfg, COMPLEX_REFERENCE_STUB).unwrap();
-        let expected = indoc!{ r##"
+        let expected = indoc! { r##"
             # Live long
             # and prosper
             # and a line with spaces both sides
