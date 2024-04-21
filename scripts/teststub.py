@@ -18,10 +18,10 @@ def check_stubgen(*, clash_ids: list[str], langs_to_check: dict[str, list[str]])
 
     Example:
     ========
-    check_stubgen(
-        clash_ids=["682102420fbce0fce95e0ee56095ea2b9924"],
-        langs_to_check={"c": ["gcc", "-fsyntax-only", "-x", "c", "-"]}
-    )
+    >>> check_stubgen(
+            clash_ids=["682102420fbce0fce95e0ee56095ea2b9924"],
+            langs_to_check={"c": ["gcc", "-fsyntax-only", "-x", "c", "-"]}
+        )
     """
     SEPARATOR = "=" * 30
     results = {lang: {"n_skipped": 0, "n_checked": 0, "n_errors": 0} for lang in langs_to_check}
