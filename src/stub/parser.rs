@@ -224,7 +224,7 @@ impl<'a> Parser<'a> {
             | Cmd::WriteJoin {
                 ref mut output_comment,
                 ..
-            } if output_comment.is_empty() => *output_comment = new_comment.clone(),
+            } if output_comment.is_empty() => output_comment.clone_from(new_comment),
             Cmd::Loop { ref mut command, .. } => {
                 Self::update_cmd_with_output_comment(command, new_comment);
             }
@@ -271,12 +271,7 @@ impl<'a> Parser<'a> {
     }
 
     fn first_non_whitespace_token(&mut self) -> Option<&'a str> {
-        while let Some(token) = self.token_stream.next() {
-            if token != "\n" && token != "" {
-                return Some(token);
-            }
-        }
-        None
+        self.token_stream.by_ref().find(|&token| token != "\n" && !token.is_empty())
     }
 
     fn rest_of_line(&mut self) -> Option<String> {

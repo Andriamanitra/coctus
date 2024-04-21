@@ -16,9 +16,9 @@ keywords = [
   "auto", "break", "case", "char",
   "const", "continue", "default", "do",
   "double", "else", "enum", "extern",
-  "float", "for", "goto", "if",
-  "int", "long", "register", "return",
-  "short", "signed", "sizeof", "static",
-  "struct", "switch", "typedef", "union",
+  "float", "for", "goto", "if", "int",
+  "long", "new", "operator", "register", "return",
+  "short", "signed", "sizeof", "static", "string",
+  "struct", "switch", "template", "typedef", "union",
   "unsigned", "void", "volatile", "while"
 ]
