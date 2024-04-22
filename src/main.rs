@@ -12,12 +12,6 @@ use clashlib::{solution, stub};
 use directories::ProjectDirs;
 use rand::seq::IteratorRandom;
 
-#[derive(Clone)]
-pub enum OutputStyleOption {
-    Default,
-    Plain,
-}
-
 fn command_from_argument(cmd_arg: Option<&String>) -> Result<Option<Command>> {
     let cmd = match cmd_arg {
         Some(cmd) => cmd,
@@ -48,7 +42,6 @@ fn cli() -> clap::Command {
         .subcommand(
             Command::new("show")
                 .about("Show clash")
-                .arg(arg!(--"no-color" "don't use ANSI colors in the output"))
                 .arg(
                     arg!(--"show-whitespace" [BOOL] "render ⏎ and • in place of newlines and spaces")
                         // This means show-whitespace=1 also works
@@ -97,6 +90,13 @@ fn cli() -> clap::Command {
                         .value_delimiter(',')
                 )
                 .arg(
+                    arg!(--"show-whitespace" [BOOL] "render ⏎ and • in place of newlines and spaces")
+                        // This means show-whitespace=1 also works
+                        .value_parser(clap::builder::BoolishValueParser::new())
+                        .default_value("true")
+                        .default_missing_value("true")
+                )
+                .arg(
                     arg!([PUBLIC_HANDLE] "hexadecimal handle of the clash")
                         .value_parser(value_parser!(PublicHandle))
                 )
@@ -125,7 +125,6 @@ fn cli() -> clap::Command {
         .subcommand(
             Command::new("showtests")
                 .about("Print testcases and validators of current clash")
-                .arg(arg!(--"no-color" "don't use ANSI colors in the output"))
                 .arg(
                     arg!(--"show-whitespace" [BOOL] "render ⏎ and • in place of newlines and spaces")
                         // This means show-whitespace=1 also works
@@ -285,20 +284,8 @@ impl App {
         };
         let clash = self.read_clash(&handle)?;
 
-        let mut ostyle = if args.get_flag("no-color") {
-            OutputStyle::plain()
-        } else {
-            OutputStyle::default()
-        };
-        if let Some(show_ws) = args.get_one::<bool>("show-whitespace") {
-            if *show_ws {
-                ostyle.input_whitespace = ostyle.input_whitespace.or(Some(ostyle.input));
-                ostyle.output_whitespace = ostyle.output_whitespace.or(Some(ostyle.output));
-            } else {
-                ostyle.input_whitespace = None;
-                ostyle.output_whitespace = None;
-            }
-        }
+        let show_whitespace = *args.get_one::<bool>("show-whitespace").unwrap_or(&false);
+        let ostyle = OutputStyle::from_env(show_whitespace);
 
         // --reverse flag
         if args.get_flag("reverse") {
@@ -389,11 +376,13 @@ impl App {
         let suite_run = solution::run(testcases, run_command, timeout);
 
         let ignore_failures = args.get_flag("ignore-failures");
-        let style = &OutputStyle::default();
+        let show_whitespace = *args.get_one::<bool>("show-whitespace").unwrap_or(&false);
+        let ostyle = OutputStyle::from_env(show_whitespace);
+
         let mut num_passed = 0;
 
         for test_run in suite_run {
-            test_run.print_result(style);
+            test_run.print_result(&ostyle);
 
             if test_run.is_successful() {
                 num_passed += 1;
@@ -438,20 +427,8 @@ impl App {
         let clash = self.read_clash(&handle)?;
         let all_testcases = clash.testcases();
 
-        let mut ostyle = if args.get_flag("no-color") {
-            OutputStyle::plain()
-        } else {
-            OutputStyle::default()
-        };
-        if let Some(show_ws) = args.get_one::<bool>("show-whitespace") {
-            if *show_ws {
-                ostyle.input_whitespace = ostyle.input_whitespace.or(Some(ostyle.input));
-                ostyle.output_whitespace = ostyle.output_whitespace.or(Some(ostyle.output));
-            } else {
-                ostyle.input_whitespace = None;
-                ostyle.output_whitespace = None;
-            }
-        }
+        let show_whitespace = *args.get_one::<bool>("show-whitespace").unwrap_or(&false);
+        let ostyle = OutputStyle::from_env(show_whitespace);
 
         let num_testcases = all_testcases.len();
         let testcase_indices: Vec<u64> = match args.get_many::<u64>("TESTCASE") {

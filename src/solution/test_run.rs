@@ -115,15 +115,13 @@ fn print_diff(testcase: &TestCase, stdout: &str, ostyle: &OutputStyle) {
     use itertools::EitherOrBoth::{Both, Left, Right};
     use itertools::Itertools;
 
-    // (TODO) temporary styling, to be replaced with OutputStyle eventually
-    let green = ansi_term::Style::new().fg(ansi_term::Color::RGB(111, 255, 111));
-    let red = ansi_term::Style::new().fg(ansi_term::Color::RGB(255, 111, 111));
-    let error_red = ansi_term::Style::new().fg(ansi_term::Color::Red).on(ansi_term::Color::RGB(70, 0, 0));
-    let dim_color = ansi_term::Style::new().fg(ansi_term::Color::RGB(50, 50, 50));
-    let ws_style = &ostyle.output_whitespace.unwrap_or(ostyle.output);
+    let diff_red = &ostyle.diff_red;
+    let diff_ws_red = &ostyle.diff_red_whitespace;
+    let diff_green = &ostyle.diff_green;
+    let diff_ws_green = &ostyle.diff_green_whitespace;
 
     if stdout.is_empty() {
-        println!("{}", dim_color.paint("(no output)"));
+        println!("{}", ostyle.dim_color.paint("(no output)"));
         return
     }
 
@@ -134,7 +132,7 @@ fn print_diff(testcase: &TestCase, stdout: &str, ostyle: &OutputStyle) {
     for either_or_both in expected_lines.zip_longest(actual_lines) {
         match either_or_both {
             Left(_) => missing_lines += 1,
-            Right(s) => print!("{}", show_whitespace(s, &red, &error_red)),
+            Right(s) => print!("{}", show_whitespace(s, diff_red, diff_ws_red)),
             Both(a, b) => {
                 let mut prev_deleted = false;
 
@@ -144,13 +142,13 @@ fn print_diff(testcase: &TestCase, stdout: &str, ostyle: &OutputStyle) {
                             let mut chars = text.chars();
                             let first_char = chars.next().expect("no chars???").to_string();
                             let rest = chars.as_str();
-                            print!("{}", show_whitespace(&first_char, &red, &error_red));
+                            print!("{}", show_whitespace(&first_char, diff_red, diff_ws_red));
                             if !rest.is_empty() {
-                                print!("{}", show_whitespace(rest, &green, ws_style));
+                                print!("{}", show_whitespace(rest, diff_green, diff_ws_green));
                             }
                         }
-                        Equal(text) => print!("{}", show_whitespace(text, &green, ws_style)),
-                        Insert(text) => print!("{}", show_whitespace(text, &red, &error_red)),
+                        Equal(text) => print!("{}", show_whitespace(text, diff_green, diff_ws_green)),
+                        Insert(text) => print!("{}", show_whitespace(text, diff_red, diff_ws_red)),
                         Delete(_) => {}
                     }
 
@@ -166,6 +164,6 @@ fn print_diff(testcase: &TestCase, stdout: &str, ostyle: &OutputStyle) {
 
     if missing_lines > 0 {
         let msg = format!("(expected {} more lines)", missing_lines);
-        println!("{}", dim_color.paint(msg));
+        println!("{}", ostyle.dim_color.paint(msg));
     }
 }

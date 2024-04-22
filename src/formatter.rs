@@ -227,13 +227,18 @@ fn format_remove_excessive_newlines(text: &str) -> String {
 
 /// 1. Replaces spaces with • and newlines with ⏎. Paints them with `ws_style`.
 /// 2. Paints the rest with `style`.
-pub fn show_whitespace(text: &str, style: &Style, ws_style: &Style) -> String {
-    let newl = format!("{}\n", ws_style.paint("⏎"));
-    let space = format!("{}", ws_style.paint("•"));
-    let fmt_non_ws = RE_NONWHITESPACE
-        .replace_all(text, |caps: &regex::Captures| style.paint(&caps[0]).to_string())
-        .to_string();
-    fmt_non_ws.replace('\n', &newl).replace(' ', &space)
+pub fn show_whitespace(text: &str, style: &Style, ws_style: &Option<Style>) -> String {
+    match ws_style {
+        None => style.paint(text).to_string(),
+        Some(ws_style) => {
+            let newl = format!("{}\n", ws_style.paint("⏎"));
+            let space = format!("{}", ws_style.paint("•"));
+            let fmt_non_ws = RE_NONWHITESPACE
+                .replace_all(text, |caps: &regex::Captures| style.paint(&caps[0]).to_string())
+                .to_string();
+            fmt_non_ws.replace('\n', &newl).replace(' ', &space)
+        }
+    }
 }
 
 /// Construct a new style that is the combination of `inner` and `outer` style.
