@@ -59,6 +59,7 @@ fn parse_write_captures_lines_of_text_until_empty_line() {
 #[test]
 fn parse_write_returns_write_joins() {
     let mut parser = Parser::new("join(\"hello\", world)");
+    parser.read_pairings.insert(String::from("world"), VarType::Bool);
     let Cmd::WriteJoin { join_terms, .. } = parser.parse_write() else { panic!() };
 
     let [
