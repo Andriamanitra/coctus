@@ -68,6 +68,14 @@ ls *.py | entr clash run --auto-advance --command "python3 sol.py"
 nodemon --ext py --exec clash -- run --auto-advance --command "python3 sol.py"
 ```
 
+### Disabling color output
+
+You may disable colors by setting the [NO_COLOR](http://no-color.org/) environment variable to any non-empty value:
+
+```console
+$ NO_COLOR=1 clash show
+```
+
 
 ## Installation
 
