@@ -1,11 +1,9 @@
 {%- set_global out = "" -%}
 {%- for term in terms -%}
-  {%- if term.var_type -%}
-    {%- if term.var_type == "String" or term.var_type == "Word" -%}
-      {%- set_global out = out ~ term.ident -%}
-    {%- else -%}
-      {%- set_global out = out ~ "str(" ~ term.ident ~ ")" -%}
-    {%- endif -%}
+  {%- if term.var_type == "String" or term.var_type == "Word" -%}
+    {%- set_global out = out ~ term.ident -%}
+  {%- elif term.var_type -%}
+    {%- set_global out = out ~ "str(" ~ term.ident ~ ")" -%}
   {%- else -%}
     {%- set_global out = out ~ '"' ~ term.ident ~ '"' -%}
   {%- endif -%}
