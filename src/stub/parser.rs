@@ -14,7 +14,7 @@ pub fn parse_generator_stub(generator: &str) -> Result<Stub> {
 /// Exists solely to be consumed with `.parse()`
 struct Parser<'a> {
     token_stream: Box<dyn Iterator<Item = &'a str> + 'a>,
-    pub read_pairings: std::collections::BTreeMap<String, VarType>,
+    read_pairings: std::collections::BTreeMap<String, VarType>,
 }
 
 impl<'a> Parser<'a> {
