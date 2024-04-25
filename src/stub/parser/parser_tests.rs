@@ -57,9 +57,20 @@ fn parse_write_captures_lines_of_text_until_empty_line() {
 }
 
 #[test]
+#[should_panic]
+fn parse_write_errors_on_write_join_with_undeclared_vars() {
+    Parser::new("join(\"hello\", world)").parse_write();
+}
+
+#[test]
 fn parse_write_returns_write_joins() {
-    let mut parser = Parser::new("join(\"hello\", world)");
-    let Cmd::WriteJoin { join_terms, .. } = parser.parse_write() else { panic!() };
+    let mut parser = Parser::new(indoc! {r##"
+        world:int
+        join("hello", world)
+    "##});
+
+    parser.parse_read();
+    let Cmd::WriteJoin { join_terms, output_comment: _} = parser.parse_write() else { panic!() };
 
     let [
         JoinTerm { ident: first_term,  .. }, 

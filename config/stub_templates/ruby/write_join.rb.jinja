@@ -1,6 +1,6 @@
 puts "
 {%- for term in terms -%}
-  {%- if term.is_variable -%}
+  {%- if term.var_type -%}
     {{- '#{' }}{{ term.ident }}{{ '}' -}}
   {%- else -%}
     {{- term.ident -}}

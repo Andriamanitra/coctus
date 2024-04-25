@@ -14,6 +14,7 @@ pub fn parse_generator_stub(generator: &str) -> Result<Stub> {
 /// Exists solely to be consumed with `.parse()`
 struct Parser<'a> {
     token_stream: Box<dyn Iterator<Item = &'a str> + 'a>,
+    read_pairings: std::collections::BTreeMap<String, VarType>,
 }
 
 impl<'a> Parser<'a> {
@@ -26,6 +27,7 @@ impl<'a> Parser<'a> {
         let token_stream = stub.lines().flat_map(|line| line.split(' ').chain(iter::once("\n")));
         Self {
             token_stream: Box::new(token_stream),
+            read_pairings: std::collections::BTreeMap::new(),
         }
     }
 
@@ -46,25 +48,6 @@ impl<'a> Parser<'a> {
                 "\n" | ""   => continue,
                 thing => panic!("Unknown token stub generator: '{}'", thing),
             };
-        }
-
-        // Update WriteJoin terms with their respective var_type.
-        let mut read_pairings = std::collections::BTreeMap::new();
-        for read_cmd in &stub.commands {
-            if let Cmd::Read(var_cmds) = read_cmd {
-                for var_cmd in var_cmds {
-                    read_pairings.insert(var_cmd.ident.clone(), var_cmd.var_type);
-                }
-            }
-        }
-        for cmd in &mut stub.commands {
-            if let Cmd::WriteJoin { join_terms, output_comment: _ } = cmd {
-                for term in join_terms.iter_mut() {
-                    if let Some(var_type) = read_pairings.get(&term.ident) {
-                        term.var_type = Some(*var_type);
-                    }
-                }
-            }
         }
 
         Ok(stub)
@@ -124,10 +107,14 @@ impl<'a> Parser<'a> {
             .split(',')
             .map(|term| {
                 if term.contains('"') {
-                    let term_name = term.trim_matches(|c| c != '"').trim_matches('"').to_string();
-                    JoinTerm::new_literal(term_name)
+                    let ident = term.trim_matches(|c| c != '"').trim_matches('"').to_string();
+                    JoinTerm::new(ident, None)
                 } else {
-                    JoinTerm::new_variable(term.trim().to_string())
+                    let ident = term.trim().to_string();
+                    match self.read_pairings.get(&ident) {
+                        Some(var_type) => JoinTerm::new(ident, Some(*var_type)),
+                        None => panic!("The JoinTerm '{}' was not previously initialized.", &ident),
+                    }
                 }
             })
             .collect();
@@ -174,10 +161,10 @@ impl<'a> Parser<'a> {
             panic!("Empty line after read keyword")
         };
 
-        tokens.into_iter().filter_map(Self::parse_variable).collect()
+        tokens.into_iter().filter_map(|token| self.parse_variable(token)).collect()
     }
 
-    fn parse_variable(token: &str) -> Option<VariableCommand> {
+    fn parse_variable(&mut self, token: &str) -> Option<VariableCommand> {
         // A token may be empty if extra spaces were present: "read   x:int  "
         if token.is_empty() {
             return None
@@ -186,6 +173,7 @@ impl<'a> Parser<'a> {
             panic!("Variable must have type")
         };
         let (var_type, max_length) = Self::extract_type_and_length(type_string);
+        self.read_pairings.insert(String::from(ident), var_type);
 
         Some(VariableCommand::new(ident.to_string(), var_type, max_length))
     }
