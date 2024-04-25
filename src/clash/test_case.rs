@@ -52,16 +52,10 @@ impl TestCase {
     }
 
     pub fn styled_input(&self, ostyle: &OutputStyle) -> String {
-        match ostyle.input_whitespace {
-            Some(ws_style) => show_whitespace(&self.test_in, &ostyle.input, &ws_style),
-            None => ostyle.input.paint(&self.test_in).to_string(),
-        }
+        show_whitespace(&self.test_in, &ostyle.input, &ostyle.input_whitespace)
     }
 
     pub fn styled_output(&self, ostyle: &OutputStyle) -> String {
-        match ostyle.output_whitespace {
-            Some(ws_style) => show_whitespace(&self.test_out, &ostyle.output, &ws_style),
-            None => ostyle.output.paint(&self.test_out).to_string(),
-        }
+        show_whitespace(&self.test_out, &ostyle.output, &ostyle.output_whitespace)
     }
 }
