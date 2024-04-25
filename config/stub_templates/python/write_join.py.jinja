@@ -1,6 +1,6 @@
 {%- set_global out = "" -%}
 {%- for term in terms -%}
-  {%- if term.is_variable -%}
+  {%- if term.var_type -%}
     {%- if term.var_type == "String" or term.var_type == "Word" -%}
       {%- set_global out = out ~ term.ident -%}
     {%- else -%}

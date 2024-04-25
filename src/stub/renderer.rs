@@ -96,7 +96,7 @@ impl Renderer {
             .iter()
             .cloned()
             .map(|mut term| {
-                if term.is_variable {
+                if term.var_type.is_some() {
                     term.ident = self.lang.variable_name_options.transform_variable_name(&term.ident);
                 }
                 term

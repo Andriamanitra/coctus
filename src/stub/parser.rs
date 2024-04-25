@@ -107,16 +107,12 @@ impl<'a> Parser<'a> {
             .split(',')
             .map(|term| {
                 if term.contains('"') {
-                    let term_name = term.trim_matches(|c| c != '"').trim_matches('"').to_string();
-                    JoinTerm::new_literal(term_name)
+                    let ident = term.trim_matches(|c| c != '"').trim_matches('"').to_string();
+                    JoinTerm::new(ident, None)
                 } else {
                     let ident = term.trim().to_string();
                     match self.read_pairings.get(&ident) {
-                        Some(var_type) => JoinTerm {
-                            ident,
-                            is_variable: true,
-                            var_type: Some(*var_type),
-                        },
+                        Some(var_type) => JoinTerm::new(ident, Some(*var_type)),
                         None => panic!("The JoinTerm '{}' was not previously initialized.", &ident),
                     }
                 }
