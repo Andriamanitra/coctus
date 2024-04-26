@@ -18,12 +18,12 @@ test:
 test-painting:
     cargo test --quiet painting -- --nocapture --test-threads=1
 
-# Print unformatted statement (requires clash & jq)
+# Print unformatted statement (requires coctus & jq)
 raw-statement HANDLE='':
-    @clash json {{HANDLE}} | jq -r .lastVersion.data.statement
+    @coctus json {{HANDLE}} | jq -r .lastVersion.data.statement
 
 raw-stub HANDLE='':
-    @clash json {{HANDLE}} | jq -r .lastVersion.data.stubGenerator
+    @coctus json {{HANDLE}} | jq -r .lastVersion.data.stubGenerator
 
 # Check if clashes look good
 check-all: check-outdated check-mono check-nested check-nested-self check-not-matching
