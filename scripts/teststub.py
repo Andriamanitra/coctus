@@ -4,8 +4,8 @@ import sys
 from subprocess import run
 from os.path import expanduser, basename, splitext
 
-CLASH_DIR = expanduser("~/.local/share/clash/clashes")
-CLASH_EXE = "target/release/clash"
+CLASH_DIR = expanduser("~/.local/share/coctus/clashes")
+COCTUS_EXE = "target/release/coctus"
 
 
 def check_stubgen(*, clash_ids: list[str], langs_to_check: dict[str, list[str]]) -> dict:
@@ -27,11 +27,11 @@ def check_stubgen(*, clash_ids: list[str], langs_to_check: dict[str, list[str]])
     results = {lang: {"n_skipped": 0, "n_checked": 0, "n_errors": 0} for lang in langs_to_check}
 
     for cid in clash_ids:
-        run([CLASH_EXE, "next", cid], capture_output=True)
+        run([COCTUS_EXE, "next", cid], capture_output=True)
 
         for lang, check_cmd in langs_to_check.items():
             res = results[lang]
-            run_stubgen = run([CLASH_EXE, "generate-stub", lang], capture_output=True)
+            run_stubgen = run([COCTUS_EXE, "generate-stub", lang], capture_output=True)
             if run_stubgen.returncode != 0:
                 stderr = run_stubgen.stderr.decode("utf-8")
                 if "provides no input stub generator" in stderr:

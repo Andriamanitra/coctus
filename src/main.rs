@@ -34,8 +34,8 @@ fn command_from_argument(cmd_arg: Option<&String>) -> Result<Option<Command>> {
 fn cli() -> clap::Command {
     use clap::{arg, value_parser, Command};
 
-    Command::new("clash")
-        .about("Clash CLI")
+    Command::new(clap::crate_name!())
+        .about("CLI tool for playing CodinGame puzzles and Clash of Code")
         .version(clap::crate_version!())
         .subcommand_required(true)
         .arg_required_else_help(true)
@@ -521,8 +521,7 @@ impl App {
 
 fn main() -> Result<()> {
     // We look for the locally stored clashes here:
-    let project_dirs =
-        ProjectDirs::from("com", "Clash CLI", "clash").expect("Unable to find project directory");
+    let project_dirs = ProjectDirs::from("", "CoCtus", "coctus").expect("Unable to find project directory");
 
     let app = App::new(project_dirs.data_dir(), project_dirs.config_dir());
 
