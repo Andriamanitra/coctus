@@ -4,7 +4,7 @@ Command line tool that allows you to play [Clash of Code](https://www.codingame.
 
 <div align=center>
 
-![coctus demo](https://github.com/Andriamanitra/coctus/assets/10672443/127ce645-4e7b-457e-9a1a-b66adb5ab34f)
+![coctus demo](https://github.com/Andriamanitra/coctus/assets/10672443/1aff1c56-1354-497c-b211-a96f77f46a81)
 
 </div>
 
