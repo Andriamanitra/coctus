@@ -1,0 +1,6 @@
+{%- for line in output_comments %}
+; {{ line }}
+{% endfor %}
+{%- for line in messages -%}
+(output "{{line}}")
+{% endfor %}

@@ -1,0 +1,24 @@
+name = "clojure"
+source_file_ext = "clj"
+
+[type_tokens]
+Int = "Integer/parseInt"
+Long = "Long/parseLong"
+Float = "Float/parseFloat"
+Bool = "not= \"0\""
+String = "NONE"
+Word = "NONE"
+
+[variable_name_options]
+casing = "camel_case"
+allow_uppercase_vars = false
+keywords = [
+  "auto", "break", "case", "char",
+  "const", "continue", "default", "do",
+  "double", "else", "enum", "extern",
+  "float", "for", "goto", "if",
+  "int", "register", "return",
+  "short", "signed", "sizeof", "static",
+  "struct", "switch", "typedef", "union",
+  "unsigned", "void", "volatile", "while"
+]

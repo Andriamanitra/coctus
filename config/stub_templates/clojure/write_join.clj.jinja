@@ -1,0 +1,16 @@
+{%- set_global out = "" -%}
+{%- for term in terms -%}
+  {%- if term.is_variable -%}
+    {%- set_global out = out ~ term.ident -%}
+  {%- else -%}
+    {%- set_global out = out ~ '"' ~ term.ident ~ '"' -%}
+  {%- endif -%}
+  {%- if loop.last == false -%}
+    {%- set_global out = out ~ ' + " " + ' -%}
+  {%- endif -%}
+{%- endfor -%}
+
+{%- for line in output_comments -%} # {{ line }}
+{% endfor -%}
+(print {{ out | replace(from='" + "', to="") | replace(from=' +', to="") }})
+(output "")

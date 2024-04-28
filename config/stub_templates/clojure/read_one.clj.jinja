@@ -1,0 +1,10 @@
+{%- set sym = format_symbols[var.var_type] -%}
+{%- if var.var_type == "String" or var.var_type == "Word" -%}
+  {%- set fn = "(read-line)" -%}
+{%- else -%}
+  {%- set fn = "(" ~ type_tokens[var.var_type] ~ " (read-line))" -%}
+{%- endif -%}
+
+{%- if var.input_comment %}; {{ var.input_comment }}
+{% endif -%}
+(let [{{ var.ident }} {{ fn }}])

@@ -1,0 +1,27 @@
+{%- set clj_split = '(filter #(not-empty %) (str/split (read-line) #" "))' -%}
+{%- set idents = vars | map(attribute="ident") | join(sep=" ")-%}
+
+{%- for var in vars %}
+{%- if var.input_comment -%}; {{ var.ident }}: {{ var.input_comment }}
+{% endif -%}
+{% endfor -%}
+
+{%- if single_type -%}
+{%- set var = vars[0] -%}
+{%- if var.var_type == "String" or var.var_type == "Word" -%}
+  {%- set fn = "" -%}
+{%- else -%}
+  {%- set fn = "(map #(" ~ type_tokens[var.var_type] ~ " %) " -%}
+{%- endif -%}
+
+(def [[{{ idents }}] {{ fn }}{{ clj_split }})]
+{% else -%}
+
+(let [{{ idents }}] {{ clj_split }}
+{% for var in vars -%}
+{%- if var.var_type != "String" and var.var_type != "Word" -%}
+(let {{ var.ident }} ({{type_tokens[var.var_type]}} {{var.ident}}))
+{% endif -%}
+{%- endfor -%}
+)
+{% endif %}

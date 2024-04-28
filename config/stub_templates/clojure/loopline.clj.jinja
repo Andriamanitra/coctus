@@ -1,0 +1,36 @@
+{%- set vars_length = vars | length -%}
+
+{# SINGLE_TYPE #}
+{%- if vars_length == 1 -%}
+{%- set var = vars[0] -%}
+{%- if var.var_type == "String" or var.var_type == "Word" -%}
+  {%- set fn = "" -%}
+{%- else -%}
+  {%- set fn = "(map# " ~ type_tokens[var.var_type] ~ ") " -%}
+{%- endif -%}
+
+(doseq
+  [{{ var.ident }} {{ fn }}(filter #(not-empty %) (str/split (read-line) #" "))]
+  ( ))
+{# MULTIPLE_TYPE #}
+{%- else -%}
+{%- set idents = vars | map(attribute="ident") | join(sep=" ") -%}
+{%- set idents = "[" ~ idents ~ "]" -%}
+
+{%- set_global fns = [] %}
+{%- for var in vars %}
+  {%- if var.var_type == "String" or var.var_type == "Word" -%}
+    {%- set fn = var.ident -%}
+  {%- else -%}
+    {%- set fn = "(" ~ type_tokens[var.var_type] ~ " " ~ var.ident ~ ")" -%}
+  {%- endif %}
+  {%- set_global fns = fns | concat(with=fn) -%}
+{%- endfor -%}
+
+(doseq
+  [{{ idents }} (map (fn [{{ idents }}] [{{ fns | join(sep=" ") }}])
+  (partition {{ vars_length }} (filter #(not-empty %) (str/split (read-line) #" ")))
+  ]
+  ( ))
+
+{%- endif %}

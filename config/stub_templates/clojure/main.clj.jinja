@@ -1,0 +1,15 @@
+(ns Solution
+  (:require [clojure.string :as str])
+  (:gen-class))
+
+(defn output [msg] (println msg) (flush))
+(defn debug [msg] (binding [*out* *err*] (println msg) (flush)))
+{% for line in statement %}
+; {{ line }}
+{%- endfor %}
+
+(defn -main [& args]
+  {%- for line in code_lines %}
+  {{ line }}
+  {%- endfor %}
+)
