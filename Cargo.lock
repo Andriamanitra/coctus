@@ -279,6 +279,7 @@ dependencies = [
  "clap_complete",
  "directories",
  "dissimilar",
+ "dyn-clone",
  "include_dir",
  "indoc",
  "itertools",
@@ -402,6 +403,12 @@ name = "dissimilar"
 version = "1.0.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "440d59c0c6d96354061909b4769b2ca03868dbaee203e7b779d9021ebbde3058"
+
+[[package]]
+name = "dyn-clone"
+version = "1.0.17"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0d6ef0072f8a535281e4876be788938b528e9a1d43900b82c2569af7da799125"
 
 [[package]]
 name = "either"

@@ -1,19 +1,22 @@
 pub mod language;
 mod parser;
+pub mod preprocessor;
 mod renderer;
 pub mod stub_config;
-pub mod preprocessor;
 
 use anyhow::Result;
 use indoc::indoc;
 pub use language::Language;
+use preprocessor::Renderable;
 use serde::Serialize;
 pub use stub_config::StubConfig;
 
-use preprocessor::RenderableCmd;
-
 pub fn generate(config: StubConfig, generator: &str) -> Result<String> {
-    let stub = parser::parse_generator_stub(generator)?;
+    let mut stub = parser::parse_generator_stub(generator)?;
+
+    for processor in config.language.preprocessors.iter() {
+        processor(&mut stub);
+    }
 
     // eprint!("=======\n{:?}\n======\n", generator);
     // eprint!("=======\n{:?}\n======\n", stub);
@@ -120,7 +123,7 @@ pub enum Cmd {
         join_terms: Vec<JoinTerm>,
         output_comment: Vec<String>,
     },
-    External(Box<dyn RenderableCmd>),
+    External(Box<dyn Renderable>),
 }
 
 pub const SIMPLE_REFERENCE_STUB: &str = indoc! {r##"
