@@ -2,9 +2,11 @@
 
 Command line tool that allows you to play [Clash of Code](https://www.codingame.com/multiplayer/clashofcode) style problems locally on your computer.
 
+## Demo
+
 <div align=center>
 
-[![coctus demo](https://github.com/Andriamanitra/coctus/assets/10672443/1aff1c56-1354-497c-b211-a96f77f46a81)](https://asciinema.org/a/656708)
+[![coctus demo](https://github.com/Andriamanitra/coctus/assets/10672443/518bb6ca-6059-4866-a69a-e381aa31cc82)](https://asciinema.org/a/656708)
 
 </div>
 
