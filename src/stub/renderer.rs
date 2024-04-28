@@ -14,7 +14,7 @@ pub fn render_stub(config: StubConfig, stub: Stub) -> Result<String> {
     Ok(renderer.render())
 }
 
-struct Renderer {
+pub struct Renderer {
     tera: Tera,
     lang: Language,
     stub: Stub,
@@ -62,7 +62,7 @@ impl Renderer {
         self.tera_render("main", &mut context)
     }
 
-    fn render_command(&self, cmd: &Cmd, nesting_depth: usize) -> String {
+    pub fn render_command(&self, cmd: &Cmd, nesting_depth: usize) -> String {
         match cmd {
             Cmd::Read(vars) => self.render_read(vars, nesting_depth),
             Cmd::Write {
@@ -76,6 +76,9 @@ impl Renderer {
             Cmd::Loop { count_var, command } => self.render_loop(count_var, command, nesting_depth),
             Cmd::LoopLine { count_var, variables } => {
                 self.render_loopline(count_var, variables, nesting_depth)
+            },
+            Cmd::External(cmd) => {
+                cmd.render(self)
             }
         }
     }

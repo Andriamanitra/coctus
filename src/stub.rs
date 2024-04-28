@@ -2,12 +2,15 @@ pub mod language;
 mod parser;
 mod renderer;
 pub mod stub_config;
+pub mod preprocessor;
 
 use anyhow::Result;
 use indoc::indoc;
 pub use language::Language;
 use serde::Serialize;
 pub use stub_config::StubConfig;
+
+use preprocessor::RenderableCmd;
 
 pub fn generate(config: StubConfig, generator: &str) -> Result<String> {
     let stub = parser::parse_generator_stub(generator)?;
@@ -98,7 +101,7 @@ impl JoinTerm {
     }
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone)]
 pub enum Cmd {
     Read(Vec<VariableCommand>),
     Loop {
@@ -117,6 +120,7 @@ pub enum Cmd {
         join_terms: Vec<JoinTerm>,
         output_comment: Vec<String>,
     },
+    External(Box<dyn RenderableCmd>),
 }
 
 pub const SIMPLE_REFERENCE_STUB: &str = indoc! {r##"
