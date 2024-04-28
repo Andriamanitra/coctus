@@ -1,3 +1,4 @@
+{%- set clj_split = '(filter #(not-empty %) (str/split (read-line) #" "))' -%}
 {%- set vars_length = vars | length -%}
 
 {# SINGLE_TYPE #}
@@ -6,11 +7,11 @@
 {%- if var.var_type == "String" or var.var_type == "Word" -%}
   {%- set fn = "" -%}
 {%- else -%}
-  {%- set fn = "(map# " ~ type_tokens[var.var_type] ~ ") " -%}
+  {%- set fn = "map #(" ~ type_tokens[var.var_type] ~ " %) " -%}
 {%- endif -%}
 
 (doseq
-  [{{ var.ident }} {{ fn }}(filter #(not-empty %) (str/split (read-line) #" "))]
+  [{{ var.ident }} ({{ fn }}{{ clj_split }})]
   ( ))
 {# MULTIPLE_TYPE #}
 {%- else -%}
@@ -29,7 +30,7 @@
 
 (doseq
   [{{ idents }} (map (fn [{{ idents }}] [{{ fns | join(sep=" ") }}])
-  (partition {{ vars_length }} (filter #(not-empty %) (str/split (read-line) #" ")))
+  (partition {{ vars_length }} {{ clj_split }}))
   ]
   ( ))
 
