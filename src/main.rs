@@ -407,8 +407,8 @@ impl App {
         let handles = args
             .get_many::<PublicHandle>("PUBLIC_HANDLE")
             .with_context(|| "Should have many handles")?;
+        let http = reqwest::blocking::Client::builder().use_rustls_tls().build()?;
         for handle in handles {
-            let http = reqwest::blocking::Client::new();
             let res = http
                 .post("https://www.codingame.com/services/Contribution/findContribution")
                 .body(format!(r#"["{}", true]"#, handle))
