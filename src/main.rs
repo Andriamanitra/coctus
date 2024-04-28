@@ -69,7 +69,7 @@ fn cli() -> clap::Command {
                 .after_help(
                     "Pick a random clash from locally stored clashes when PUBLIC_HANDLE is not given.\
                     \nIf instead flags modes are supplied, it will look for a clash that has at least all of those modes available.\
-                    \nFor example: clash next --fastest --shortest will return a clash that has BOTH fastest and shortest as options."
+                    \nFor example: coctus next --fastest --shortest will return a clash that has BOTH fastest and shortest as options."
                 )
         )
         .subcommand(
@@ -162,8 +162,8 @@ fn cli() -> clap::Command {
                     "Prints boilerplate code for the input of the current clash.\
                     \nIntended to be piped to a file.\
                     \nExamples:\
-                    \n  $ clash generate-stub ruby > sol.rb\
-                    \n  $ clash generate-stub bash > sol.sh"
+                    \n  $ coctus generate-stub ruby > sol.rb\
+                    \n  $ coctus generate-stub bash > sol.sh"
             )
         )
         .subcommand(
@@ -174,9 +174,9 @@ fn cli() -> clap::Command {
                     "Prints shell completion for the selected shell to stdout.\
                     \nIntended to be piped to a file. See documentation for your shell for details about where to place the completion file.\
                     \nExamples:\
-                    \n  $ clash generate-shell-completion fish > ~/.config/fish/completions/clash.fish\
-                    \n  $ clash generate-shell-completion bash >> ~/.config/bash_completion\
-                    \n  $ clash generate-shell-completion powershell >> $PROFILE.CurrentUserCurrentHost\
+                    \n  $ coctus generate-shell-completion fish > ~/.config/fish/completions/coctus.fish\
+                    \n  $ coctus generate-shell-completion bash >> ~/.config/bash_completion\
+                    \n  $ coctus generate-shell-completion powershell >> $PROFILE.CurrentUserCurrentHost\
                     \nNOTE: (powershell) You may need to move the using statements to the top of the script."
                 )
         )

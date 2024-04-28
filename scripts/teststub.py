@@ -13,7 +13,7 @@ def check_stubgen(*, clash_ids: list[str], langs_to_check: dict[str, list[str]])
     Checks that stubgen generates valid code for all given clash_ids.
     Returns the number of errors encountered.
     langs_to_check should be a dict where keys are language names for the
-    `clash generate-stub` and values are commands that read the generated
+    `coctus generate-stub` and values are commands that read the generated
     code from STDIN and exit non-zero if the code is not valid.
 
     Example:

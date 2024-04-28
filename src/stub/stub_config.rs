@@ -25,7 +25,7 @@ impl StubConfig {
     /// 2. This repo, embedded into the binary:
     ///    `config/stub_templates/#{lang_arg}/stub_config.toml`
     ///
-    /// where the user config dir is in `~/.config/clash` (Linux, see the
+    /// where the user config dir is in `~/.config/coctus` (Linux, see the
     /// [directories documentation](https://docs.rs/directories/latest/directories/struct.ProjectDirs.html#method.config_dir)
     /// for others).
     pub fn find_stub_config(lang_name: &str, config_path: &Path) -> Result<Self> {
