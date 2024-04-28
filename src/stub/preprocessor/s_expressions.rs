@@ -1,15 +1,22 @@
 use super::Renderable;
-use crate::stub::{Cmd, Stub, VariableCommand};
+use crate::stub::{Cmd, Stub};
 
 pub fn transform(stub: &mut Stub) {
     let old_commands = stub.commands.drain(..).peekable();
+
+    // while let Some(cmd) = old_commands.next() {
+    //     
+    // }
 
     let (mut cmds, mut leftover) = old_commands.rev().fold((vec![], vec![]), |(mut cmds, mut reads), cmd| {
         if matches!(cmd, Cmd::Read(_)) {
             reads.push(cmd)
         } else {
             if !reads.is_empty() {
-                let read_batch = ReadBatch::new(reads.drain(..).collect(), cmds.drain(..).collect());
+                let read_batch = ReadBatch {
+                    line_readers: reads.drain(..).rev().collect(),
+                    nested_cmds: cmds.drain(..).rev().collect(),
+                };
 
                 cmds.push(Cmd::External(Box::new(read_batch)));
             }
@@ -21,7 +28,10 @@ pub fn transform(stub: &mut Stub) {
     });
 
     if !leftover.is_empty() {
-        let read_batch = ReadBatch::new(leftover.drain(..).collect(), cmds.drain(..).collect());
+        let read_batch = ReadBatch {
+            line_readers: leftover.drain(..).rev().collect(),
+            nested_cmds: cmds.drain(..).rev().collect(),
+        };
 
         cmds.push(Cmd::External(Box::new(read_batch)));
     }
@@ -34,15 +44,6 @@ pub fn transform(stub: &mut Stub) {
 struct ReadBatch {
     pub line_readers: Vec<Cmd>,
     pub nested_cmds: Vec<Cmd>,
-}
-
-impl ReadBatch {
-    fn new(line_readers: Vec<Cmd>, nested_cmds: Vec<Cmd>) -> ReadBatch {
-        ReadBatch {
-            line_readers,
-            nested_cmds,
-        }
-    }
 }
 
 impl Renderable for ReadBatch {
