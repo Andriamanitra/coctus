@@ -14,13 +14,13 @@
   {%- set fn = "(map #(" ~ type_tokens[var.var_type] ~ " %) " -%}
 {%- endif -%}
 
-(def [[{{ idents }}] {{ fn }}{{ clj_split }})]
+{{ idents }} {{ fn }}{{ clj_split }}
 {% else -%}
 
-(let [{{ idents }}] {{ clj_split }}
+{{ idents }}] {{ clj_split }}
 {% for var in vars -%}
 {%- if var.var_type != "String" and var.var_type != "Word" -%}
-(let {{ var.ident }} ({{type_tokens[var.var_type]}} {{var.ident}}))
+{{ var.ident }} ({{type_tokens[var.var_type]}} {{var.ident}}
 {% endif -%}
 {%- endfor -%}
 )

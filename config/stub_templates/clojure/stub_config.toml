@@ -1,6 +1,10 @@
 name = "clojure"
 source_file_ext = "clj"
 
+preprocessors = [
+  "s-expression"
+]
+
 [type_tokens]
 Int = "Integer/parseInt"
 Long = "Long/parseLong"
