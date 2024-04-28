@@ -2,42 +2,33 @@ use super::Renderable;
 use crate::stub::{Cmd, Stub};
 
 pub fn transform(stub: &mut Stub) {
-    let old_commands = stub.commands.drain(..).peekable();
+    let mut old_commands = stub.commands.drain(..).rev().peekable();
 
-    // while let Some(cmd) = old_commands.next() {
-    //     
-    // }
+    let mut cmds = Vec::new();
+    let mut reads = Vec::new();
 
-    let (mut cmds, mut leftover) = old_commands.rev().fold((vec![], vec![]), |(mut cmds, mut reads), cmd| {
-        if matches!(cmd, Cmd::Read(_)) {
+    while let Some(cmd) = old_commands.next() {
+        let is_read = matches!(cmd, Cmd::Read(_));
+
+        if is_read {
             reads.push(cmd)
         } else {
-            if !reads.is_empty() {
-                let read_batch = ReadBatch {
-                    line_readers: reads.drain(..).rev().collect(),
-                    nested_cmds: cmds.drain(..).rev().collect(),
-                };
-
-                cmds.push(Cmd::External(Box::new(read_batch)));
-            }
-
-            cmds.push(cmd);
+            cmds.push(cmd)
         }
 
-        (cmds, reads)
-    });
+        if !reads.is_empty() && (!is_read || old_commands.peek().is_none()) {
+            let read_batch = ReadBatch {
+                line_readers: reads.drain(..).rev().collect(),
+                nested_cmds: cmds.drain(..).rev().collect(),
+            };
 
-    if !leftover.is_empty() {
-        let read_batch = ReadBatch {
-            line_readers: leftover.drain(..).rev().collect(),
-            nested_cmds: cmds.drain(..).rev().collect(),
-        };
-
-        cmds.push(Cmd::External(Box::new(read_batch)));
+            cmds.push(Cmd::External(Box::new(read_batch)));
+        }
     }
 
+    cmds.reverse();
+    drop(old_commands);
     stub.commands = cmds;
-    stub.commands.reverse();
 }
 
 #[derive(Debug, Clone)]
