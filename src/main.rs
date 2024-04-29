@@ -398,14 +398,11 @@ impl App {
         let handles = args
             .get_many::<PublicHandle>("PUBLIC_HANDLE")
             .with_context(|| "Should have many handles")?;
-        let http = reqwest::blocking::Client::builder().use_rustls_tls().build()?;
         for handle in handles {
-            let res = http
-                .post("https://www.codingame.com/services/Contribution/findContribution")
-                .body(format!(r#"["{}", true]"#, handle))
-                .header(reqwest::header::CONTENT_TYPE, "application/json")
-                .send()?;
-            let content = res.error_for_status()?.text()?;
+            let response = ureq::post("https://www.codingame.com/services/Contribution/findContribution")
+                .set("Content-Type", "application/json")
+                .send_string(&format!(r#"["{}", true]"#, handle))?;
+            let content = response.into_string()?;
             let clash_file_path = self.clash_dir.join(format!("{}.json", handle));
             std::fs::write(&clash_file_path, &content)?;
             println!("Saved clash {} as {}", &handle, &clash_file_path.display());
