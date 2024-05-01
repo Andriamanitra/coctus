@@ -1,6 +1,6 @@
 use ansi_term::{Color, Style};
 use clashlib::clash::{Clash, TestCase};
-use clashlib::solution::{TestRun, TestRunResult};
+use clashlib::solution::{TestResult, TestRun};
 
 use super::formatter::show_whitespace;
 use super::lines_with_endings::LinesWithEndings;
@@ -222,21 +222,21 @@ impl OutputStyle {
         let testcase = testrun.testcase();
         let title = self.styled_testcase_title(testcase);
         match testrun.result() {
-            TestRunResult::Success => {
+            TestResult::Success => {
                 println!("{} {}", self.success.paint("PASS"), title);
             }
 
-            TestRunResult::WrongOutput { stdout, stderr } => {
+            TestResult::WrongOutput { stdout, stderr } => {
                 println!("{} {}", self.failure.paint("FAIL"), title);
                 self.print_failure(testcase, stdout, stderr);
             }
 
-            TestRunResult::RuntimeError { stdout, stderr } => {
+            TestResult::RuntimeError { stdout, stderr } => {
                 println!("{} {}", self.error.paint("ERROR"), title);
                 self.print_failure(testcase, stdout, stderr);
             }
 
-            TestRunResult::Timeout { stdout, stderr } => {
+            TestResult::Timeout { stdout, stderr } => {
                 println!("{} {}", self.error.paint("TIMEOUT"), title);
                 self.print_failure(testcase, stdout, stderr);
             }

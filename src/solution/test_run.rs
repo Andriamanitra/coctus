@@ -1,21 +1,21 @@
 use crate::clash::TestCase;
 
-#[derive(Debug, PartialEq, Clone)]
-pub enum TestRunResult {
+#[derive(Debug, Clone)]
+pub enum TestResult {
     Success,
     WrongOutput { stdout: String, stderr: String },
     RuntimeError { stdout: String, stderr: String },
     Timeout { stdout: String, stderr: String },
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct TestRun<'a> {
     testcase: &'a TestCase,
-    result: TestRunResult,
+    result: TestResult,
 }
 
 impl<'a> TestRun<'a> {
-    pub fn new(testcase: &'a TestCase, result: TestRunResult) -> Self {
+    pub fn new(testcase: &'a TestCase, result: TestResult) -> Self {
         Self { testcase, result }
     }
 
@@ -25,22 +25,22 @@ impl<'a> TestRun<'a> {
 
     pub fn actual(&self) -> &String {
         match &self.result {
-            TestRunResult::Success => self.expected(),
-            TestRunResult::RuntimeError { stdout, .. } => stdout,
-            TestRunResult::WrongOutput { stdout, .. } => stdout,
-            TestRunResult::Timeout { stdout, .. } => stdout,
+            TestResult::Success => self.expected(),
+            TestResult::RuntimeError { stdout, .. } => stdout,
+            TestResult::WrongOutput { stdout, .. } => stdout,
+            TestResult::Timeout { stdout, .. } => stdout,
         }
     }
 
     pub fn is_successful(&self) -> bool {
-        self.result == TestRunResult::Success
+        matches!(self.result, TestResult::Success)
     }
 
     pub fn testcase(&self) -> &'a TestCase {
         self.testcase
     }
 
-    pub fn result(&'a self) -> &'a TestRunResult {
+    pub fn result(&'a self) -> &'a TestResult {
         &self.result
     }
 }

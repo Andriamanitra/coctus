@@ -4,7 +4,7 @@ use std::vec::IntoIter;
 
 use wait_timeout::ChildExt;
 
-use super::test_run::{TestRun, TestRunResult};
+use super::test_run::{TestResult, TestRun};
 use crate::clash::TestCase;
 
 pub struct SuiteRun<'a> {
@@ -62,13 +62,13 @@ impl<'a> SuiteRun<'a> {
         let stdout = stdout.replace("\r\n", "\n").trim_end().to_string();
         let stderr = String::from_utf8(output.stderr).unwrap_or_default();
         let result = if stdout == test.test_out.trim_end() {
-            TestRunResult::Success
+            TestResult::Success
         } else if timed_out {
-            TestRunResult::Timeout { stdout, stderr }
+            TestResult::Timeout { stdout, stderr }
         } else if output.status.success() {
-            TestRunResult::WrongOutput { stdout, stderr }
+            TestResult::WrongOutput { stdout, stderr }
         } else {
-            TestRunResult::RuntimeError { stdout, stderr }
+            TestResult::RuntimeError { stdout, stderr }
         };
 
         TestRun::new(test, result)

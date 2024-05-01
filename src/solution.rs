@@ -6,7 +6,7 @@ use std::time::Duration;
 
 use anyhow::{anyhow, Result};
 use suite_run::SuiteRun;
-pub use test_run::{TestRun, TestRunResult};
+pub use test_run::{TestResult, TestRun};
 
 use crate::clash::TestCase;
 
