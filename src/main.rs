@@ -1,3 +1,5 @@
+mod internal;
+
 use std::io::Read;
 use std::path::PathBuf;
 use std::process::Command;
@@ -6,10 +8,10 @@ use std::str::FromStr;
 use anyhow::{anyhow, Context, Result};
 use clap::ArgMatches;
 use clashlib::clash::{Clash, PublicHandle, TestCase};
-use clashlib::outputstyle::OutputStyle;
 use clashlib::stub::StubConfig;
 use clashlib::{solution, stub};
 use directories::ProjectDirs;
+use internal::OutputStyle;
 use rand::seq::IteratorRandom;
 
 fn command_from_argument(cmd_arg: Option<&String>) -> Result<Option<Command>> {
@@ -270,7 +272,7 @@ impl App {
         // --reverse flag
         if args.get_flag("reverse") {
             if clash.is_reverse() {
-                clash.print_reverse_mode(&ostyle);
+                ostyle.print_reverse_mode(&clash);
                 return Ok(())
             } else {
                 return Err(anyhow::Error::msg("The clash doesn't have a reverse mode"))
@@ -279,12 +281,12 @@ impl App {
 
         // If the clash is reverse only, print the headers and testcases.
         if clash.is_reverse_only() {
-            clash.print_reverse_mode(&ostyle);
-            return Ok(())
+            ostyle.print_reverse_mode(&clash);
+        } else {
+            ostyle.print_headers(&clash);
+            ostyle.print_statement(&clash);
         }
 
-        clash.print_headers(&ostyle);
-        clash.print_statement(&ostyle);
         Ok(())
     }
 
@@ -361,10 +363,10 @@ impl App {
 
         let mut num_passed = 0;
 
-        for test_run in suite_run {
-            test_run.print_result(&ostyle);
+        for testrun in suite_run {
+            ostyle.print_result(&testrun);
 
-            if test_run.is_successful() {
+            if testrun.is_successful() {
                 num_passed += 1;
             } else if !ignore_failures {
                 break
@@ -435,13 +437,13 @@ impl App {
                 println!("{}", ostyle.secondary_title.paint("===== INPUT ======"));
             }
             if !only_out {
-                println!("{}", testcase.styled_input(&ostyle));
+                println!("{}", ostyle.styled_testcase_input(testcase));
             }
             if !(only_in || only_out) {
                 println!("{}", ostyle.secondary_title.paint("==== EXPECTED ===="));
             }
             if !only_in {
-                println!("{}", testcase.styled_output(&ostyle));
+                println!("{}", ostyle.styled_testcase_output(testcase));
             }
         }
 

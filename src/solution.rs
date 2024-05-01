@@ -1,15 +1,20 @@
+mod suite_run;
+mod test_run;
+
 use std::process::Command;
 use std::time::Duration;
 
 use anyhow::{anyhow, Result};
-
-mod suite_run;
 use suite_run::SuiteRun;
+pub use test_run::{TestRun, TestRunResult};
 
 use crate::clash::TestCase;
-mod test_run;
 
-pub fn run(testcases: Vec<&TestCase>, run_command: Command, timeout: Duration) -> SuiteRun {
+pub fn run(
+    testcases: Vec<&TestCase>,
+    run_command: Command,
+    timeout: Duration,
+) -> impl Iterator<Item = TestRun> {
     SuiteRun::new(testcases, run_command, timeout)
 }
 

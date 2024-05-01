@@ -1,14 +1,10 @@
-use serde::{Deserialize, Serialize};
-
-use crate::formatter::format_cg;
-use crate::outputstyle::OutputStyle;
-
+mod public_handle;
 mod test_case;
+
+pub use public_handle::PublicHandle;
+use serde::{Deserialize, Serialize};
 use test_case::deserialize_testcases;
 pub use test_case::TestCase;
-
-mod public_handle;
-pub use public_handle::PublicHandle;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Clash {
@@ -115,54 +111,5 @@ impl Clash {
 
     pub fn is_reverse_only(&self) -> bool {
         self.is_reverse() && !self.is_fastest() && !self.is_shortest()
-    }
-
-    pub fn print_headers(&self, ostyle: &OutputStyle) {
-        println!("{}\n", ostyle.title.paint(format!("=== {} ===", self.title())));
-        println!("{}\n", ostyle.link.paint(self.codingame_link()));
-    }
-
-    pub fn print_statement(&self, ostyle: &OutputStyle) {
-        println!("{}\n", format_cg(self.statement(), ostyle));
-        println!("{}\n{}\n", ostyle.title.paint("Input:"), format_cg(self.input_description(), ostyle));
-        println!(
-            "{}\n{}\n",
-            ostyle.title.paint("Output:"),
-            format_cg(self.output_description(), ostyle)
-        );
-        if let Some(constraints) = self.constraints() {
-            println!("{}\n{}\n", ostyle.title.paint("Constraints:"), format_cg(constraints, ostyle));
-        }
-
-        let example = self.testcases().first().expect("no test cases");
-        println!(
-            "{}\n{}\n{}\n{}",
-            ostyle.title.paint("Example:"),
-            example.styled_input(ostyle),
-            ostyle.title.paint("Expected output:"),
-            example.styled_output(ostyle),
-        );
-    }
-
-    pub fn print_testcases(&self, ostyle: &OutputStyle, selection: Vec<usize>) {
-        // Skips validators: -t 1 will print the example, -t 2 will print the second
-        // test (skipping validator 1)
-        for (idx, testcase) in self.testcases().iter().filter(|t| !t.is_validator).enumerate() {
-            if selection.contains(&idx) {
-                println!(
-                    "{}\n{}\n\n{}\n",
-                    testcase.styled_title(ostyle),
-                    testcase.styled_input(ostyle),
-                    testcase.styled_output(ostyle),
-                );
-            }
-        }
-    }
-
-    pub fn print_reverse_mode(&self, ostyle: &OutputStyle) {
-        self.print_headers(ostyle);
-        println!("{}\n", ostyle.title.paint("REVERSE!"));
-        let selection = (0..self.testcases().len()).collect::<Vec<usize>>();
-        self.print_testcases(ostyle, selection);
     }
 }

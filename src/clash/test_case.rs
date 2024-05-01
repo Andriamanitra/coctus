@@ -1,12 +1,9 @@
 use serde::{Deserialize, Deserializer, Serialize};
 
-use crate::formatter::show_whitespace;
-use crate::outputstyle::OutputStyle;
-
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct TestCase {
     #[serde(skip_serializing, skip_deserializing)]
-    index: usize,
+    pub index: usize,
     #[serde(deserialize_with = "deserialize_testcase_title")]
     pub title: String,
     #[serde(rename = "testIn")]
@@ -44,18 +41,4 @@ fn deserialize_testcase_title<'de, D: Deserializer<'de>>(de: D) -> Result<String
         TempTitle::Weird { title } => title,
     };
     Ok(title)
-}
-
-impl TestCase {
-    pub fn styled_title(&self, ostyle: &OutputStyle) -> String {
-        ostyle.title.paint(format!("#{} {}", self.index, self.title)).to_string()
-    }
-
-    pub fn styled_input(&self, ostyle: &OutputStyle) -> String {
-        show_whitespace(&self.test_in, &ostyle.input, &ostyle.input_whitespace)
-    }
-
-    pub fn styled_output(&self, ostyle: &OutputStyle) -> String {
-        show_whitespace(&self.test_out, &ostyle.output, &ostyle.output_whitespace)
-    }
 }
