@@ -331,8 +331,19 @@ impl App {
             None => self.current_handle()?,
         };
 
-        let build_command = command_from_argument(args.get_one::<String>("build-command"))?;
-        solution::build(build_command)?;
+        if let Some(mut build_command) = command_from_argument(args.get_one::<String>("build-command"))? {
+            let build = build_command.output()?;
+
+            if !build.status.success() {
+                if !build.stderr.is_empty() {
+                    println!("Build command STDERR:\n{}", String::from_utf8(build.stderr)?);
+                }
+                if !build.stdout.is_empty() {
+                    println!("Build command STDOUT:\n{}", String::from_utf8(build.stdout)?);
+                }
+                return Err(anyhow!("Build failed"))
+            }
+        }
 
         let run_command: Command = command_from_argument(args.get_one::<String>("command"))?
             .expect("--command is required to run solution.");
