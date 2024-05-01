@@ -352,7 +352,7 @@ impl App {
             secs if secs.is_nan() => return Err(anyhow!("Timeout can't be NaN")),
             secs if secs < 0.0 => return Err(anyhow!("Timeout can't be negative (use 0 for no timeout)")),
             secs if secs == 0.0 => std::time::Duration::MAX,
-            secs => std::time::Duration::from_secs(secs as u64),
+            secs => std::time::Duration::from_micros((secs * 1e6) as u64),
         };
 
         let all_testcases = self.read_clash(&handle)?.testcases().to_owned();
