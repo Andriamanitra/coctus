@@ -26,7 +26,7 @@ pub struct Clash {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub enum PuzzleType {
+enum PuzzleType {
     #[serde(rename = "CLASHOFCODE")]
     Clash,
     #[serde(rename = "PUZZLE_INOUT")]
