@@ -5,7 +5,7 @@ use std::str::FromStr;
 
 use anyhow::{anyhow, Context, Result};
 use clap::ArgMatches;
-use clashlib::clash::{Clash, TestCase};
+use clashlib::clash::{Clash, PublicHandle, TestCase};
 use clashlib::outputstyle::OutputStyle;
 use clashlib::stub::StubConfig;
 use clashlib::{solution, stub};
@@ -180,26 +180,6 @@ fn cli() -> clap::Command {
                     \nNOTE: (powershell) You may need to move the using statements to the top of the script."
                 )
         )
-}
-
-#[derive(Debug, Clone)]
-struct PublicHandle(String);
-
-impl FromStr for PublicHandle {
-    type Err = anyhow::Error;
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if s.chars().all(|ch| ch.is_ascii_hexdigit()) {
-            Ok(PublicHandle(String::from(s)))
-        } else {
-            Err(anyhow!("valid handles only contain characters 0-9 and a-f"))
-        }
-    }
-}
-
-impl std::fmt::Display for PublicHandle {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "{}", self.0)
-    }
 }
 
 struct App {

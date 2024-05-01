@@ -7,11 +7,14 @@ mod test_case;
 use test_case::deserialize_testcases;
 pub use test_case::TestCase;
 
+mod public_handle;
+pub use public_handle::PublicHandle;
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Clash {
     id: u32,
     #[serde(rename = "publicHandle")]
-    public_handle: String,
+    public_handle: PublicHandle,
     #[serde(rename = "lastVersion")]
     last_version: ClashVersion,
     #[serde(rename = "type")]
