@@ -13,6 +13,6 @@ pub fn run(
     testcases: Vec<&TestCase>,
     run_command: Command,
     timeout: Duration,
-) -> impl Iterator<Item = TestRun> {
+) -> impl IntoIterator<Item = TestRun> {
     SuiteRun::new(testcases, run_command, timeout)
 }
