@@ -345,7 +345,7 @@ impl App {
             }
         }
 
-        let run_command: Command = command_from_argument(args.get_one::<String>("command"))?
+        let mut run_command: Command = command_from_argument(args.get_one::<String>("command"))?
             .expect("--command is required to run solution.");
 
         let timeout_seconds: f64 = *args.get_one::<f64>("timeout").unwrap_or(&5.0);
@@ -366,7 +366,7 @@ impl App {
         };
 
         let num_tests = testcases.len();
-        let suite_run = solution::run(testcases, run_command, timeout);
+        let suite_run = solution::lazy_run(testcases, &mut run_command, &timeout);
 
         let ignore_failures = args.get_flag("ignore-failures");
         let show_whitespace = *args.get_one::<bool>("show-whitespace").unwrap_or(&false);
