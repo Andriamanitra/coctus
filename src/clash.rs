@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 use test_case::deserialize_testcases;
 pub use test_case::TestCase;
 
+/// `Clash` represents a deserialized Clash of Code or I/O puzzle.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Clash {
     id: u32,

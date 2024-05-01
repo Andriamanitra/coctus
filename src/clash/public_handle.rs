@@ -3,6 +3,21 @@ use std::str::FromStr;
 use anyhow::anyhow;
 use serde::{Deserialize, Deserializer, Serialize};
 
+/// `PublicHandle` is a hexadecimal string that uniquely identifies a clash
+/// or a puzzle. It is the last part of the URL when viewing a clash or a puzzle
+/// on the CodinGame contribution page.
+///
+/// # Examples
+///
+/// ```
+/// use clashlib::clash::PublicHandle;
+/// use std::str::FromStr;
+///
+/// let handle = PublicHandle::from_str("682102420fbce0fce95e0ee56095ea2b9924");
+/// assert!(handle.is_ok());
+/// let invalid_handle = PublicHandle::from_str("xyz");
+/// assert!(invalid_handle.is_err());
+/// ```
 #[derive(Debug, Clone, Serialize)]
 pub struct PublicHandle(String);
 
