@@ -3,6 +3,7 @@ use crate::clash::TestCase;
 #[derive(Debug, Clone)]
 pub enum TestResult {
     Success,
+    UnableToRun { error_msg: String },
     WrongOutput { stdout: String, stderr: String },
     RuntimeError { stdout: String, stderr: String },
     Timeout { stdout: String, stderr: String },
@@ -19,13 +20,14 @@ impl<'a> TestRun<'a> {
         Self { testcase, result }
     }
 
-    pub fn expected(&self) -> &String {
+    pub fn expected(&self) -> &str {
         &self.testcase.test_out
     }
 
-    pub fn actual(&self) -> &String {
+    pub fn actual(&self) -> &str {
         match &self.result {
             TestResult::Success => self.expected(),
+            TestResult::UnableToRun { .. } => "",
             TestResult::RuntimeError { stdout, .. } => stdout,
             TestResult::WrongOutput { stdout, .. } => stdout,
             TestResult::Timeout { stdout, .. } => stdout,

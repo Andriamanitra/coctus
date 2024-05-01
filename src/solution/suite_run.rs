@@ -37,13 +37,27 @@ impl<'a> SuiteRun<'a> {
     }
 
     fn run_testcase(&mut self, test: &'a TestCase) -> TestRun<'a> {
-        let mut run = self
+        let mut run = match self
             .run_command
             .stdin(std::process::Stdio::piped())
             .stdout(std::process::Stdio::piped())
             .stderr(std::process::Stdio::piped())
             .spawn()
-            .expect("Failed to run --command");
+        {
+            Ok(run) => run,
+            Err(error) => {
+                return TestRun::new(
+                    test,
+                    TestResult::UnableToRun {
+                        error_msg: format!(
+                            "{}: {}",
+                            self.run_command.get_program().to_str().unwrap_or("Unable to run command"),
+                            error
+                        ),
+                    },
+                )
+            }
+        };
 
         let mut stdin = run.stdin.as_mut().unwrap();
         std::io::Write::write(&mut stdin, test.test_in.as_bytes())

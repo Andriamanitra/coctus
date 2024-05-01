@@ -226,6 +226,11 @@ impl OutputStyle {
                 println!("{} {}", self.success.paint("PASS"), title);
             }
 
+            TestResult::UnableToRun { error_msg } => {
+                println!("{} {}", self.failure.paint("ERROR"), title);
+                println!(" {}", self.stderr.paint(error_msg));
+            }
+
             TestResult::WrongOutput { stdout, stderr } => {
                 println!("{} {}", self.failure.paint("FAIL"), title);
                 self.print_failure(testcase, stdout, stderr);
