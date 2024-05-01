@@ -32,7 +32,7 @@ fn run_testcase<'a>(test: &'a TestCase, run_command: &mut Command, timeout: &Dur
         .as_mut()
         .unwrap()
         .write(test.test_in.as_bytes())
-        .expect("Fatal error: could not write to stdin.");
+        .expect("STDIN should be writable");
 
     TestRun::new(test, get_result(run, &test.test_out, timeout))
 }
@@ -44,13 +44,13 @@ fn unable_to_run(error: std::io::Error, cmd: &mut Command) -> TestResult {
 }
 
 fn get_result(mut run: std::process::Child, expected: &str, timeout: &Duration) -> TestResult {
-    let timed_out = run.wait_timeout(*timeout).expect("Could not wait for program execution.").is_none();
+    let timed_out = run.wait_timeout(*timeout).expect("Process should be able to wait for execution").is_none();
 
     if timed_out {
-        run.kill().expect("Failed to kill test run process");
+        run.kill().expect("Process should have been killed");
     }
 
-    let output = run.wait_with_output().expect("Could not wait for program execution.");
+    let output = run.wait_with_output().expect("Process should allow waiting for its execution");
 
     let stdout = String::from_utf8(output.stdout)
         .unwrap_or_default()
