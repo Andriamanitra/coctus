@@ -1,0 +1,106 @@
+{
+    "id": 90435,
+    "activeVersion": 6,
+    "score": 0,
+    "votableId": 33375234,
+    "codingamerId": 4806550,
+    "views": 38,
+    "commentableId": 33228357,
+    "title": "Boggus test",
+    "status": "PENDING",
+    "type": "CLASHOFCODE",
+    "nickname": "Rafarafa",
+    "publicHandle": "90435e82d1d5e3fe5f9d3dd813770f0d5a7d2",
+    "codingamerHandle": "68977779383d7e4ea558c7a5446487f40556084",
+    "lastVersion": {
+        "version": 6,
+        "data": {
+            "title": "Boggus test",
+            "topics": [],
+            "fastest": true,
+            "reverse": false,
+            "shortest": false,
+            "statement": "asdf",
+            "testCases": [
+                {
+                    "title": "Test 1",
+                    "isTest": true,
+                    "testIn": "123",
+                    "testOut": "123",
+                    "isValidator": false,
+                    "needValidation": true
+                },
+                {
+                    "title": "Validator 1",
+                    "isTest": false,
+                    "testIn": "123",
+                    "testOut": "123",
+                    "isValidator": true,
+                    "needValidation": true
+                },
+                {
+                    "title": "Test 2",
+                    "isTest": true,
+                    "testIn": "123",
+                    "testOut": "123",
+                    "isValidator": false,
+                    "needValidation": true
+                },
+                {
+                    "title": "Validator 2",
+                    "isTest": false,
+                    "testIn": "123",
+                    "testOut": "123",
+                    "isValidator": true,
+                    "needValidation": true
+                },
+                {
+                    "title": "Test 3",
+                    "isTest": true,
+                    "testIn": "123",
+                    "testOut": "123",
+                    "isValidator": false,
+                    "needValidation": true
+                },
+                {
+                    "title": "Validator 3",
+                    "isTest": false,
+                    "testIn": "123",
+                    "testOut": "123",
+                    "isValidator": true,
+                    "needValidation": true
+                },
+                {
+                    "title": "Test 4",
+                    "isTest": true,
+                    "testIn": "123",
+                    "testOut": "123",
+                    "isValidator": false,
+                    "needValidation": true
+                },
+                {
+                    "title": "Validator 4",
+                    "isTest": false,
+                    "testIn": "123",
+                    "testOut": "123",
+                    "isValidator": true,
+                    "needValidation": true
+                }
+            ],
+            "constraints": "asdf",
+            "stubGenerator": "read anInt:int\nread aFloat:float\nread Long:long\nread aWord:word(1)\nread boolean:bool\nread ABC1ABc1aBC1AbC1abc1:int\nread STRING:string(256)\nread anInt2:int aFloat2:float Long2:long aWord2:word(1) boolean2:bool\nloop anInt read x:int\nloop anInt read x:int f:float\nloop anInt loop anInt read x:int y:int\nloopline anInt x:int\nloopline anInt w:word(50)\nloopline anInt x:int f:float w:word(50)\nwrite result\n\nOUTPUT\nAn output comment\n\nwrite join(anInt, aFloat, Long, boolean)\n\nwrite join(aWord, \"literal\", STRING)\n\nSTATEMENT\nThis is the statement\n\nINPUT\nanInt: An input comment over anInt",
+            "inputDescription": "asdf",
+            "outputDescription": "asdf"
+        },
+        "draft": true,
+        "readyForModeration": false
+    },
+    "avatar": 80946308795008,
+    "commentCount": 0,
+    "upVotes": 0,
+    "downVotes": 0,
+    "statusHistory": [],
+    "editable": true,
+    "draft": true,
+    "readyForModeration": false
+}
