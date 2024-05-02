@@ -24,7 +24,7 @@ enum CmdStatus {
     Success,
     Timeout,
     Error,
-    Failure
+    Failure,
 }
 
 fn run_solution(cmd: &mut Command, input: &str, timeout: &Duration) -> (CmdStatus, String, String) {
@@ -33,10 +33,16 @@ fn run_solution(cmd: &mut Command, input: &str, timeout: &Duration) -> (CmdStatu
         .stdout(std::process::Stdio::piped())
         .stderr(std::process::Stdio::piped())
         .spawn()
-        {
-            Ok(run) => run,
-            Err(error) => return (CmdStatus::Failure, cmd.get_program().to_string_lossy().to_string(), error.to_string())
-        };
+    {
+        Ok(run) => run,
+        Err(error) => {
+            return (
+                CmdStatus::Failure,
+                cmd.get_program().to_string_lossy().to_string(),
+                error.to_string(),
+            )
+        }
+    };
 
     run.stdin
         .as_mut()
@@ -62,7 +68,6 @@ fn run_solution(cmd: &mut Command, input: &str, timeout: &Duration) -> (CmdStatu
         .to_string();
     let stderr = String::from_utf8(output.stderr).unwrap_or_default();
 
-
     if timed_out {
         (CmdStatus::Timeout, stdout, stderr)
     } else if output.status.success() {
@@ -81,12 +86,8 @@ fn check_testcase<'a>(testcase: &'a TestCase, run_results: (CmdStatus, String, S
                 TestResult::WrongOutput { stdout, stderr }
             }
         }
-        (CmdStatus::Timeout, stdout, stderr) => {
-            TestResult::Timeout { stdout, stderr }
-        }
-        (CmdStatus::Error, stdout, stderr) => {
-            TestResult::RuntimeError { stdout, stderr }
-        }
+        (CmdStatus::Timeout, stdout, stderr) => TestResult::Timeout { stdout, stderr },
+        (CmdStatus::Error, stdout, stderr) => TestResult::RuntimeError { stdout, stderr },
         (CmdStatus::Failure, program_name, message) => {
             let error_msg = format!("{}: {}", program_name, message);
             TestResult::UnableToRun { error_msg }
