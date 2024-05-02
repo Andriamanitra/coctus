@@ -345,17 +345,15 @@ impl App {
             }
         }
 
-        let run_command: Command = command_from_argument(args.get_one::<String>("command"))?
+        let mut run_command = command_from_argument(args.get_one::<String>("command"))?
             .expect("--command is required to run solution.");
 
-        let timeout_seconds: f64 = *args.get_one::<f64>("timeout").unwrap_or(&5.0);
-
-        let timeout = std::time::Duration::from_micros(match timeout_seconds {
-            x if x.is_nan() => return Err(anyhow!("Timeout can't be NaN")),
-            x if x < 0.0 => return Err(anyhow!("Timeout can't be negative (use 0 for no timeout)")),
-            x if x == 0.0 => u64::MAX,
-            x => (1e6 * x) as u64,
-        });
+        let timeout = match *args.get_one::<f64>("timeout").unwrap_or(&5.0) {
+            secs if secs.is_nan() => return Err(anyhow!("Timeout can't be NaN")),
+            secs if secs < 0.0 => return Err(anyhow!("Timeout can't be negative (use 0 for no timeout)")),
+            secs if secs == 0.0 => std::time::Duration::MAX,
+            secs => std::time::Duration::from_micros((secs * 1e6) as u64),
+        };
 
         let all_testcases = self.read_clash(&handle)?.testcases().to_owned();
 
@@ -366,7 +364,7 @@ impl App {
         };
 
         let num_tests = testcases.len();
-        let suite_run = solution::run(testcases, run_command, timeout);
+        let suite_run = solution::lazy_run(testcases, &mut run_command, &timeout);
 
         let ignore_failures = args.get_flag("ignore-failures");
         let show_whitespace = *args.get_one::<bool>("show-whitespace").unwrap_or(&false);
@@ -374,10 +372,10 @@ impl App {
 
         let mut num_passed = 0;
 
-        for testrun in suite_run {
-            ostyle.print_result(&testrun);
+        for test_run in suite_run {
+            ostyle.print_result(&test_run);
 
-            if testrun.is_successful() {
+            if test_run.is_successful() {
                 num_passed += 1;
             } else if !ignore_failures {
                 break
