@@ -25,26 +25,27 @@ fn run_testcase<'a>(test: &'a TestCase, run_command: &mut Command, timeout: &Dur
         .spawn()
     {
         Ok(run) => run,
-        Err(error) => return TestRun::new(test, unable_to_run(error, run_command)),
+        Err(error) => {
+            let program = run_command.get_program().to_str().unwrap_or("Unable to run command");
+            let error_msg = format!("{}: {}", program, error);
+            return TestRun::new(test, TestResult::UnableToRun { error_msg })
+        }
     };
 
     run.stdin
         .as_mut()
-        .unwrap()
-        .write(test.test_in.as_bytes())
-        .expect("STDIN should be writable");
+        .expect("STDIN of child process should be captured")
+        .write_all(test.test_in.as_bytes())
+        .expect("STDIN of child process should be writable");
 
     TestRun::new(test, get_result(run, &test.test_out, timeout))
 }
 
-fn unable_to_run(error: std::io::Error, cmd: &mut Command) -> TestResult {
-    TestResult::UnableToRun {
-        error_msg: format!("{}: {}", cmd.get_program().to_str().unwrap_or("Unable to run command"), error),
-    }
-}
-
 fn get_result(mut run: std::process::Child, expected: &str, timeout: &Duration) -> TestResult {
-    let timed_out = run.wait_timeout(*timeout).expect("Process should be able to wait for execution").is_none();
+    let timed_out = run
+        .wait_timeout(*timeout)
+        .expect("Process should be able to wait for execution")
+        .is_none();
 
     if timed_out {
         run.kill().expect("Process should have been killed");
