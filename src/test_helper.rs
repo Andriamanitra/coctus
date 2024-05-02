@@ -1,5 +1,4 @@
 use std::path::PathBuf;
-use std::process::Command;
 
 use anyhow::{Context, Result};
 use clash::Clash;
@@ -14,10 +13,4 @@ pub fn sample_puzzle(name: &str) -> Result<Clash> {
         .with_context(|| format!("Unable to deserialize test puzzle {} from {:?}", name, &puzzle_file))?;
 
     Ok(clash)
-}
-
-pub fn sh_cmd(script: &str) -> Command {
-    let mut command = Command::new("sh");
-    command.arg("-c").arg(script);
-    command
 }
