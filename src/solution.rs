@@ -4,6 +4,7 @@ use std::io::Write;
 use std::process::Command;
 use std::time::Duration;
 
+use test_run::CommandExit;
 pub use test_run::{TestResult, TestRun};
 use wait_timeout::ChildExt;
 
@@ -14,10 +15,13 @@ pub fn lazy_run<'a>(
     run_command: &'a mut Command,
     timeout: &'a Duration,
 ) -> impl IntoIterator<Item = TestRun<'a>> {
-    testcases.into_iter().map(|test| run_testcase(test, run_command, timeout))
+    testcases.into_iter().map(|test| {
+        let result = run_testcase(test, run_command, timeout);
+        TestRun::new(test, result)
+    })
 }
 
-fn run_testcase<'a>(test: &'a TestCase, run_command: &mut Command, timeout: &Duration) -> TestRun<'a> {
+fn run_testcase(test: &TestCase, run_command: &mut Command, timeout: &Duration) -> TestResult {
     let mut run = match run_command
         .stdin(std::process::Stdio::piped())
         .stdout(std::process::Stdio::piped())
@@ -28,7 +32,7 @@ fn run_testcase<'a>(test: &'a TestCase, run_command: &mut Command, timeout: &Dur
         Err(error) => {
             let program = run_command.get_program().to_str().unwrap_or("Unable to run command");
             let error_msg = format!("{}: {}", program, error);
-            return TestRun::new(test, TestResult::UnableToRun { error_msg })
+            return TestResult::UnableToRun { error_msg }
         }
     };
 
@@ -38,10 +42,6 @@ fn run_testcase<'a>(test: &'a TestCase, run_command: &mut Command, timeout: &Dur
         .write_all(test.test_in.as_bytes())
         .expect("STDIN of child process should be writable");
 
-    TestRun::new(test, get_result(run, &test.test_out, timeout))
-}
-
-fn get_result(mut run: std::process::Child, expected: &str, timeout: &Duration) -> TestResult {
     let timed_out = run
         .wait_timeout(*timeout)
         .expect("Process should be able to wait for execution")
@@ -53,45 +53,38 @@ fn get_result(mut run: std::process::Child, expected: &str, timeout: &Duration) 
 
     let output = run.wait_with_output().expect("Process should allow waiting for its execution");
 
-    let stdout = String::from_utf8(output.stdout)
-        .unwrap_or_default()
-        .replace("\r\n", "\n")
-        .trim_end()
-        .to_string();
-    let stderr = String::from_utf8(output.stderr).unwrap_or_default();
-
-    if stdout == expected.trim_end() {
-        TestResult::Success
-    } else if timed_out {
-        TestResult::Timeout { stdout, stderr }
+    let exit_status = if timed_out {
+        CommandExit::Timeout
     } else if output.status.success() {
-        TestResult::WrongOutput { stdout, stderr }
+        CommandExit::Ok
     } else {
-        TestResult::RuntimeError { stdout, stderr }
-    }
+        CommandExit::Error
+    };
+    TestResult::from_output(&test.test_out, output.stdout, output.stderr, exit_status)
 }
 
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-//     #[test]
-//     fn test_passing_solution() {
-//         let clash = crate::test_helper::sample_puzzle("stub_tester").unwrap();
-//         let mut run_cmd = crate::test_helper::sh_cmd("read input; echo 123");
-//         let timeout = Duration::from_secs(1);
-//         assert!(lazy_run(clash.testcases(), &mut run_cmd, &timeout)
-//             .into_iter()
-//             .all(|test_run| test_run.is_successful()))
-//     }
+    #[test]
+    fn test_passing_solution() {
+        let clash = crate::test_helper::sample_puzzle("stub_tester").unwrap();
+        let mut run_cmd = Command::new("cat");
+        let timeout = Duration::from_secs(1);
+        assert!(lazy_run(clash.testcases(), &mut run_cmd, &timeout)
+            .into_iter()
+            .all(|test_run| test_run.is_successful()))
+    }
 
-//     #[test]
-//     fn test_failing_solution() {
-//         let clash = crate::test_helper::sample_puzzle("stub_tester").unwrap();
-//         let mut run_cmd = crate::test_helper::sh_cmd("read input; echo nada");
-//         let timeout = Duration::from_secs(1);
-//         assert!(lazy_run(clash.testcases(), &mut run_cmd, &timeout)
-//             .into_iter()
-//             .all(|test_run| !test_run.is_successful()))
-//     }
-// }
+    #[test]
+    fn test_failing_solution() {
+        let clash = crate::test_helper::sample_puzzle("stub_tester").unwrap();
+        let mut run_cmd = Command::new("echo");
+        run_cmd.arg("wrong");
+        let timeout = Duration::from_secs(1);
+        assert!(lazy_run(clash.testcases(), &mut run_cmd, &timeout)
+            .into_iter()
+            .all(|test_run| !test_run.is_successful()))
+    }
+}
