@@ -1,4 +1,5 @@
-use std::{path::PathBuf, process::Command};
+use std::path::PathBuf;
+use std::process::Command;
 
 use anyhow::{Context, Result};
 use clash::Clash;
