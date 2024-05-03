@@ -1,9 +1,7 @@
 name = "clojure"
 source_file_ext = "clj"
 
-preprocessors = [
-  "s-expression"
-]
+preprocessor = "s-expression"
 
 [type_tokens]
 Int = "Integer/parseInt"
