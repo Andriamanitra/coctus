@@ -23,22 +23,17 @@ pub struct Language {
     pub variable_name_options: VariableNameOptions,
     pub source_file_ext: String,
     pub type_tokens: TypeTokens,
-    #[serde(deserialize_with = "deser_preprocessors", default)]
-    pub preprocessors: Vec<Preprocessor>,
+    #[serde(deserialize_with = "deser_preprocessor", default)]
+    pub preprocessor: Option<Preprocessor>,
 }
 
-fn deser_preprocessors<'de, D>(deserializer: D) -> Result<Vec<Preprocessor>, D::Error>
+fn deser_preprocessor<'de, D>(deserializer: D) -> Result<Option<Preprocessor>, D::Error>
 where
     D: serde::Deserializer<'de>,
 {
-    let preprocessors: Vec<String> = Deserialize::deserialize(deserializer)?;
-    let mut output: Vec<Preprocessor> = Vec::new();
-
-    for preprocessor_name in preprocessors {
-        match preprocessor_name.as_str() {
-            "s-expression" => output.push(preprocessor::s_expressions::transform),
-            _ => return Err(D::Error::custom(format!("preprocessor {preprocessor_name} not found."))),
-        }
+    let preprocessor: String = Deserialize::deserialize(deserializer)?;
+    match preprocessor.as_str() {
+        "s-expression" => Ok(Some(preprocessor::s_expressions::transform)),
+        _ => Err(D::Error::custom(format!("preprocessor {preprocessor} not found."))),
     }
-    Ok(output)
 }

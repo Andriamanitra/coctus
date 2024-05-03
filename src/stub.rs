@@ -14,8 +14,8 @@ pub use stub_config::StubConfig;
 pub fn generate(config: StubConfig, generator: &str) -> Result<String> {
     let mut stub = parser::parse_generator_stub(generator)?;
 
-    for processor in config.language.preprocessors.iter() {
-        processor(&mut stub);
+    if let Some(processor) = config.language.preprocessor {
+        processor(&mut stub)
     }
 
     // eprint!("=======\n{:?}\n======\n", generator);
