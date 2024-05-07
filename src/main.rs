@@ -346,7 +346,7 @@ impl App {
         }
 
         let mut run_command = command_from_argument(args.get_one::<String>("command"))?
-            .expect("--command is required to run solution.");
+            .expect("clap should ensure `run` can't be executed without a --command");
 
         let timeout = match *args.get_one::<f64>("timeout").unwrap_or(&5.0) {
             secs if secs.is_nan() => return Err(anyhow!("Timeout can't be NaN")),

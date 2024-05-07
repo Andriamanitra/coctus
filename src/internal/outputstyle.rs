@@ -128,7 +128,7 @@ impl OutputStyle {
             println!("{}\n{}\n", self.title.paint("Constraints:"), format_cg(constraints, self));
         }
 
-        let example = clash.testcases().first().expect("puzzle should be at least one test case");
+        let example = clash.testcases().first().expect("example puzzle should have at least one test case");
         println!(
             "{}\n{}\n{}\n{}",
             self.title.paint("Example:"),
@@ -190,9 +190,9 @@ impl OutputStyle {
                         match chunk {
                             Equal(text) if prev_deleted => {
                                 let mut chars = text.chars();
-                                let first_char = chars.next().expect("no chars???").to_string();
+                                let first_char = chars.next().expect("diff chunk should not be empty");
                                 let rest = chars.as_str();
-                                print!("{}", show_whitespace(&first_char, diff_red, diff_ws_red));
+                                print!("{}", show_whitespace(&first_char.to_string(), diff_red, diff_ws_red));
                                 if !rest.is_empty() {
                                     print!("{}", show_whitespace(rest, diff_green, diff_ws_green));
                                 }
