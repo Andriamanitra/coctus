@@ -69,8 +69,10 @@ mod tests {
 
     #[test]
     fn test_passing_solution() {
-        let clash = crate::test_helper::sample_puzzle("stub_tester").unwrap();
-        let mut run_cmd = Command::new("cat");
+        let clash = crate::test_helper::sample_puzzle("stub_and_solution_tester").unwrap();
+        let mut run_cmd = Command::new("tr");
+        run_cmd.arg("X");
+        run_cmd.arg("b");
         let timeout = Duration::from_secs(1);
         assert!(lazy_run(clash.testcases(), &mut run_cmd, &timeout)
             .into_iter()
@@ -79,10 +81,9 @@ mod tests {
 
     #[test]
     fn test_failing_solution() {
-        let clash = crate::test_helper::sample_puzzle("stub_tester").unwrap();
-        let mut run_cmd = Command::new("echo");
-        run_cmd.arg("wrong");
+        let clash = crate::test_helper::sample_puzzle("stub_and_solution_tester").unwrap();
         let timeout = Duration::from_secs(1);
+        let mut run_cmd = Command::new("cat");
         assert!(lazy_run(clash.testcases(), &mut run_cmd, &timeout)
             .into_iter()
             .all(|test_run| !test_run.is_successful()))
