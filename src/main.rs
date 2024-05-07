@@ -399,10 +399,14 @@ impl App {
             .get_many::<PublicHandle>("PUBLIC_HANDLE")
             .with_context(|| "Should have many handles")?;
         for handle in handles {
-            let response = ureq::post("https://www.codingame.com/services/Contribution/findContribution")
-                .set("Content-Type", "application/json")
-                .send_string(&format!(r#"["{}", true]"#, handle))?;
-            let content = response.into_string()?;
+            let req = ureq::post("https://www.codingame.com/services/Contribution/findContribution")
+                .set("Content-Type", "application/json");
+            let content = match req.send_string(&format!(r#"["{}", true]"#, handle)) {
+                Err(ureq::Error::Status(status, res)) => {
+                    return Err(anyhow!("HTTP {} {} from {}", status, res.status_text(), res.get_url()))
+                }
+                res => res?.into_string()?,
+            };
             let clash_file_path = self.clash_dir.join(format!("{}.json", handle));
             std::fs::write(&clash_file_path, &content)?;
             println!("Saved clash {} as {}", &handle, &clash_file_path.display());
