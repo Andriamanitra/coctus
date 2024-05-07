@@ -5,7 +5,7 @@
 (defn output [msg] (println msg) (flush))
 (defn debug [msg] (binding [*out* *err*] (println msg) (flush)))
 {% for line in statement %}
-; {{ line }}
+;; {{ line }}
 {%- endfor %}
 
 (defn -main [& args]
