@@ -15,12 +15,14 @@ Word = "NONE"
 casing = "kebab_case"
 allow_uppercase_vars = false
 keywords = [
-  "auto", "break", "case", "char",
-  "const", "continue", "default", "do",
-  "double", "else", "enum", "extern",
-  "float", "for", "goto", "if",
-  "int", "register", "return",
-  "short", "signed", "sizeof", "static",
-  "struct", "switch", "typedef", "union",
-  "unsigned", "void", "volatile", "while"
+  "def", "fn", "let", "if", "do", "quote", "recur", "loop", "apply", "map",
+  "conj", "println", "when", "or", "with-open", "cond", "vec", "for",
+  "partition", "assoc", "into", "str", "nth", "merge", "into-array", "println",
+  "require", "while", "and", "defn", "list", "name", "strcat", "as", "ref",
+  "quote'", "or", "condp", "import", "when-first", "inc", "dec", "doseq", "defmacro", "resolve",
+  "reify", "throw", "try", "catch", "new", "set", "type", "re-find",
+  "letfn", "proxy", "remove", "deftype", "keys", "defrecord", "into-array", "sort", "flush", 
+  "mapv", "repeatedly", "deftype'", "identity", "get-in", "println", "definline",
+  "class", "dec'", "quote", "defonce", "recur", "ref-set", "proxy-mappings", "assert", "assert-args",
+  "defstruct", "throw", "throw-arity", "println", "recur", "reduced", "repeatedly",
 ]
