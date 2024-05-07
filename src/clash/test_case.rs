@@ -1,18 +1,23 @@
 use serde::{Deserialize, Deserializer, Serialize};
 
-use crate::formatter::show_whitespace;
-use crate::outputstyle::OutputStyle;
-
+/// `TestCase` is a deserialized representation of a test case for a Clash of
+/// Code or I/O puzzle.
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct TestCase {
+    /// `index` is the number of the test/validator, starting from 1.
     #[serde(skip_serializing, skip_deserializing)]
-    index: usize,
+    pub index: usize,
+    /// `title` is a human readable name for the test/validator
     #[serde(deserialize_with = "deserialize_testcase_title")]
     pub title: String,
+    /// `test_in` is the input that a solution reads from STDIN
     #[serde(rename = "testIn")]
     pub test_in: String,
+    /// `test_out` is the output that a solution is expected to print to STDOUT
     #[serde(rename = "testOut")]
     pub test_out: String,
+    /// `is_validator` is true for test cases that are not normally visible when
+    /// solving a puzzle on CodinGame.
     #[serde(rename = "isValidator")]
     pub is_validator: bool,
 }
@@ -44,18 +49,4 @@ fn deserialize_testcase_title<'de, D: Deserializer<'de>>(de: D) -> Result<String
         TempTitle::Weird { title } => title,
     };
     Ok(title)
-}
-
-impl TestCase {
-    pub fn styled_title(&self, ostyle: &OutputStyle) -> String {
-        ostyle.title.paint(format!("#{} {}", self.index, self.title)).to_string()
-    }
-
-    pub fn styled_input(&self, ostyle: &OutputStyle) -> String {
-        show_whitespace(&self.test_in, &ostyle.input, &ostyle.input_whitespace)
-    }
-
-    pub fn styled_output(&self, ostyle: &OutputStyle) -> String {
-        show_whitespace(&self.test_out, &ostyle.output, &ostyle.output_whitespace)
-    }
 }

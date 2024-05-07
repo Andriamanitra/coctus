@@ -1,35 +1,72 @@
+mod test_run;
+
+use std::io::Write;
 use std::process::Command;
 use std::time::Duration;
 
-use anyhow::{anyhow, Result};
-
-mod suite_run;
-use suite_run::SuiteRun;
+pub use test_run::{TestResult, TestRun};
+use wait_timeout::ChildExt;
 
 use crate::clash::TestCase;
-mod test_run;
 
-pub fn run(testcases: Vec<&TestCase>, run_command: Command, timeout: Duration) -> SuiteRun {
-    SuiteRun::new(testcases, run_command, timeout)
+pub fn lazy_run<'a>(
+    testcases: impl IntoIterator<Item = &'a TestCase>,
+    run_command: &'a mut Command,
+    timeout: &'a Duration,
+) -> impl IntoIterator<Item = TestRun<'a>> {
+    testcases.into_iter().map(|test| run_testcase(test, run_command, timeout))
 }
 
-pub fn build(build_command: Option<Command>) -> Result<()> {
-    let mut command: Command = match build_command {
-        Some(cmd) => cmd,
-        None => return Ok(()),
+fn run_testcase<'a>(test: &'a TestCase, run_command: &mut Command, timeout: &Duration) -> TestRun<'a> {
+    let mut run = match run_command
+        .stdin(std::process::Stdio::piped())
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped())
+        .spawn()
+    {
+        Ok(run) => run,
+        Err(error) => {
+            let program = run_command.get_program().to_str().unwrap_or("Unable to run command");
+            let error_msg = format!("{}: {}", program, error);
+            return TestRun::new(test, TestResult::UnableToRun { error_msg })
+        }
     };
 
-    let build = command.output()?;
+    run.stdin
+        .as_mut()
+        .expect("STDIN of child process should be captured")
+        .write_all(test.test_in.as_bytes())
+        .expect("STDIN of child process should be writable");
 
-    if !build.status.success() {
-        if !build.stderr.is_empty() {
-            println!("Build command STDERR:\n{}", String::from_utf8(build.stderr)?);
-        }
-        if !build.stdout.is_empty() {
-            println!("Build command STDOUT:\n{}", String::from_utf8(build.stdout)?);
-        }
-        return Err(anyhow!("Build failed"))
+    TestRun::new(test, get_result(run, &test.test_out, timeout))
+}
+
+fn get_result(mut run: std::process::Child, expected: &str, timeout: &Duration) -> TestResult {
+    let timed_out = run
+        .wait_timeout(*timeout)
+        .expect("Process should be able to wait for execution")
+        .is_none();
+
+    if timed_out {
+        run.kill().expect("Process should have been killed");
     }
 
-    Ok(())
+    let output = run.wait_with_output().expect("Process should allow waiting for its execution");
+
+    let stdout = String::from_utf8(output.stdout)
+        .unwrap_or_default()
+        .replace("\r\n", "\n")
+        .trim_end()
+        .to_string();
+    let stderr = String::from_utf8(output.stderr).unwrap_or_default();
+
+    if stdout == expected.trim_end() {
+        TestResult::Success
+    } else if timed_out {
+        TestResult::Timeout { stdout, stderr }
+    } else if output.status.success() {
+        TestResult::WrongOutput { stdout, stderr }
+    } else {
+        TestResult::RuntimeError { stdout, stderr }
+    }
 }

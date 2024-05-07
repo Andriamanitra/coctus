@@ -2,7 +2,7 @@ use ansi_term::Style;
 use lazy_static::lazy_static;
 use regex::Regex;
 
-use crate::outputstyle::OutputStyle;
+use super::outputstyle::OutputStyle;
 
 // use lazy_static! to make sure regexes are only compiled once
 lazy_static! {

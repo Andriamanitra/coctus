@@ -1,3 +1,5 @@
+mod internal;
+
 use std::io::Read;
 use std::path::PathBuf;
 use std::process::Command;
@@ -5,11 +7,11 @@ use std::str::FromStr;
 
 use anyhow::{anyhow, Context, Result};
 use clap::ArgMatches;
-use clashlib::clash::{Clash, TestCase};
-use clashlib::outputstyle::OutputStyle;
+use clashlib::clash::{Clash, PublicHandle, TestCase};
 use clashlib::stub::StubConfig;
 use clashlib::{solution, stub};
 use directories::ProjectDirs;
+use internal::OutputStyle;
 use rand::seq::IteratorRandom;
 
 fn command_from_argument(cmd_arg: Option<&String>) -> Result<Option<Command>> {
@@ -182,26 +184,6 @@ fn cli() -> clap::Command {
         )
 }
 
-#[derive(Debug, Clone)]
-struct PublicHandle(String);
-
-impl FromStr for PublicHandle {
-    type Err = anyhow::Error;
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if s.chars().all(|ch| ch.is_ascii_hexdigit()) {
-            Ok(PublicHandle(String::from(s)))
-        } else {
-            Err(anyhow!("valid handles only contain characters 0-9 and a-f"))
-        }
-    }
-}
-
-impl std::fmt::Display for PublicHandle {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
-
 struct App {
     clash_dir: PathBuf,
     current_clash_file: PathBuf,
@@ -290,7 +272,7 @@ impl App {
         // --reverse flag
         if args.get_flag("reverse") {
             if clash.is_reverse() {
-                clash.print_reverse_mode(&ostyle);
+                ostyle.print_reverse_mode(&clash);
                 return Ok(())
             } else {
                 return Err(anyhow::Error::msg("The clash doesn't have a reverse mode"))
@@ -299,12 +281,12 @@ impl App {
 
         // If the clash is reverse only, print the headers and testcases.
         if clash.is_reverse_only() {
-            clash.print_reverse_mode(&ostyle);
-            return Ok(())
+            ostyle.print_reverse_mode(&clash);
+        } else {
+            ostyle.print_headers(&clash);
+            ostyle.print_statement(&clash);
         }
 
-        clash.print_headers(&ostyle);
-        clash.print_statement(&ostyle);
         Ok(())
     }
 
@@ -349,20 +331,29 @@ impl App {
             None => self.current_handle()?,
         };
 
-        let build_command = command_from_argument(args.get_one::<String>("build-command"))?;
-        solution::build(build_command)?;
+        if let Some(mut build_command) = command_from_argument(args.get_one::<String>("build-command"))? {
+            let build = build_command.output()?;
 
-        let run_command: Command = command_from_argument(args.get_one::<String>("command"))?
-            .expect("--command is required to run solution.");
+            if !build.status.success() {
+                if !build.stderr.is_empty() {
+                    println!("Build command STDERR:\n{}", String::from_utf8(build.stderr)?);
+                }
+                if !build.stdout.is_empty() {
+                    println!("Build command STDOUT:\n{}", String::from_utf8(build.stdout)?);
+                }
+                return Err(anyhow!("Build failed"))
+            }
+        }
 
-        let timeout_seconds: f64 = *args.get_one::<f64>("timeout").unwrap_or(&5.0);
+        let mut run_command = command_from_argument(args.get_one::<String>("command"))?
+            .expect("clap should ensure `run` can't be executed without a --command");
 
-        let timeout = std::time::Duration::from_micros(match timeout_seconds {
-            x if x.is_nan() => return Err(anyhow!("Timeout can't be NaN")),
-            x if x < 0.0 => return Err(anyhow!("Timeout can't be negative (use 0 for no timeout)")),
-            x if x == 0.0 => u64::MAX,
-            x => (1e6 * x) as u64,
-        });
+        let timeout = match *args.get_one::<f64>("timeout").unwrap_or(&5.0) {
+            secs if secs.is_nan() => return Err(anyhow!("Timeout can't be NaN")),
+            secs if secs < 0.0 => return Err(anyhow!("Timeout can't be negative (use 0 for no timeout)")),
+            secs if secs == 0.0 => std::time::Duration::MAX,
+            secs => std::time::Duration::from_micros((secs * 1e6) as u64),
+        };
 
         let all_testcases = self.read_clash(&handle)?.testcases().to_owned();
 
@@ -373,7 +364,7 @@ impl App {
         };
 
         let num_tests = testcases.len();
-        let suite_run = solution::run(testcases, run_command, timeout);
+        let suite_run = solution::lazy_run(testcases, &mut run_command, &timeout);
 
         let ignore_failures = args.get_flag("ignore-failures");
         let show_whitespace = *args.get_one::<bool>("show-whitespace").unwrap_or(&false);
@@ -382,7 +373,7 @@ impl App {
         let mut num_passed = 0;
 
         for test_run in suite_run {
-            test_run.print_result(&ostyle);
+            ostyle.print_result(&test_run);
 
             if test_run.is_successful() {
                 num_passed += 1;
@@ -455,13 +446,13 @@ impl App {
                 println!("{}", ostyle.secondary_title.paint("===== INPUT ======"));
             }
             if !only_out {
-                println!("{}", testcase.styled_input(&ostyle));
+                println!("{}", ostyle.styled_testcase_input(testcase));
             }
             if !(only_in || only_out) {
                 println!("{}", ostyle.secondary_title.paint("==== EXPECTED ===="));
             }
             if !only_in {
-                println!("{}", testcase.styled_output(&ostyle));
+                println!("{}", ostyle.styled_testcase_output(testcase));
             }
         }
 
