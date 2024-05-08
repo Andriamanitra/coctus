@@ -12,7 +12,7 @@ String = "NONE"
 Word = "NONE"
 
 [variable_name_options]
-casing = "camel_case"
+casing = "kebab_case"
 allow_uppercase_vars = false
 keywords = [
   "auto", "break", "case", "char",
