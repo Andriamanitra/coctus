@@ -79,7 +79,7 @@ impl VariableNameOptions {
                     char_iter.peeking_take_while(|c| !c.is_ascii_lowercase()).collect();
                 word_chars.extend(char_iter.peeking_take_while(|c| c.is_ascii_lowercase()));
 
-                Some(word_chars.iter().collect::<String>().to_lowercase())
+                Some(String::from_iter(word_chars).to_lowercase())
             })
             .collect()
     }
