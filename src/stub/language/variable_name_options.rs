@@ -15,6 +15,7 @@ lazy_static! {
 #[allow(clippy::enum_variant_names)]
 pub enum Casing {
     SnakeCase,
+    KebabCase,
     CamelCase,
     PascalCase,
 }
@@ -65,6 +66,7 @@ impl VariableNameOptions {
     fn convert(&self, variable_name: &str) -> String {
         match self.casing {
             Casing::SnakeCase => Self::convert_to_snake_case(variable_name),
+            Casing::KebabCase => Self::convert_to_kebab_case(variable_name),
             Casing::PascalCase => Self::convert_to_pascal_case(variable_name),
             Casing::CamelCase => Self::convert_to_camel_case(variable_name),
         }
@@ -74,6 +76,14 @@ impl VariableNameOptions {
         SC_WORD_BREAK
             .replace_all(variable_name, |caps: &regex::Captures| {
                 format!("{}_{}", &caps[1], &caps[2].to_lowercase())
+            })
+            .to_lowercase()
+    }
+
+    fn convert_to_kebab_case(variable_name: &str) -> String {
+        SC_WORD_BREAK
+            .replace_all(variable_name, |caps: &regex::Captures| {
+                format!("{}-{}", &caps[1], &caps[2].to_lowercase())
             })
             .to_lowercase()
     }
@@ -108,6 +118,13 @@ mod tests {
     fn test_snake_case() {
         let expected = "abc1abc_1a_bc1ab_c1abc_1";
         let received = VariableNameOptions::convert_to_snake_case(WORD);
+        assert_eq!(expected, received);
+    }
+
+    #[test]
+    fn test_kebab_case() {
+        let expected = "abc1abc-1a-bc1ab-c1abc-1";
+        let received = VariableNameOptions::convert_to_kebab_case(WORD);
         assert_eq!(expected, received);
     }
 
