@@ -98,3 +98,30 @@ impl VariableNameOptions {
             .to_string()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    const WORD: &str = "ABC1ABc1aBC1AbC1abc1";
+
+    #[test]
+    fn test_snake_case() {
+        let expected = "abc1abc_1a_bc1ab_c1abc_1";
+        let received = VariableNameOptions::convert_to_snake_case(WORD);
+        assert_eq!(expected, received);
+    }
+
+    #[test]
+    fn test_pascal_case() {
+        let expected = "ABC1aBc1aBC1AbC1abc1";
+        let received = VariableNameOptions::convert_to_pascal_case(WORD);
+        assert_eq!(expected, received);
+    }
+
+    #[test]
+    fn test_camel_case() {
+        let expected = "aBC1aBc1aBC1AbC1abc1";
+        let received = VariableNameOptions::convert_to_camel_case(WORD);
+        assert_eq!(expected, received);
+    }
+}
