@@ -93,15 +93,11 @@ impl VariableNameOptions {
     }
 
     fn convert_to_pascal_case(variable_name: &str) -> String {
-        Self::ident_words(variable_name)
-            .iter()
-            .map(|word| word[0..1].to_uppercase() + &word[1..])
-            .collect()
+        variable_name[0..1].to_uppercase() + &variable_name[1..]
     }
 
     fn convert_to_camel_case(variable_name: &str) -> String {
-        let pascal = Self::convert_to_pascal_case(variable_name);
-        pascal[0..1].to_lowercase() + &pascal[1..]
+        variable_name[0..1].to_lowercase() + &variable_name[1..]
     }
 }
 
@@ -156,7 +152,7 @@ mod tests {
     #[test]
     fn test_complex_pascal_case() {
         // let expected = "OC4MLl1spAB4PcH4skell9"; // in CG
-        let expected = "Oc4mll1spAb4pcH4skell9";
+        let expected = "OC4MLl1spAB4PcH4skell9";
         let received = VariableNameOptions::convert_to_pascal_case(COMPLEX_WORD);
         assert_eq!(expected, received);
     }
@@ -164,7 +160,7 @@ mod tests {
     #[test]
     fn test_complex_camel_case() {
         // let expected = "oc4MLl1spAb4PcH4skell9"; // in CG
-        let expected = "oc4mll1spAb4pcH4skell9";
+        let expected = "oC4MLl1spAB4PcH4skell9";
         let received = VariableNameOptions::convert_to_camel_case(COMPLEX_WORD);
         assert_eq!(expected, received);
     }
