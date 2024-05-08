@@ -6,7 +6,7 @@ use crate::stub::VariableCommand;
 #[derive(Deserialize, Debug, Clone)]
 #[serde(rename_all = "snake_case")]
 #[allow(clippy::enum_variant_names)]
-pub enum Casing {
+enum Casing {
     SnakeCase,
     KebabCase,
     CamelCase,
@@ -16,9 +16,9 @@ pub enum Casing {
 #[derive(Deserialize, Debug, Clone)]
 #[serde(rename_all = "snake_case")]
 pub struct VariableNameOptions {
-    pub casing: Casing,
-    pub allow_uppercase_vars: Option<bool>,
-    pub keywords: Vec<String>,
+    casing: Casing,
+    allow_uppercase_vars: Option<bool>,
+    keywords: Vec<String>,
 }
 
 fn is_uppercase_string(string: &str) -> bool {
@@ -26,7 +26,7 @@ fn is_uppercase_string(string: &str) -> bool {
 }
 
 impl VariableNameOptions {
-    pub fn transform_variable_name(&self, variable_name: &str) -> String {
+    pub(in crate::stub) fn transform_variable_name(&self, variable_name: &str) -> String {
         // CG has special treatment for variables with all uppercase identifiers.
         // In most languages they remain uppercase regardless of variable format.
         // In others (such as ruby where constants are uppercase) they get downcased.
@@ -39,7 +39,7 @@ impl VariableNameOptions {
         self.escape_keywords(converted_variable_name)
     }
 
-    pub fn transform_variable_command(&self, var: &VariableCommand) -> VariableCommand {
+    pub(in crate::stub) fn transform_variable_command(&self, var: &VariableCommand) -> VariableCommand {
         VariableCommand {
             ident: self.transform_variable_name(&var.ident),
             var_type: var.var_type,
@@ -48,7 +48,7 @@ impl VariableNameOptions {
         }
     }
 
-    pub fn escape_keywords(&self, variable_name: String) -> String {
+    fn escape_keywords(&self, variable_name: String) -> String {
         if self.keywords.contains(&variable_name) {
             format!("_{variable_name}")
         } else {

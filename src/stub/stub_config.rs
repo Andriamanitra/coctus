@@ -1,5 +1,4 @@
 use std::fs;
-use std::path::Path;
 
 use anyhow::{Context, Result};
 use include_dir::include_dir;
@@ -12,32 +11,11 @@ const HARDCODED_TEMPLATE_DIR: include_dir::Dir<'static> =
 
 #[derive(Clone)]
 pub struct StubConfig {
-    pub language: Language,
-    pub tera: Tera,
+    pub(super) language: Language,
+    pub(super) tera: Tera,
 }
 
 impl StubConfig {
-    /// This function is responsible for searching locations where language
-    /// config files can be stored.
-    ///
-    /// Language config files are stored in: (ordered by precedence)
-    /// 1. The user config dir: `stub_templates/#{lang_arg}/stub_config.toml`
-    /// 2. This repo, embedded into the binary:
-    ///    `config/stub_templates/#{lang_arg}/stub_config.toml`
-    ///
-    /// where the user config dir is in `~/.config/coctus` (Linux, see the
-    /// [directories documentation](https://docs.rs/directories/latest/directories/struct.ProjectDirs.html#method.config_dir)
-    /// for others).
-    pub fn find_stub_config(lang_name: &str, config_path: &Path) -> Result<Self> {
-        let user_config_lang_dir = config_path.join(lang_name);
-
-        if user_config_lang_dir.is_file() {
-            Self::read_from_dir(user_config_lang_dir)
-        } else {
-            Self::read_from_embedded(&lang_name.to_lowercase())
-        }
-    }
-
     pub fn read_from_dir(dir: std::path::PathBuf) -> Result<Self> {
         let fname = dir.join("stub_config.toml");
         let toml_str = fs::read_to_string(fname)?;

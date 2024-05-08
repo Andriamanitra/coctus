@@ -9,11 +9,6 @@ const ALPHABET: [char; 18] = [
     'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
 ];
 
-pub fn render_stub(config: StubConfig, stub: Stub) -> Result<String> {
-    let renderer = Renderer::new(config, stub)?;
-    Ok(renderer.render())
-}
-
 pub struct Renderer {
     tera: Tera,
     lang: Language,
@@ -21,7 +16,7 @@ pub struct Renderer {
 }
 
 impl Renderer {
-    fn new(config: StubConfig, stub: Stub) -> Result<Renderer> {
+    pub(super) fn new(config: StubConfig, stub: Stub) -> Result<Renderer> {
         Ok(Self {
             lang: config.language,
             tera: config.tera,
@@ -29,7 +24,7 @@ impl Renderer {
         })
     }
 
-    pub fn tera_render(&self, template_name: &str, context: &mut Context) -> String {
+    pub(super) fn tera_render(&self, template_name: &str, context: &mut Context) -> String {
         // Since these are (generally) shared across languages, it makes sense to
         // store it in the "global" context instead of accepting it as parameters.
         let format_symbols = json!({
@@ -50,7 +45,7 @@ impl Renderer {
             .unwrap()
     }
 
-    fn render(&self) -> String {
+    pub(super) fn render(&self) -> String {
         let mut context = Context::new();
 
         let code: String = self.stub.commands.iter().map(|cmd| self.render_command(cmd, 0)).collect();
@@ -62,7 +57,7 @@ impl Renderer {
         self.tera_render("main", &mut context)
     }
 
-    pub fn render_command(&self, cmd: &Cmd, nesting_depth: usize) -> String {
+    pub(super) fn render_command(&self, cmd: &Cmd, nesting_depth: usize) -> String {
         match cmd {
             Cmd::Read(vars) => self.render_read(vars, nesting_depth),
             Cmd::Write {

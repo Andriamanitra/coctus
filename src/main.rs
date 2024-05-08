@@ -206,14 +206,6 @@ impl App {
         PublicHandle::from_str(&content)
     }
 
-    fn build_stub_config(&self, args: &ArgMatches) -> Result<StubConfig> {
-        let lang_arg = args
-            .get_one::<String>("PROGRAMMING_LANGUAGE")
-            .context("Should have a programming language")?;
-
-        StubConfig::find_stub_config(lang_arg.as_str(), &self.stub_templates_dir)
-    }
-
     fn clashes(&self) -> Result<std::fs::ReadDir> {
         std::fs::read_dir(&self.clash_dir).with_context(|| "No clashes stored")
     }
@@ -460,7 +452,9 @@ impl App {
     }
 
     fn generate_stub(&self, args: &ArgMatches) -> Result<()> {
-        let config = self.build_stub_config(args)?;
+        let lang_arg = args
+            .get_one::<String>("PROGRAMMING_LANGUAGE")
+            .context("Should have a programming language")?;
 
         let stub_generator = match args.get_one::<PathBuf>("from-file") {
             Some(fname) if fname.to_str() == Some("-") => {
@@ -479,7 +473,17 @@ impl App {
             }
         };
 
-        let stub_string = stub::generate(config, &stub_generator)?;
+        // Language config files are stored in: (ordered by precedence)
+        // 1. The user config dir: `stub_templates/LANG/stub_config.toml`
+        // 2. This repo, embedded into the binary:
+        //    `config/stub_templates/LANG/stub_config.toml`
+        let lang_template_dir = self.stub_templates_dir.join(lang_arg);
+        let stub_string = if lang_template_dir.is_dir() {
+            let stub_config = StubConfig::read_from_dir(lang_template_dir)?;
+            stub::generate_from_config(stub_config, &stub_generator)?
+        } else {
+            stub::generate(lang_arg, &stub_generator)?
+        };
         println!("{stub_string}");
         Ok(())
     }
