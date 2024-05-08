@@ -104,64 +104,36 @@ impl VariableNameOptions {
 #[cfg(test)]
 mod tests {
     use super::*;
-    const SIMPLE_WORD: &str = "dateOfBirth";
-    const COMPLEX_WORD: &str = "OC4MLl1spAB4PcH4skell9";
 
     #[test]
     fn test_snake_case() {
-        let expected = "date_of_birth";
-        let received = VariableNameOptions::convert_to_snake_case(SIMPLE_WORD);
-        assert_eq!(expected, received);
+        let convert = VariableNameOptions::convert_to_snake_case;
+        assert_eq!("date_of_birth", convert("dateOfBirth"));
+        assert_eq!("phrase_1braille_top_row", convert("Phrase1BrailleTopRow"));
+        assert_eq!("crane_asciirepresentation", convert("craneASCIIRepresentation"));
     }
 
     #[test]
     fn test_kebab_case() {
-        let expected = "date-of-birth";
-        let received = VariableNameOptions::convert_to_kebab_case(SIMPLE_WORD);
-        assert_eq!(expected, received);
+        let convert = VariableNameOptions::convert_to_kebab_case;
+        assert_eq!("date-of-birth", convert("dateOfBirth"));
+        assert_eq!("phrase-1braille-top-row", convert("Phrase1BrailleTopRow"));
+        assert_eq!("crane-asciirepresentation", convert("craneASCIIRepresentation"));
     }
 
     #[test]
     fn test_pascal_case() {
-        let expected = "DateOfBirth";
-        let received = VariableNameOptions::convert_to_pascal_case(SIMPLE_WORD);
-        assert_eq!(expected, received);
+        let convert = VariableNameOptions::convert_to_pascal_case;
+        assert_eq!("DateOfBirth", convert("dateOfBirth"));
+        assert_eq!("Phrase1BrailleTopRow", convert("Phrase1BrailleTopRow"));
+        assert_eq!("CraneASCIIRepresentation", convert("craneASCIIRepresentation"));
     }
 
     #[test]
     fn test_camel_case() {
-        let expected = "dateOfBirth";
-        let received = VariableNameOptions::convert_to_camel_case(SIMPLE_WORD);
-        assert_eq!(expected, received);
-    }
-
-    #[test]
-    fn test_complex_snake_case() {
-        let expected = "oc4mll_1sp_ab4pc_h4skell_9";
-        let received = VariableNameOptions::convert_to_snake_case(COMPLEX_WORD);
-        assert_eq!(expected, received);
-    }
-
-    #[test]
-    fn test_complex_kebab_case() {
-        let expected = "oc4mll-1sp-ab4pc-h4skell-9";
-        let received = VariableNameOptions::convert_to_kebab_case(COMPLEX_WORD);
-        assert_eq!(expected, received);
-    }
-
-    #[test]
-    fn test_complex_pascal_case() {
-        // let expected = "OC4MLl1spAB4PcH4skell9"; // in CG
-        let expected = "OC4MLl1spAB4PcH4skell9";
-        let received = VariableNameOptions::convert_to_pascal_case(COMPLEX_WORD);
-        assert_eq!(expected, received);
-    }
-
-    #[test]
-    fn test_complex_camel_case() {
-        // let expected = "oc4MLl1spAb4PcH4skell9"; // in CG
-        let expected = "oC4MLl1spAB4PcH4skell9";
-        let received = VariableNameOptions::convert_to_camel_case(COMPLEX_WORD);
-        assert_eq!(expected, received);
+        let convert = VariableNameOptions::convert_to_camel_case;
+        assert_eq!("dateOfBirth", convert("dateOfBirth"));
+        assert_eq!("phrase1BrailleTopRow", convert("Phrase1BrailleTopRow"));
+        assert_eq!("craneASCIIRepresentation", convert("craneASCIIRepresentation"));
     }
 }
