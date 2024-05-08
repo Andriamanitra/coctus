@@ -4,19 +4,21 @@ pub enum CommandExit {
     Timeout,
 }
 
-/// Represents outcome of running a test case. [TestResult::Success] means the
-/// output of a solution command matched the `test_out` field of the
+/// Represents the outcome of running a test case. [TestResult::Success] means
+/// the output of a solution command matched the `test_out` field of the
 /// [TestCase](crate::clash::TestCase).
 #[derive(Debug, Clone)]
 pub enum TestResult {
     /// Solution command produced the expected output. A test run is considered
-    /// a success even if it runs into a runtime error or times out if  its
+    /// a success even if it runs into a runtime error or times out if its
     /// output was correct (just like it works on CodinGame).
     Success,
-    /// Solution command failed to run. This may happen if the executable does
-    /// not exist or current user does not have permissions to run it.
+    /// Solution command failed to run. This may happen for example if the
+    /// executable does not exist or if the current user does not have
+    /// permission to execute it.
     UnableToRun { error_msg: String },
-    /// Solution command exited normally but didn't produce the expected output.
+    /// Solution command exited normally but did not produce the expected
+    /// output.
     WrongOutput { stdout: String, stderr: String },
     /// Solution command encountered a runtime error (exited non-zero).
     RuntimeError { stdout: String, stderr: String },
@@ -46,7 +48,7 @@ impl TestResult {
         }
     }
 
-    /// Returns true if the test case passed. A test cases passes if the output
+    /// Returns true if the test case passed. A test case passes if the output
     /// of the solution command matches the expected output.
     pub fn is_success(&self) -> bool {
         matches!(self, TestResult::Success)
