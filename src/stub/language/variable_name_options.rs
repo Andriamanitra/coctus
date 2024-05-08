@@ -1,14 +1,7 @@
-use lazy_static::lazy_static;
-use regex::Regex;
+use itertools::Itertools;
 use serde::Deserialize;
 
 use crate::stub::VariableCommand;
-
-lazy_static! {
-    static ref SC_WORD_BREAK: Regex = Regex::new(r"([a-z])([A-Z0-9])").unwrap();
-    static ref PC_WORD_BREAK: Regex = Regex::new(r"([A-Z]*)([A-Z][a-z])").unwrap();
-    static ref PC_WORD_END: Regex = Regex::new(r"([A-Z])([A-Z]*$)").unwrap();
-}
 
 #[derive(Deserialize, Debug, Clone)]
 #[serde(rename_all = "snake_case")]
@@ -72,73 +65,107 @@ impl VariableNameOptions {
         }
     }
 
-    fn convert_to_snake_case(variable_name: &str) -> String {
-        SC_WORD_BREAK
-            .replace_all(variable_name, |caps: &regex::Captures| {
-                format!("{}_{}", &caps[1], &caps[2].to_lowercase())
+    fn ident_words(ident: &str) -> Vec<String> {
+        ident
+            .chars()
+            .peekable()
+            .batching(|char_iter| {
+                char_iter.peek()?; // check if there are any chars left
+
+                // The word boundary seem to be non-lowercase characters in CG
+                // Therefore we take
+                // boundary characters + lowercase characters until next boundary
+                let mut word_chars: Vec<char> =
+                    char_iter.peeking_take_while(|c| !c.is_ascii_lowercase()).collect();
+                word_chars.extend(char_iter.peeking_take_while(|c| c.is_ascii_lowercase()));
+
+                Some(word_chars.iter().collect::<String>().to_lowercase())
             })
-            .to_lowercase()
+            .collect()
+    }
+
+    fn convert_to_snake_case(variable_name: &str) -> String {
+        Self::ident_words(variable_name).join("_")
     }
 
     fn convert_to_kebab_case(variable_name: &str) -> String {
-        SC_WORD_BREAK
-            .replace_all(variable_name, |caps: &regex::Captures| {
-                format!("{}-{}", &caps[1], &caps[2].to_lowercase())
-            })
-            .to_lowercase()
+        Self::ident_words(variable_name).join("-")
     }
 
     fn convert_to_pascal_case(variable_name: &str) -> String {
-        variable_name[0..1].to_uppercase() + &Self::pascalize(&variable_name[1..])
+        Self::ident_words(variable_name)
+            .iter()
+            .map(|word| word[0..1].to_uppercase() + &word[1..])
+            .collect()
     }
 
     fn convert_to_camel_case(variable_name: &str) -> String {
-        variable_name[0..1].to_lowercase() + &Self::pascalize(&variable_name[1..])
-    }
-
-    fn pascalize(variable_slice: &str) -> String {
-        let start_replaced = PC_WORD_BREAK.replace_all(variable_slice, |caps: &regex::Captures| {
-            format!("{}{}", &caps[1].to_lowercase(), &caps[2])
-        });
-
-        PC_WORD_END
-            .replace_all(&start_replaced, |caps: &regex::Captures| {
-                format!("{}{}", &caps[1], &caps[2].to_lowercase())
-            })
-            .to_string()
+        let pascal = Self::convert_to_pascal_case(variable_name);
+        pascal[0..1].to_lowercase() + &pascal[1..]
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    const WORD: &str = "dateOfBirth";
+    const SIMPLE_WORD: &str = "dateOfBirth";
+    const COMPLEX_WORD: &str = "OC4MLl1spAB4PcH4skell9";
 
     #[test]
     fn test_snake_case() {
         let expected = "date_of_birth";
-        let received = VariableNameOptions::convert_to_snake_case(WORD);
+        let received = VariableNameOptions::convert_to_snake_case(SIMPLE_WORD);
         assert_eq!(expected, received);
     }
 
     #[test]
     fn test_kebab_case() {
         let expected = "date-of-birth";
-        let received = VariableNameOptions::convert_to_kebab_case(WORD);
+        let received = VariableNameOptions::convert_to_kebab_case(SIMPLE_WORD);
         assert_eq!(expected, received);
     }
 
     #[test]
     fn test_pascal_case() {
         let expected = "DateOfBirth";
-        let received = VariableNameOptions::convert_to_pascal_case(WORD);
+        let received = VariableNameOptions::convert_to_pascal_case(SIMPLE_WORD);
         assert_eq!(expected, received);
     }
 
     #[test]
     fn test_camel_case() {
         let expected = "dateOfBirth";
-        let received = VariableNameOptions::convert_to_camel_case(WORD);
+        let received = VariableNameOptions::convert_to_camel_case(SIMPLE_WORD);
+        assert_eq!(expected, received);
+    }
+
+    #[test]
+    fn test_complex_snake_case() {
+        let expected = "oc4mll_1sp_ab4pc_h4skell_9";
+        let received = VariableNameOptions::convert_to_snake_case(COMPLEX_WORD);
+        assert_eq!(expected, received);
+    }
+
+    #[test]
+    fn test_complex_kebab_case() {
+        let expected = "oc4mll-1sp-ab4pc-h4skell-9";
+        let received = VariableNameOptions::convert_to_kebab_case(COMPLEX_WORD);
+        assert_eq!(expected, received);
+    }
+
+    #[test]
+    fn test_complex_pascal_case() {
+        // let expected = "OC4MLl1spAB4PcH4skell9"; // in CG
+        let expected = "Oc4mll1spAb4pcH4skell9";
+        let received = VariableNameOptions::convert_to_pascal_case(COMPLEX_WORD);
+        assert_eq!(expected, received);
+    }
+
+    #[test]
+    fn test_complex_camel_case() {
+        // let expected = "oc4MLl1spAb4PcH4skell9"; // in CG
+        let expected = "oc4mll1spAb4pcH4skell9";
+        let received = VariableNameOptions::convert_to_camel_case(COMPLEX_WORD);
         assert_eq!(expected, received);
     }
 }
