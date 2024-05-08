@@ -1,6 +1,15 @@
 use super::Renderable;
 use crate::stub::{Cmd, Stub};
 
+/// Edit Stub to allow for rendering lisp-like syntax.
+///
+/// Specifically, this preprocessor will:
+/// - batch consecutive reads together
+/// - embed remaining commands inside the scope of a read_batch
+///
+/// The purpose is to support languages such as lisp and clojure which
+/// initialize multiple variables in one statement and also must have the scope
+/// of said variables explicitly wrapped.
 pub fn transform(stub: &mut Stub) {
     let mut old_commands = stub.commands.drain(..).rev().peekable();
 
