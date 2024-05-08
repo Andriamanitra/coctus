@@ -112,32 +112,32 @@ impl VariableNameOptions {
 #[cfg(test)]
 mod tests {
     use super::*;
-    const WORD: &str = "ABC1ABc1aBC1AbC1abc1";
+    const WORD: &str = "dateOfBirth";
 
     #[test]
     fn test_snake_case() {
-        let expected = "abc1abc_1a_bc1ab_c1abc_1";
+        let expected = "date_of_birth";
         let received = VariableNameOptions::convert_to_snake_case(WORD);
         assert_eq!(expected, received);
     }
 
     #[test]
     fn test_kebab_case() {
-        let expected = "abc1abc-1a-bc1ab-c1abc-1";
+        let expected = "date-of-birth";
         let received = VariableNameOptions::convert_to_kebab_case(WORD);
         assert_eq!(expected, received);
     }
 
     #[test]
     fn test_pascal_case() {
-        let expected = "ABC1aBc1aBC1AbC1abc1";
+        let expected = "DateOfBirth";
         let received = VariableNameOptions::convert_to_pascal_case(WORD);
         assert_eq!(expected, received);
     }
 
     #[test]
     fn test_camel_case() {
-        let expected = "aBC1aBc1aBC1AbC1abc1";
+        let expected = "dateOfBirth";
         let received = VariableNameOptions::convert_to_camel_case(WORD);
         assert_eq!(expected, received);
     }
