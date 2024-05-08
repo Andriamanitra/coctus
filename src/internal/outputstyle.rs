@@ -1,6 +1,6 @@
 use ansi_term::{Color, Style};
 use clashlib::clash::{Clash, TestCase};
-use clashlib::solution::{TestResult, TestRun};
+use clashlib::solution::TestResult;
 
 use super::formatter::show_whitespace;
 use super::lines_with_endings::LinesWithEndings;
@@ -218,10 +218,9 @@ impl OutputStyle {
         }
     }
 
-    pub fn print_result(&self, testrun: &TestRun) {
-        let testcase = testrun.testcase();
-        let title = self.styled_testcase_title(testcase);
-        match testrun.result() {
+    pub fn print_result(&self, test_case: &TestCase, test_result: &TestResult) {
+        let title = self.styled_testcase_title(test_case);
+        match test_result {
             TestResult::Success => {
                 println!("{} {}", self.success.paint("PASS"), title);
             }
@@ -233,17 +232,17 @@ impl OutputStyle {
 
             TestResult::WrongOutput { stdout, stderr } => {
                 println!("{} {}", self.failure.paint("FAIL"), title);
-                self.print_failure(testcase, stdout, stderr);
+                self.print_failure(test_case, stdout, stderr);
             }
 
             TestResult::RuntimeError { stdout, stderr } => {
                 println!("{} {}", self.error.paint("ERROR"), title);
-                self.print_failure(testcase, stdout, stderr);
+                self.print_failure(test_case, stdout, stderr);
             }
 
             TestResult::Timeout { stdout, stderr } => {
                 println!("{} {}", self.error.paint("TIMEOUT"), title);
-                self.print_failure(testcase, stdout, stderr);
+                self.print_failure(test_case, stdout, stderr);
             }
         }
     }

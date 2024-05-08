@@ -372,10 +372,10 @@ impl App {
 
         let mut num_passed = 0;
 
-        for test_run in suite_run {
-            ostyle.print_result(&test_run);
+        for (test_case, test_result) in suite_run {
+            ostyle.print_result(test_case, &test_result);
 
-            if test_run.is_successful() {
+            if test_result.is_success() {
                 num_passed += 1;
             } else if !ignore_failures {
                 break
