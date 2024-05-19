@@ -4,9 +4,9 @@ pub enum CommandExit {
     Timeout,
 }
 
-/// Represents the outcome of running a test case. [TestResult::Success] means
+/// Represents the outcome of running a testcase. [TestResult::Success] means
 /// the output of a solution command matched the `test_out` field of the
-/// [TestCase](crate::clash::TestCase).
+/// [Testcase](crate::clash::Testcase).
 #[derive(Debug, Clone)]
 pub enum TestResult {
     /// Solution command produced the expected output. A test run is considered
@@ -48,7 +48,7 @@ impl TestResult {
         }
     }
 
-    /// Returns true if the test case passed. A test case passes if the output
+    /// Returns true if the testcase passed. A testcase passes if the output
     /// of the solution command matches the expected output.
     pub fn is_success(&self) -> bool {
         matches!(self, TestResult::Success)

@@ -10,7 +10,7 @@ use wait_timeout::ChildExt;
 
 use crate::clash::Testcase;
 
-/// Run a command against test cases one at a time.
+/// Run a command against testcases one at a time.
 ///
 /// # Examples
 ///
@@ -46,7 +46,7 @@ pub fn lazy_run<'a>(
     })
 }
 
-/// Run a command against a single test case.
+/// Run a command against a single testcase.
 pub fn run_testcase(test: &Testcase, run_command: &mut Command, timeout: &Duration) -> TestResult {
     let mut run = match run_command
         .stdin(std::process::Stdio::piped())

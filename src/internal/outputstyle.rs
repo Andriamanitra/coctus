@@ -128,7 +128,7 @@ impl OutputStyle {
             println!("{}\n{}\n", self.title.paint("Constraints:"), format_cg(constraints, self));
         }
 
-        let example = clash.testcases().first().expect("example puzzle should have at least one test case");
+        let example = clash.testcases().first().expect("example puzzle should have at least one testcase");
         println!(
             "{}\n{}\n{}\n{}",
             self.title.paint("Example:"),

@@ -84,7 +84,7 @@ fn cli() -> clap::Command {
                         .value_parser(value_parser!(f64))
                         .default_value("5")
                 )
-                .arg(arg!(--"auto-advance" "automatically move on to next clash if all test cases pass"))
+                .arg(arg!(--"auto-advance" "automatically move on to next clash if all testcases pass"))
                 .arg(arg!(--"ignore-failures" "run all tests despite failures"))
                 .arg(
                     arg!(--"testcases" <TESTCASE_INDICES> "indices of the testcases to run (separated by commas)")
@@ -103,8 +103,8 @@ fn cli() -> clap::Command {
                         .value_parser(value_parser!(PublicHandle))
                 )
                 .after_help(
-                    "If a --build-command is specified, it will be executed once before running any of the test cases. \
-                    The --command is required and will be executed once per test case.\
+                    "If a --build-command is specified, it will be executed once before running any of the testcases. \
+                    The --command is required and will be executed once per testcase.\
                     \nIMPORTANT: The commands you provide will be executed without any sandboxing. Only run code you trust!"
                 )
         )
@@ -435,8 +435,8 @@ impl App {
                 Some(x) => x,
                 None => {
                     return Err(anyhow!(
-                    "Invalid testcase index {idx} (the current clash only has {num_testcases} test cases)"
-                ))
+                        "Invalid testcase index {idx} (the current clash only has {num_testcases} testcases)"
+                    ))
                 }
             };
 
