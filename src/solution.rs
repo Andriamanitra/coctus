@@ -8,18 +8,18 @@ use test_result::CommandExit;
 pub use test_result::TestResult;
 use wait_timeout::ChildExt;
 
-use crate::clash::TestCase;
+use crate::clash::Testcase;
 
 /// Run a command against test cases one at a time.
 ///
 /// # Examples
 ///
 /// ```
-/// use clashlib::clash::TestCase;
+/// use clashlib::clash::Testcase;
 /// use clashlib::solution::lazy_run;
 ///
-/// let test_cases = [
-///     TestCase {
+/// let testcases = [
+///     Testcase {
 ///         index: 1,
 ///         title: String::from("Test #1"),
 ///         test_in: String::from("hey"),
@@ -30,16 +30,16 @@ use crate::clash::TestCase;
 /// let mut command = std::process::Command::new("cat");
 /// let timeout = std::time::Duration::from_secs(5);
 ///
-/// for (test_case, test_result) in lazy_run(&test_cases, &mut command, &timeout) {
-///     assert_eq!(test_case.title, "Test #1");
+/// for (testcase, test_result) in lazy_run(&testcases, &mut command, &timeout) {
+///     assert_eq!(testcase.title, "Test #1");
 ///     assert!(test_result.is_success());
 /// }
 /// ```
 pub fn lazy_run<'a>(
-    testcases: impl IntoIterator<Item = &'a TestCase>,
+    testcases: impl IntoIterator<Item = &'a Testcase>,
     run_command: &'a mut Command,
     timeout: &'a Duration,
-) -> impl IntoIterator<Item = (&'a TestCase, TestResult)> {
+) -> impl IntoIterator<Item = (&'a Testcase, TestResult)> {
     testcases.into_iter().map(|test| {
         let result = run_testcase(test, run_command, timeout);
         (test, result)
@@ -47,7 +47,7 @@ pub fn lazy_run<'a>(
 }
 
 /// Run a command against a single test case.
-pub fn run_testcase(test: &TestCase, run_command: &mut Command, timeout: &Duration) -> TestResult {
+pub fn run_testcase(test: &Testcase, run_command: &mut Command, timeout: &Duration) -> TestResult {
     let mut run = match run_command
         .stdin(std::process::Stdio::piped())
         .stdout(std::process::Stdio::piped())

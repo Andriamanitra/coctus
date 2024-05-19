@@ -7,7 +7,7 @@ use std::str::FromStr;
 
 use anyhow::{anyhow, Context, Result};
 use clap::ArgMatches;
-use clashlib::clash::{Clash, PublicHandle, TestCase};
+use clashlib::clash::{Clash, PublicHandle, Testcase};
 use clashlib::stub::StubConfig;
 use clashlib::{solution, stub};
 use directories::ProjectDirs;
@@ -357,7 +357,7 @@ impl App {
 
         let all_testcases = self.read_clash(&handle)?.testcases().to_owned();
 
-        let testcases: Vec<&TestCase> = if let Some(testcase_indices) = args.get_many::<u64>("testcases") {
+        let testcases: Vec<&Testcase> = if let Some(testcase_indices) = args.get_many::<u64>("testcases") {
             testcase_indices.map(|idx| &all_testcases[(idx - 1) as usize]).collect()
         } else {
             all_testcases.iter().collect()
@@ -372,8 +372,8 @@ impl App {
 
         let mut num_passed = 0;
 
-        for (test_case, test_result) in suite_run {
-            ostyle.print_result(test_case, &test_result);
+        for (testcase, test_result) in suite_run {
+            ostyle.print_result(testcase, &test_result);
 
             if test_result.is_success() {
                 num_passed += 1;

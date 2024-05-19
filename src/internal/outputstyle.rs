@@ -1,5 +1,5 @@
 use ansi_term::{Color, Style};
-use clashlib::clash::{Clash, TestCase};
+use clashlib::clash::{Clash, Testcase};
 use clashlib::solution::TestResult;
 
 use super::formatter::show_whitespace;
@@ -103,15 +103,15 @@ impl Default for OutputStyle {
 }
 
 impl OutputStyle {
-    pub fn styled_testcase_title(&self, testcase: &TestCase) -> String {
+    pub fn styled_testcase_title(&self, testcase: &Testcase) -> String {
         self.title.paint(format!("#{} {}", testcase.index, testcase.title)).to_string()
     }
 
-    pub fn styled_testcase_input(&self, testcase: &TestCase) -> String {
+    pub fn styled_testcase_input(&self, testcase: &Testcase) -> String {
         show_whitespace(&testcase.test_in, &self.input, &self.input_whitespace)
     }
 
-    pub fn styled_testcase_output(&self, testcase: &TestCase) -> String {
+    pub fn styled_testcase_output(&self, testcase: &Testcase) -> String {
         show_whitespace(&testcase.test_out, &self.output, &self.output_whitespace)
     }
 
@@ -160,7 +160,7 @@ impl OutputStyle {
         self.print_testcases(clash, selection);
     }
 
-    fn print_diff(&self, testcase: &TestCase, stdout: &str) {
+    fn print_diff(&self, testcase: &Testcase, stdout: &str) {
         use dissimilar::Chunk::*;
         use itertools::EitherOrBoth::{Both, Left, Right};
         use itertools::Itertools;
@@ -218,8 +218,8 @@ impl OutputStyle {
         }
     }
 
-    pub fn print_result(&self, test_case: &TestCase, test_result: &TestResult) {
-        let title = self.styled_testcase_title(test_case);
+    pub fn print_result(&self, testcase: &Testcase, test_result: &TestResult) {
+        let title = self.styled_testcase_title(testcase);
         match test_result {
             TestResult::Success => {
                 println!("{} {}", self.success.paint("PASS"), title);
@@ -232,22 +232,22 @@ impl OutputStyle {
 
             TestResult::WrongOutput { stdout, stderr } => {
                 println!("{} {}", self.failure.paint("FAIL"), title);
-                self.print_failure(test_case, stdout, stderr);
+                self.print_failure(testcase, stdout, stderr);
             }
 
             TestResult::RuntimeError { stdout, stderr } => {
                 println!("{} {}", self.error.paint("ERROR"), title);
-                self.print_failure(test_case, stdout, stderr);
+                self.print_failure(testcase, stdout, stderr);
             }
 
             TestResult::Timeout { stdout, stderr } => {
                 println!("{} {}", self.error.paint("TIMEOUT"), title);
-                self.print_failure(test_case, stdout, stderr);
+                self.print_failure(testcase, stdout, stderr);
             }
         }
     }
 
-    fn print_failure(&self, testcase: &TestCase, stdout: &str, stderr: &str) {
+    fn print_failure(&self, testcase: &Testcase, stdout: &str, stderr: &str) {
         println!(
             "{}\n{}\n{}\n{}",
             self.secondary_title.paint("===== INPUT ======"),

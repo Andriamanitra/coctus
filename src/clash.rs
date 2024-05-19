@@ -1,10 +1,10 @@
 mod public_handle;
-mod test_case;
+mod testcase;
 
 pub use public_handle::PublicHandle;
 use serde::{Deserialize, Serialize};
-use test_case::deserialize_testcases;
-pub use test_case::TestCase;
+use testcase::deserialize_testcases;
+pub use testcase::Testcase;
 
 /// `Clash` represents a deserialized Clash of Code or I/O puzzle.
 #[derive(Debug, Serialize, Deserialize)]
@@ -54,7 +54,7 @@ struct ClashData {
 
     #[serde(rename = "testCases")]
     #[serde(deserialize_with = "deserialize_testcases")]
-    testcases: Vec<TestCase>,
+    testcases: Vec<Testcase>,
 
     constraints: Option<String>,
     #[serde(rename = "stubGenerator")]
@@ -66,7 +66,7 @@ struct ClashData {
 }
 
 impl Clash {
-    pub fn testcases(&self) -> &Vec<TestCase> {
+    pub fn testcases(&self) -> &Vec<Testcase> {
         &self.last_version.data.testcases
     }
 
