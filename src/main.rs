@@ -7,7 +7,7 @@ use std::str::FromStr;
 
 use anyhow::{anyhow, Context, Result};
 use clap::ArgMatches;
-use clashlib::clash::{Clash, PublicHandle, TestCase};
+use clashlib::clash::{Clash, PublicHandle, Testcase};
 use clashlib::stub::StubConfig;
 use clashlib::{solution, stub};
 use directories::ProjectDirs;
@@ -84,7 +84,7 @@ fn cli() -> clap::Command {
                         .value_parser(value_parser!(f64))
                         .default_value("5")
                 )
-                .arg(arg!(--"auto-advance" "automatically move on to next clash if all test cases pass"))
+                .arg(arg!(--"auto-advance" "automatically move on to next clash if all testcases pass"))
                 .arg(arg!(--"ignore-failures" "run all tests despite failures"))
                 .arg(
                     arg!(--"testcases" <TESTCASE_INDICES> "indices of the testcases to run (separated by commas)")
@@ -103,8 +103,8 @@ fn cli() -> clap::Command {
                         .value_parser(value_parser!(PublicHandle))
                 )
                 .after_help(
-                    "If a --build-command is specified, it will be executed once before running any of the test cases. \
-                    The --command is required and will be executed once per test case.\
+                    "If a --build-command is specified, it will be executed once before running any of the testcases. \
+                    The --command is required and will be executed once per testcase.\
                     \nIMPORTANT: The commands you provide will be executed without any sandboxing. Only run code you trust!"
                 )
         )
@@ -357,7 +357,7 @@ impl App {
 
         let all_testcases = self.read_clash(&handle)?.testcases().to_owned();
 
-        let testcases: Vec<&TestCase> = if let Some(testcase_indices) = args.get_many::<u64>("testcases") {
+        let testcases: Vec<&Testcase> = if let Some(testcase_indices) = args.get_many::<u64>("testcases") {
             testcase_indices.map(|idx| &all_testcases[(idx - 1) as usize]).collect()
         } else {
             all_testcases.iter().collect()
@@ -372,10 +372,10 @@ impl App {
 
         let mut num_passed = 0;
 
-        for test_run in suite_run {
-            ostyle.print_result(&test_run);
+        for (testcase, test_result) in suite_run {
+            ostyle.print_result(testcase, &test_result);
 
-            if test_run.is_successful() {
+            if test_result.is_success() {
                 num_passed += 1;
             } else if !ignore_failures {
                 break
@@ -436,8 +436,8 @@ impl App {
                 Some(x) => x,
                 None => {
                     return Err(anyhow!(
-                    "Invalid testcase index {idx} (the current clash only has {num_testcases} test cases)"
-                ))
+                        "Invalid testcase index {idx} (the current clash only has {num_testcases} testcases)"
+                    ))
                 }
             };
 

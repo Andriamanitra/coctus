@@ -1,22 +1,38 @@
-use crate::clash::TestCase;
-
 pub enum CommandExit {
     Ok,
     Error,
     Timeout,
 }
 
+/// Represents the outcome of running a testcase. [TestResult::Success] means
+/// the output of a solution command matched the `test_out` field of the
+/// [Testcase](crate::clash::Testcase).
 #[derive(Debug, Clone)]
 pub enum TestResult {
+    /// Solution command produced the expected output. A test run is considered
+    /// a success even if it runs into a runtime error or times out if its
+    /// output was correct (just like it works on CodinGame).
     Success,
+    /// Solution command failed to run. This may happen for example if the
+    /// executable does not exist or if the current user does not have
+    /// permission to execute it.
     UnableToRun { error_msg: String },
+    /// Solution command exited normally but did not produce the expected
+    /// output.
     WrongOutput { stdout: String, stderr: String },
+    /// Solution command encountered a runtime error (exited non-zero).
     RuntimeError { stdout: String, stderr: String },
+    /// Solution command timed out.
     Timeout { stdout: String, stderr: String },
 }
 
 impl TestResult {
-    pub fn from_output(expected: &str, stdout: Vec<u8>, stderr: Vec<u8>, exit_status: CommandExit) -> Self {
+    pub(crate) fn from_output(
+        expected: &str,
+        stdout: Vec<u8>,
+        stderr: Vec<u8>,
+        exit_status: CommandExit,
+    ) -> Self {
         let stdout = String::from_utf8(stdout)
             .unwrap_or_default()
             .replace("\r\n", "\n")
@@ -31,43 +47,11 @@ impl TestResult {
             CommandExit::Error => TestResult::RuntimeError { stdout, stderr },
         }
     }
-}
 
-#[derive(Debug, Clone)]
-pub struct TestRun<'a> {
-    testcase: &'a TestCase,
-    result: TestResult,
-}
-
-impl<'a> TestRun<'a> {
-    pub fn new(testcase: &'a TestCase, result: TestResult) -> Self {
-        Self { testcase, result }
-    }
-
-    pub fn expected(&self) -> &str {
-        &self.testcase.test_out
-    }
-
-    pub fn actual(&self) -> &str {
-        match &self.result {
-            TestResult::Success => self.expected(),
-            TestResult::UnableToRun { .. } => "",
-            TestResult::RuntimeError { stdout, .. } => stdout,
-            TestResult::WrongOutput { stdout, .. } => stdout,
-            TestResult::Timeout { stdout, .. } => stdout,
-        }
-    }
-
-    pub fn is_successful(&self) -> bool {
-        matches!(self.result, TestResult::Success)
-    }
-
-    pub fn testcase(&self) -> &'a TestCase {
-        self.testcase
-    }
-
-    pub fn result(&'a self) -> &'a TestResult {
-        &self.result
+    /// Returns true if the testcase passed. A testcase passes if the output
+    /// of the solution command matches the expected output.
+    pub fn is_success(&self) -> bool {
+        matches!(self, TestResult::Success)
     }
 }
 

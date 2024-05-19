@@ -1,9 +1,9 @@
 use serde::{Deserialize, Deserializer, Serialize};
 
-/// `TestCase` is a deserialized representation of a test case for a Clash of
+/// `Testcase` is a deserialized representation of a testcase for a Clash of
 /// Code or I/O puzzle.
 #[derive(Debug, Deserialize, Serialize, Clone)]
-pub struct TestCase {
+pub struct Testcase {
     /// `index` is the number of the test/validator, starting from 1.
     #[serde(skip_serializing, skip_deserializing)]
     pub index: usize,
@@ -16,14 +16,14 @@ pub struct TestCase {
     /// `test_out` is the output that a solution is expected to print to STDOUT
     #[serde(rename = "testOut")]
     pub test_out: String,
-    /// `is_validator` is true for test cases that are not normally visible when
+    /// `is_validator` is true for testcases that are not normally visible when
     /// solving a puzzle on CodinGame.
     #[serde(rename = "isValidator")]
     pub is_validator: bool,
 }
 
-pub fn deserialize_testcases<'de, D: Deserializer<'de>>(de: D) -> Result<Vec<TestCase>, D::Error> {
-    let mut testcases = Vec::<TestCase>::deserialize(de)?;
+pub fn deserialize_testcases<'de, D: Deserializer<'de>>(de: D) -> Result<Vec<Testcase>, D::Error> {
+    let mut testcases = Vec::<Testcase>::deserialize(de)?;
 
     for (i, testcase) in testcases.iter_mut().enumerate() {
         testcase.index = i + 1;
