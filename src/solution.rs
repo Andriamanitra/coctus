@@ -47,7 +47,7 @@ pub fn lazy_run<'a>(
 }
 
 /// Run a command against a single testcase.
-pub fn run_testcase(test: &Testcase, run_command: &mut Command, timeout: &Duration) -> TestResult {
+pub fn run_testcase(testcase: &Testcase, run_command: &mut Command, timeout: &Duration) -> TestResult {
     let mut run = match run_command
         .stdin(std::process::Stdio::piped())
         .stdout(std::process::Stdio::piped())
@@ -65,7 +65,7 @@ pub fn run_testcase(test: &Testcase, run_command: &mut Command, timeout: &Durati
     run.stdin
         .as_mut()
         .expect("STDIN of child process should be captured")
-        .write_all(test.test_in.as_bytes())
+        .write_all(testcase.test_in.as_bytes())
         .expect("STDIN of child process should be writable");
 
     let timed_out = run
@@ -86,7 +86,7 @@ pub fn run_testcase(test: &Testcase, run_command: &mut Command, timeout: &Durati
     } else {
         CommandExit::Error
     };
-    TestResult::from_output(&test.test_out, output.stdout, output.stderr, exit_status)
+    TestResult::from_output(&testcase.test_out, output.stdout, output.stderr, exit_status)
 }
 
 #[cfg(test)]
