@@ -225,9 +225,8 @@ mod tests {
 
     #[test]
     fn test_simple_code_generation() {
-        let cfg = StubConfig::read_from_embedded("ruby").unwrap();
         let generator = "read m:int n:int\nwrite result";
-        let received = generate_from_config(cfg, generator).unwrap();
+        let received = generate("ruby", generator).unwrap();
         let expected = "m, n = gets.split.map(&:to_i)\nputs \"result\"";
 
         assert_eq!(received, expected);
@@ -235,8 +234,7 @@ mod tests {
 
     #[test]
     fn test_reference_stub_ruby() {
-        let cfg = StubConfig::read_from_embedded("ruby").unwrap();
-        let received = generate_from_config(cfg, COMPLEX_REFERENCE_STUB).unwrap();
+        let received = generate("ruby", COMPLEX_REFERENCE_STUB).unwrap();
         let expected = indoc! { r##"
             # Live long
             # and prosper
@@ -301,19 +299,16 @@ mod tests {
     // Just test that it compiles
     #[test]
     fn test_reference_stub_rust() {
-        let cfg = StubConfig::read_from_embedded("rust").unwrap();
-        generate_from_config(cfg, COMPLEX_REFERENCE_STUB).unwrap();
+        generate("rust", COMPLEX_REFERENCE_STUB).unwrap();
     }
 
     #[test]
     fn test_reference_stub_c() {
-        let cfg = StubConfig::read_from_embedded("c").unwrap();
-        generate_from_config(cfg, COMPLEX_REFERENCE_STUB).unwrap();
+        generate("c", COMPLEX_REFERENCE_STUB).unwrap();
     }
 
     #[test]
     fn test_reference_stub_cpp() {
-        let cfg = StubConfig::read_from_embedded("cpp").unwrap();
-        generate_from_config(cfg, COMPLEX_REFERENCE_STUB).unwrap();
+        generate("cpp", COMPLEX_REFERENCE_STUB).unwrap();
     }
 }

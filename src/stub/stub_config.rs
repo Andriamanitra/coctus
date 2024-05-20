@@ -26,7 +26,7 @@ impl StubConfig {
         Ok(Self { language, tera })
     }
 
-    pub fn read_from_embedded(lang_name: &str) -> Result<Self> {
+    pub(super) fn read_from_embedded(lang_name: &str) -> Result<Self> {
         // If you just created a new template for a language and you get:
         // Error: No stub generator found for 'language'
         // you may need to recompile the binaries to update: `cargo build`
