@@ -1,8 +1,7 @@
-use clashlib::stub::{self, StubConfig};
+use clashlib::stub;
 
 fn test_stub_builder(generator: &str, expected: &str) {
-    let cfg = StubConfig::read_from_embedded("python").unwrap();
-    let received = stub::generate(cfg, generator).unwrap().as_str().trim().to_string();
+    let received = stub::generate("python", generator).unwrap().as_str().trim().to_string();
     let expected = expected.trim();
 
     assert_eq!(expected.lines().count(), received.lines().count());

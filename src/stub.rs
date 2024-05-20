@@ -1,35 +1,49 @@
-pub mod language;
+mod language;
 mod parser;
-pub mod preprocessor;
+mod preprocessor;
 mod renderer;
-pub mod stub_config;
+mod stub_config;
 
 use anyhow::Result;
 use indoc::indoc;
-pub use language::Language;
+use language::Language;
 use preprocessor::Renderable;
 use serde::Serialize;
 pub use stub_config::StubConfig;
 
-pub fn generate(config: StubConfig, generator: &str) -> Result<String> {
+pub fn generate_from_config(config: StubConfig, generator: &str) -> Result<String> {
     let mut stub = parser::parse_generator_stub(generator)?;
 
     if let Some(processor) = config.language.preprocessor {
         processor(&mut stub)
     }
 
-    // eprint!("=======\n{:?}\n======\n", generator);
-    // eprint!("=======\n{:?}\n======\n", stub);
-
-    let output_str = renderer::render_stub(config.clone(), stub)?;
+    let renderer = renderer::Renderer::new(config, stub)?;
+    let output_str = renderer.render();
 
     Ok(output_str.as_str().trim().to_string())
 }
 
+/// Generate a stub string from a (supported) language and a generator.
+///
+/// # Examples
+///
+/// ```
+/// use clashlib::stub::generate;
+///
+/// let generator = "read anInt:int\nwrite solution";
+/// let stub_str = generate("python", generator).unwrap();
+/// assert_eq!(stub_str, "an_int = int(input())\nprint(\"solution\")");
+/// ```
+pub fn generate(language_name: &str, generator: &str) -> Result<String> {
+    let config = StubConfig::read_from_embedded(language_name)?;
+    generate_from_config(config, generator)
+}
+
 #[derive(Clone, Default)]
-pub struct Stub {
-    pub commands: Vec<Cmd>,
-    pub statement: Vec<String>,
+struct Stub {
+    commands: Vec<Cmd>,
+    statement: Vec<String>,
 }
 
 // More visual than derive(Debug)
@@ -44,7 +58,7 @@ impl std::fmt::Debug for Stub {
 }
 
 #[derive(Debug, Clone, Copy, Serialize, PartialEq, Eq, Hash)]
-pub enum VarType {
+enum VarType {
     Int,
     Float,
     Long,
@@ -74,11 +88,11 @@ impl<'a> VarType {
 }
 
 #[derive(Debug, Clone, Serialize)]
-pub struct VariableCommand {
-    pub ident: String,
-    pub var_type: VarType,
-    pub max_length: Option<String>,
-    pub input_comment: String,
+struct VariableCommand {
+    ident: String,
+    var_type: VarType,
+    max_length: Option<String>,
+    input_comment: String,
 }
 
 impl VariableCommand {
@@ -93,7 +107,7 @@ impl VariableCommand {
 }
 
 #[derive(Serialize, Clone, Debug)]
-pub struct JoinTerm {
+struct JoinTerm {
     pub ident: String,
     pub var_type: Option<VarType>,
 }
@@ -105,7 +119,7 @@ impl JoinTerm {
 }
 
 #[derive(Debug, Clone)]
-pub enum Cmd {
+enum Cmd {
     Read(Vec<VariableCommand>),
     Loop {
         count_var: String,
@@ -222,9 +236,8 @@ mod tests {
 
     #[test]
     fn test_simple_code_generation() {
-        let cfg = StubConfig::read_from_embedded("ruby").unwrap();
         let generator = "read m:int n:int\nwrite result";
-        let received = generate(cfg, generator).unwrap();
+        let received = generate("ruby", generator).unwrap();
         let expected = "m, n = gets.split.map(&:to_i)\nputs \"result\"";
 
         assert_eq!(received, expected);
@@ -232,8 +245,7 @@ mod tests {
 
     #[test]
     fn test_reference_stub_ruby() {
-        let cfg = StubConfig::read_from_embedded("ruby").unwrap();
-        let received = generate(cfg, COMPLEX_REFERENCE_STUB).unwrap();
+        let received = generate("ruby", COMPLEX_REFERENCE_STUB).unwrap();
         let expected = indoc! { r##"
             # Live long
             # and prosper
@@ -298,19 +310,16 @@ mod tests {
     // Just test that it compiles
     #[test]
     fn test_reference_stub_rust() {
-        let cfg = StubConfig::read_from_embedded("rust").unwrap();
-        generate(cfg, COMPLEX_REFERENCE_STUB).unwrap();
+        generate("rust", COMPLEX_REFERENCE_STUB).unwrap();
     }
 
     #[test]
     fn test_reference_stub_c() {
-        let cfg = StubConfig::read_from_embedded("c").unwrap();
-        generate(cfg, COMPLEX_REFERENCE_STUB).unwrap();
+        generate("c", COMPLEX_REFERENCE_STUB).unwrap();
     }
 
     #[test]
     fn test_reference_stub_cpp() {
-        let cfg = StubConfig::read_from_embedded("cpp").unwrap();
-        generate(cfg, COMPLEX_REFERENCE_STUB).unwrap();
+        generate("cpp", COMPLEX_REFERENCE_STUB).unwrap();
     }
 }
