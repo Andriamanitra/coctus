@@ -6,7 +6,7 @@ use tera::Tera;
 
 use super::Language;
 
-const HARDCODED_TEMPLATE_DIR: include_dir::Dir<'static> =
+const HARDCODED_EMBEDDED_TEMPLATE_DIR: include_dir::Dir<'static> =
     include_dir!("$CARGO_MANIFEST_DIR/config/stub_templates");
 
 #[derive(Clone)]
@@ -17,8 +17,8 @@ pub struct StubConfig {
 
 impl StubConfig {
     pub fn read_from_dir(dir: std::path::PathBuf) -> Result<Self> {
-        let fname = dir.join("stub_config.toml");
-        let toml_str = fs::read_to_string(fname)?;
+        let toml_file = dir.join("stub_config.toml");
+        let toml_str = fs::read_to_string(toml_file)?;
         let language: Language = toml::from_str(&toml_str)?;
         let jinja_glob = dir.join("*.jinja");
         let tera = Tera::new(jinja_glob.to_str().expect("language directory path should be valid utf8"))
@@ -26,17 +26,17 @@ impl StubConfig {
         Ok(Self { language, tera })
     }
 
-    pub fn read_from_embedded(lang_name: &str) -> Result<Self> {
+    pub(super) fn read_from_embedded(lang_name: &str) -> Result<Self> {
         // If you just created a new template for a language and you get:
         // Error: No stub generator found for 'language'
         // you may need to recompile the binaries to update: `cargo build`
-        let embedded_config_dir = HARDCODED_TEMPLATE_DIR
+        let embedded_config_dir = HARDCODED_EMBEDDED_TEMPLATE_DIR
             .get_dir(lang_name)
             .context(format!("No stub generator found for '{lang_name}'"))?;
-        let config_file = embedded_config_dir
+        let toml_file = embedded_config_dir
             .get_file(format!("{lang_name}/stub_config.toml"))
             .expect("Embedded stub generators should have stub_config.toml");
-        let toml_str = config_file
+        let toml_str = toml_file
             .contents_utf8()
             .expect("Embedded stub_config.toml contents should be valid utf8");
         let language: Language = toml::from_str(toml_str)?;
