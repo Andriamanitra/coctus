@@ -1,4 +1,8 @@
-# CoCtus
+# CoCtus &ensp; [![Latest Version]](https://crates.io/crates/coctus) [![Docs]](https://docs.rs/coctus) [![Build Status]](https://github.com/Andriamanitra/coctus/actions/workflows/ci.yml)
+
+[Latest Version]: https://img.shields.io/crates/v/coctus.svg
+[Docs]: https://img.shields.io/docsrs/coctus.svg
+[Build Status]: https://github.com/andriamanitra/coctus/workflows/Build/badge.svg
 
 Command line tool that allows you to play [Clash of Code](https://www.codingame.com/multiplayer/clashofcode) style problems locally on your computer.
 
