@@ -474,7 +474,8 @@ impl App {
         };
 
         // Language config files are stored in: (ordered by precedence)
-        // 1. The user config dir: `stub_templates/LANG/stub_config.toml`
+        // 1. The user config dir, where {CONF} is the OS dependent config folder:
+        //    `{CONF}/stub_templates/LANG/stub_config.toml`
         // 2. This repo, embedded into the binary:
         //    `config/stub_templates/LANG/stub_config.toml`
         let lang_template_dir = self.stub_templates_dir.join(lang_arg);
