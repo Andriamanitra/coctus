@@ -24,7 +24,6 @@ Detailed [user guide](https://github.com/Andriamanitra/coctus/wiki/User-guide) i
 The program has only been tested on Linux and Windows. Other platforms may or may not work!
 
 ### (Option 1) Install latest release from crates.io
-You may need to install `pkg-config` and `libssl-dev` or equivalent for this to work (`apt install pkg-config libssl-dev` on Ubuntu).
 ```
 $ cargo install coctus
 ```
@@ -35,7 +34,7 @@ Download the latest binary for your operating system from [releases](https://git
 
 ### (Option 3) Build from source (recommended for developers)
 
-This method requires `git` and a relatively recent (1.73+ should work) version of the Rust toolchain.
+This method requires `git` and a relatively recent (1.74.1+) version of the Rust toolchain.
 ```
 $ git clone https://github.com/Andriamanitra/coctus
 $ cargo install --path=.
