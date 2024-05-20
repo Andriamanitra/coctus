@@ -24,6 +24,17 @@ pub fn generate_from_config(config: StubConfig, generator: &str) -> Result<Strin
     Ok(output_str.as_str().trim().to_string())
 }
 
+/// Generate a stub string from a (supported) language and a generator.
+///
+/// # Examples
+///
+/// ```
+/// use clashlib::stub::generate;
+///
+/// let generator = "read anInt:int\nwrite solution";
+/// let stub_str = generate("python", generator).unwrap();
+/// assert_eq!(stub_str, "an_int = int(input())\nprint(\"solution\")");
+/// ```
 pub fn generate(language_name: &str, generator: &str) -> Result<String> {
     let config = StubConfig::read_from_embedded(language_name)?;
     generate_from_config(config, generator)
