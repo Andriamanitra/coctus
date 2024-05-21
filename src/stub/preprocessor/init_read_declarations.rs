@@ -17,6 +17,19 @@ struct MainWrapper {
     pub main_content: Vec<Cmd>,
 }
 
+/// Edit stub to allow for Pascal-style forward declarations.
+///
+/// Wraps all of the commands in a stub that contains:
+/// - Forward declarations
+/// - The rest of the code
+///
+/// Traverses through the stub commands, taking all declared variables.
+/// Leaves only one MainWrapper command in the stub.
+/// Introduces two new templates:
+/// - `forward_declaration` - similar to a read_one declares one single variable, includes all the
+///   fields in a VariableCommand (not nested under `var`)
+/// - `main_wrapper` - wraps all of the code, contains `forward_declarations` (the above resource,
+///   rendered) and `main_content`
 pub fn transform(stub: &mut Stub) {
     let mut max_nested_depth = 0;
 
