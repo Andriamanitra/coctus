@@ -7,6 +7,7 @@
   {%- set ref = "&" -%}
 {%- endif -%}
 
-{%- if input_comment %}// {{ input_comment }}
+{%- if input_comment %}
+// {{ input_comment }}
 {% endif -%}
-{{ type_kw }} {{ ident }}{{ len }}; 
+{{ type_kw }} {{ ident }}{{ len }};
