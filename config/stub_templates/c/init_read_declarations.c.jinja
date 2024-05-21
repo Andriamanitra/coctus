@@ -1,0 +1,16 @@
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdbool.h>
+
+{%- for line in read_declarations %}
+INIT HERE
+{%- endfor %}
+
+int main() {
+    {%- for line in main_contents %}
+    {{ line }}
+    {%- endfor %}
+
+    return 0;
+}

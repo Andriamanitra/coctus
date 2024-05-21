@@ -1,6 +1,8 @@
 name = "c"
 source_file_ext = "c"
 
+preprocessor = "init_read_declarations"
+
 [type_tokens]
 Int = "int"
 Long = "long long"
