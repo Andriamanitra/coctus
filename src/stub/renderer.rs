@@ -24,6 +24,10 @@ impl Renderer {
         })
     }
 
+    pub fn transform_variable_name(&self, variable_name: &str) -> String {
+        self.lang.variable_name_options.transform_variable_name(&variable_name)
+    }
+
     pub(super) fn tera_render(&self, template_name: &str, context: &mut Context) -> String {
         // Since these are (generally) shared across languages, it makes sense to
         // store it in the "global" context instead of accepting it as parameters.

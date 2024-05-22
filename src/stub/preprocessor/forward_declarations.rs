@@ -38,11 +38,11 @@ pub fn transform(stub: &mut Stub) {
         .commands
         .iter()
         .filter_map(|cmd| {
-        let (cmd, nested_depth) = unpack_cmd(cmd, 0);
+            let (cmd, nested_depth) = unpack_cmd(cmd, 0);
 
-        if nested_depth > max_nested_depth {
-            max_nested_depth = nested_depth;
-        }
+            if nested_depth > max_nested_depth {
+                max_nested_depth = nested_depth;
+            }
 
             if let Cmd::Read(var_cmds)
             | Cmd::LoopLine {
@@ -50,9 +50,9 @@ pub fn transform(stub: &mut Stub) {
             } = cmd
             {
                 Some(var_cmds.into_iter())
-        } else {
-            None
-        }
+            } else {
+                None
+            }
         })
         .flatten()
         .collect();
@@ -61,9 +61,9 @@ pub fn transform(stub: &mut Stub) {
         .iter()
         .filter(|loop_var| forward_declarations.iter().all(|var_cmd| var_cmd.ident != loop_var.to_string()))
         .map(|loop_var| VariableCommand {
-            ident: loop_var.to_string(), 
-            var_type: VarType::Int, 
-            max_length: None, 
+            ident: loop_var.to_string(),
+            var_type: VarType::Int,
+            max_length: None,
             input_comment: String::new(),
         })
         .collect();
@@ -116,7 +116,11 @@ impl Renderable for MainWrapper {
 
 impl Renderable for VariableCommand {
     fn render(&self, renderer: &crate::stub::renderer::Renderer) -> String {
-        let mut context = tera::Context::from_serialize(self).expect("VariableCommand should be serializable");
-        renderer.tera_render("forward_declaration", &mut context)
+        let mut context =
+            tera::Context::from_serialize(self).expect("VariableCommand should be serializable");
+        // Not sure we want to become Java
+        // Ideally we would want to access language but it's now private...
+        context.insert("ident", &renderer.transform_variable_name(&self.ident));
+        renderer.tera_render("forward_declarations", &mut context).trim().to_string()
     }
 }
