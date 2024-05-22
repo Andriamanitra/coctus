@@ -1,0 +1,9 @@
+ParseIn(Inputs);
+{% for var in vars -%}
+{%- if var.var_type == "Word" -%}
+{%- set assign_var = var.ident ~ " := Inputs[" ~ loop.index0 ~ "];" -%}
+{%- else -%}
+{%- set assign_var = var.ident ~ " := " ~ type_parsers[var.var_type] ~ "(Inputs[" ~ loop.index0 ~ "]);" -%}
+{%- endif -%}
+{{ assign_var }}
+{% endfor -%}

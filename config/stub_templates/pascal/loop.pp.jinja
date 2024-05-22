@@ -1,0 +1,6 @@
+for {{ index_ident }} := 0 to {{ count_var }} - 1 do
+begin
+{%- for line in inner %}
+    {{line}}
+{%- endfor %}
+end;

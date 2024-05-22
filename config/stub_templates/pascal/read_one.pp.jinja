@@ -1,0 +1,17 @@
+{%- if var.var_type == "String" -%}
+{%- set readln = "readln(" ~ var.ident ~ ");" -%}
+{%- else -%}
+{%- set parse_input = "ParseIn(Inputs);" -%}
+{%- if var.var_type == "Word" -%}
+{%- set assign_var = var.ident ~ " := Inputs[0];" -%}
+{%- else -%}
+{%- set assign_var = var.ident ~ " := " ~ type_parsers[var.var_type] ~ "(Inputs[0]);" -%}
+{%- endif -%}
+{%- endif -%}
+
+{%- if var.var_type == "String" -%}
+{{ readln }}
+{% else -%}
+{{ parse_input }}
+{{ assign_var }}
+{% endif -%}

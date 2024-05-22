@@ -1,0 +1,25 @@
+{%- set vars_length = vars | length -%}
+{%- if vars_length == 1 -%}
+    {%- set offset = "" -%}
+{%- else -%}
+    {%- set offset = vars_length ~ "*" -%}
+{%- endif -%}
+
+ParseIn(Inputs);
+for {{ index_ident }} := 0 to {{ count_var }} - 1 do
+begin
+{%- for var in vars %}
+    {%- if loop.index0 == 0 -%}
+        {%- set idx = "" -%}
+    {%- else -%}
+        {%- set idx = "+" ~ loop.index0 -%}
+    {%- endif -%}
+    {%- if var.var_type == "Word" -%}
+        {%- set assign_var = var.ident ~ " := Inputs[" ~ offset ~ index_ident ~ idx ~ "];" -%}
+    {%- else -%}
+        {%- set assign_var = var.ident ~ " := " ~ type_parsers[var.var_type] ~ "(Inputs[" ~ offset ~ index_ident ~ idx ~ "]);" -%}
+    {%- endif %}
+    {{ assign_var }}
+{%- endfor %}
+end;
+
