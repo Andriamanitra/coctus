@@ -33,7 +33,7 @@ where
     let preprocessor: String = Deserialize::deserialize(deserializer)?;
     match preprocessor.as_str() {
         "lisp-like" => Ok(Some(preprocessor::lisp_like::transform)),
-        "init_read_declarations" => Ok(Some(preprocessor::init_read_declarations::transform)),
+        "forward-declarations" => Ok(Some(preprocessor::forward_declarations::transform)),
         _ => Err(D::Error::custom(format!("preprocessor {preprocessor} not found."))),
     }
 }

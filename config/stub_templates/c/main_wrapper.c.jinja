@@ -3,8 +3,8 @@
 #include <string.h>
 #include <stdbool.h>
 
-{%- for line in read_declarations %}
-INIT HERE
+{%- for line in forward_declarations %}
+{{- line }}
 {%- endfor %}
 
 int main() {

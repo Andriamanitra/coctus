@@ -39,6 +39,8 @@ impl Renderer {
         });
         context.insert("format_symbols", &format_symbols);
 
+        context.insert("type_tokens", &self.lang.type_tokens);
+
         self.tera
             .render(&format!("{template_name}.{}.jinja", self.lang.source_file_ext), context)
             .with_context(|| format!("Failed to render {} template.", template_name))
@@ -100,7 +102,6 @@ impl Renderer {
             .collect();
 
         context.insert("terms", &terms);
-        context.insert("type_tokens", &self.lang.type_tokens);
         context.insert("output_comments", output_comments);
 
         self.tera_render("write_join", &mut context)
@@ -118,7 +119,6 @@ impl Renderer {
         let var = self.lang.variable_name_options.transform_variable_command(var);
 
         context.insert("var", &var);
-        context.insert("type_tokens", &self.lang.type_tokens);
 
         self.tera_render("read_one", &mut context)
     }
@@ -139,7 +139,6 @@ impl Renderer {
         let index_ident = ALPHABET[nesting_depth];
 
         context.insert("vars", &vars);
-        context.insert("type_tokens", &self.lang.type_tokens);
         context.insert("index_ident", &index_ident);
 
         self.tera_render("read_many", &mut context)
@@ -170,7 +169,6 @@ impl Renderer {
 
         context.insert("count_var", &cased_count_var);
         context.insert("vars", &vars);
-        context.insert("type_tokens", &self.lang.type_tokens);
         context.insert("index_ident", &index_ident);
 
         self.tera_render("loopline", &mut context)
