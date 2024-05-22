@@ -10,8 +10,8 @@ const ALPHABET: [char; 18] = [
 ];
 
 pub struct Renderer {
-    tera: Tera,
     lang: Language,
+    tera: Tera,
     stub: Stub,
 }
 
@@ -40,6 +40,8 @@ impl Renderer {
         context.insert("format_symbols", &format_symbols);
 
         context.insert("type_tokens", &self.lang.type_tokens);
+        context.insert("type_parsers", &self.lang.type_parsers);
+        context.insert("type_extra_tokens", &self.lang.type_extra_tokens);
 
         self.tera
             .render(&format!("{template_name}.{}.jinja", self.lang.source_file_ext), context)
