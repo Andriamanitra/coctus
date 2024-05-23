@@ -17,7 +17,8 @@ enum Casing {
 #[serde(rename_all = "snake_case")]
 pub struct VariableNameOptions {
     casing: Casing,
-    allow_uppercase_vars: Option<bool>,
+    #[serde(default)]
+    allow_uppercase_vars: bool,
     keywords: Vec<String>,
 }
 
@@ -30,10 +31,10 @@ impl VariableNameOptions {
         // CG has special treatment for variables with all uppercase identifiers.
         // In most languages they remain uppercase regardless of variable format.
         // In others (such as ruby where constants are uppercase) they get downcased.
-        let converted_variable_name = match (is_uppercase_string(variable_name), self.allow_uppercase_vars) {
-            (true, Some(false)) => variable_name.to_lowercase(),
-            (true, _) => variable_name.to_string(),
-            (false, _) => self.convert(variable_name),
+        let converted_variable_name = match is_uppercase_string(variable_name) {
+            true if self.allow_uppercase_vars => variable_name.to_string(),
+            true => variable_name.to_lowercase(),
+            false => self.convert(variable_name),
         };
 
         self.escape_keywords(converted_variable_name)

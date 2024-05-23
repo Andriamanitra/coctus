@@ -10,7 +10,7 @@ const ALPHABET: [char; 18] = [
 ];
 
 pub struct Renderer {
-    lang: Language,
+    pub(super) lang: Language,
     tera: Tera,
     stub: Stub,
 }
@@ -22,10 +22,6 @@ impl Renderer {
             tera: config.tera,
             stub,
         })
-    }
-
-    pub fn transform_variable_name(&self, variable_name: &str) -> String {
-        self.lang.variable_name_options.transform_variable_name(&variable_name)
     }
 
     pub(super) fn tera_render(&self, template_name: &str, context: &mut Context) -> String {
