@@ -57,18 +57,13 @@ pub fn transform(stub: &mut Stub) {
         .flatten()
         .collect();
 
-    let mut loop_vars: Vec<VariableCommand> = ALPHABET[0..max_nested_depth - 1]
-        .iter()
-        .filter(|loop_var| forward_declarations.iter().all(|var_cmd| var_cmd.ident != loop_var.to_string()))
-        .map(|loop_var| VariableCommand {
-            ident: loop_var.to_string(),
-            var_type: VarType::Int,
-            max_length: None,
-            input_comment: String::new(),
-        })
-        .collect();
-
-    forward_declarations.append(&mut loop_vars);
+    // Add also the forloop indices to the declarations.
+    forward_declarations.extend(ALPHABET[0..max_nested_depth].iter().map(|loop_var| VariableCommand {
+        ident: loop_var.to_string(),
+        var_type: VarType::Int,
+        max_length: None,
+        input_comment: String::new(),
+    }));
 
     let mut unique_forward_declarations: Vec<VariableCommand> = Vec::new();
     let mut seen_idents: Vec<String> = Vec::new();
@@ -94,7 +89,7 @@ fn unpack_cmd(cmd: &Cmd, nested_depth: usize) -> (Cmd, usize) {
             count_var: _,
             command: subcmd,
         } => unpack_cmd(subcmd, nested_depth + 1),
-        _ => (cmd.clone(), nested_depth + 1),
+        _ => (cmd.clone(), nested_depth),
     }
 }
 
