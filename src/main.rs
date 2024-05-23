@@ -1,5 +1,4 @@
 mod internal;
-
 use std::io::Read;
 use std::path::PathBuf;
 use std::process::Command;
@@ -9,7 +8,7 @@ use anyhow::{anyhow, Context, Result};
 use clap::ArgMatches;
 use clashlib::clash::{Clash, PublicHandle, Testcase};
 use clashlib::stub::StubConfig;
-use clashlib::{solution, stub};
+use clashlib::{__test_helper, solution, stub};
 use directories::ProjectDirs;
 use internal::OutputStyle;
 use rand::seq::IteratorRandom;
@@ -464,7 +463,12 @@ impl App {
                 input
             }
             Some(fname) => std::fs::read_to_string(fname)?,
-            None if args.get_flag("from-reference") => stub::SIMPLE_REFERENCE_STUB.to_owned(),
+            None if args.get_flag("from-reference") => {
+                let reference_clash = __test_helper::sample_puzzle("stub_and_solution_tester").unwrap();
+                let reference_stub = reference_clash.stub_generator().unwrap();
+
+                reference_stub.to_owned()
+            }
             None => {
                 let handle = self.current_handle()?;
                 self.read_clash(&handle)?

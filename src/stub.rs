@@ -5,7 +5,6 @@ mod renderer;
 mod stub_config;
 
 use anyhow::Result;
-use indoc::indoc;
 use language::Language;
 use preprocessor::Renderable;
 use serde::Serialize;
@@ -140,39 +139,10 @@ enum Cmd {
     External(Box<dyn Renderable>),
 }
 
-pub const SIMPLE_REFERENCE_STUB: &str = indoc! {r##"
-    read anInt:int
-    read aFloat:float
-    read Long:long
-    read aWord:word(1)
-    read boolean:bool
-    read ABC1ABc1aBC1AbC1abc1:int
-    read STRING:string(256)
-    read anInt2:int aFloat2:float Long2:long aWord2:word(1) boolean2:bool
-    loop anInt read x:int
-    loop anInt read x:int f:float
-    loop anInt loop anInt read x:int y:int
-    loopline anInt x:int
-    loopline anInt w:word(50)
-    loopline anInt x:int f:float w:word(50)
-    write result
-
-    OUTPUT
-    An output comment
-
-    write join(anInt, aFloat, Long, boolean)
-
-    write join(aWord, "literal", STRING)
-
-    STATEMENT
-    This is the statement
-
-    INPUT
-    anInt: An input comment over anInt
-"##};
-
 #[cfg(test)]
 mod tests {
+    use indoc::indoc;
+
     use super::*;
 
     const COMPLEX_REFERENCE_STUB: &str = indoc! {r##"
