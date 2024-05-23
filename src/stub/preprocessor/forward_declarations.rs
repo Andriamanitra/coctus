@@ -118,9 +118,7 @@ impl Renderable for VariableCommand {
     fn render(&self, renderer: &crate::stub::renderer::Renderer) -> String {
         let mut context =
             tera::Context::from_serialize(self).expect("VariableCommand should be serializable");
-        // Not sure we want to become Java
-        // Ideally we would want to access language but it's now private...
-        context.insert("ident", &renderer.transform_variable_name(&self.ident));
+        context.insert("ident", &renderer.lang.variable_name_options.transform_variable_name(&self.ident));
         renderer.tera_render("forward_declarations", &mut context).trim().to_string()
     }
 }
