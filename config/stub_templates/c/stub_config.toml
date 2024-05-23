@@ -1,8 +1,6 @@
 name = "c"
 source_file_ext = "c"
 
-preprocessor = "forward-declarations"
-
 [type_tokens]
 Int = "int"
 Long = "long long"

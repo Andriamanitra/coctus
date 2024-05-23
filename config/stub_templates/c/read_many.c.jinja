@@ -1,3 +1,8 @@
+{%- for var in vars %}
+{%- if var.input_comment -%}// {{ var.ident }}: {{ var.input_comment }}
+{% endif -%}
+{% endfor -%}
+
 {# Setup of types (%d, %s etc.) and variable references (& or "") inside the scanf function #}
 {%- set_global types = "" -%}
 {%- set_global var_refs = [] -%}
@@ -12,5 +17,22 @@
   {%- set_global types = types ~ format_symbols[var.var_type] -%}
 {%- endfor -%}
 
+{%- if single_type -%}
 
+{%- set_global type = vars[0].var_type -%}
+{{ type_tokens[type] }} {{ vars | map(attribute="ident") | join(sep=", ") }};
 scanf("{{ types }}", {{ var_refs | join(sep=", ") }});
+
+{%- else %}
+
+{%- for var in vars -%}
+{%- if var.var_type == "String" or var.var_type == "Word" -%}
+  {%- set len = [var.max_length ~ " + 1"] -%}
+{%- else -%}
+  {%- set len = "" -%}
+{%- endif -%}
+{{ type_tokens[var.var_type] }} {{ var.ident }}{{ len }};
+{% endfor -%}
+scanf("{{ types }}", {{ var_refs | join(sep=", ") }});
+
+{%- endif %}
