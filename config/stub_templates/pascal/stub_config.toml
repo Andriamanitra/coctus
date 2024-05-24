@@ -30,7 +30,7 @@ casing = "pascal_case"
 allow_uppercase_vars = false
 # TODO
 keywords = [
-  "string", "boolean", "Boolean",
+  "string", "boolean",
 
   "auto", "break", "case", "char",
   "const", "continue", "default", "do",

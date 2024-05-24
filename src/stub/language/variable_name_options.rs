@@ -49,8 +49,19 @@ impl VariableNameOptions {
         }
     }
 
+    /// Escapes a variable name if it is contained in the vector of (disallowed)
+    /// keywords. This performs a case-insensitive comparison.
     fn escape_keywords(&self, variable_name: String) -> String {
-        if self.keywords.contains(&variable_name) {
+        // This should be language dependent.
+        // "string STRING" is valid cpp but "STRING : String" is not valid Pascal
+        // even though the keyword "string" is expected to be escaped in both languages.
+        if self
+            .keywords
+            .iter()
+            .map(|kw| kw.to_uppercase())
+            .collect::<Vec<_>>()
+            .contains(&variable_name.to_uppercase())
+        {
             format!("_{variable_name}")
         } else {
             variable_name
