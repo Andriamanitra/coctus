@@ -41,3 +41,4 @@ keywords = [
   "struct", "switch", "typedef", "union",
   "unsigned", "void", "volatile", "while"
 ]
+case_insensitive_keywords = true

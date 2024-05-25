@@ -20,6 +20,9 @@ pub struct VariableNameOptions {
     #[serde(default)]
     allow_uppercase_vars: bool,
     keywords: Vec<String>,
+    /// Whether a keyword should escape case insensitive variations.
+    /// Defaults to case sensitive.
+    case_insensitive_keywords: Option<bool>,
 }
 
 fn is_uppercase_string(string: &str) -> bool {
@@ -50,18 +53,20 @@ impl VariableNameOptions {
     }
 
     /// Escapes a variable name if it is contained in the vector of (disallowed)
-    /// keywords. This performs a case-insensitive comparison.
+    /// keywords.
     fn escape_keywords(&self, variable_name: String) -> String {
-        // This should be language dependent.
+        // This is language dependent:
         // "string STRING" is valid cpp but "STRING : String" is not valid Pascal
         // even though the keyword "string" is expected to be escaped in both languages.
-        if self
-            .keywords
-            .iter()
-            .map(|kw| kw.to_uppercase())
-            .collect::<Vec<_>>()
-            .contains(&variable_name.to_uppercase())
-        {
+        let case_insensitive = self.case_insensitive_keywords.unwrap_or(false);
+
+        let cmp_function = if case_insensitive {
+            str::eq_ignore_ascii_case
+        } else {
+            <str as PartialEq>::eq
+        };
+
+        if self.keywords.iter().any(|kw| cmp_function(&kw, &variable_name)) {
             format!("_{variable_name}")
         } else {
             variable_name
@@ -147,5 +152,31 @@ mod tests {
         assert_eq!("dateOfBirth", convert("dateOfBirth"));
         assert_eq!("phrase1BrailleTopRow", convert("Phrase1BrailleTopRow"));
         assert_eq!("craneASCIIRepresentation", convert("craneASCIIRepresentation"));
+    }
+
+    #[test]
+    fn test_keywords_case_sensitive() {
+        let variable_name_options = VariableNameOptions {
+            casing: Casing::SnakeCase,
+            allow_uppercase_vars: true,
+            keywords: vec!["boolean".to_string()],
+            case_insensitive_keywords: None,
+        };
+
+        // Does not change Boolean into _Boolean
+        assert_eq!(variable_name_options.escape_keywords("Boolean".to_string()), "Boolean".to_string());
+    }
+
+    #[test]
+    fn test_keywords_case_insensitive() {
+        let variable_name_options = VariableNameOptions {
+            casing: Casing::SnakeCase,
+            allow_uppercase_vars: true,
+            keywords: vec!["boolean".to_string()],
+            case_insensitive_keywords: Some(true),
+        };
+
+        // Changes Boolean into _Boolean
+        assert_eq!(variable_name_options.escape_keywords("Boolean".to_string()), "_Boolean".to_string());
     }
 }
