@@ -22,7 +22,8 @@ pub struct VariableNameOptions {
     keywords: Vec<String>,
     /// Whether a keyword should escape case insensitive variations.
     /// Defaults to case sensitive.
-    case_insensitive_keywords: Option<bool>,
+    #[serde(default)]
+    case_insensitive_keywords: bool,
 }
 
 fn is_uppercase_string(string: &str) -> bool {
@@ -58,9 +59,7 @@ impl VariableNameOptions {
         // This is language dependent:
         // "string STRING" is valid cpp but "STRING : String" is not valid Pascal
         // even though the keyword "string" is expected to be escaped in both languages.
-        let case_insensitive = self.case_insensitive_keywords.unwrap_or(false);
-
-        let cmp_function = if case_insensitive {
+        let cmp_function = if self.case_insensitive_keywords {
             str::eq_ignore_ascii_case
         } else {
             <str as PartialEq>::eq
@@ -160,7 +159,7 @@ mod tests {
             casing: Casing::SnakeCase,
             allow_uppercase_vars: true,
             keywords: vec!["boolean".to_string()],
-            case_insensitive_keywords: None,
+            case_insensitive_keywords: false,
         };
 
         // Does not change Boolean into _Boolean
@@ -173,7 +172,7 @@ mod tests {
             casing: Casing::SnakeCase,
             allow_uppercase_vars: true,
             keywords: vec!["boolean".to_string()],
-            case_insensitive_keywords: Some(true),
+            case_insensitive_keywords: true,
         };
 
         // Changes Boolean into _Boolean
