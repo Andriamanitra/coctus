@@ -2,6 +2,6 @@
 // {{ line }}
 {% endfor %}
 {%- for line in messages -%}
-writeln('{{line}}');
+writeln('{{ line | replace(from="'", to="''") }}');
 {% endfor -%}
 flush(StdErr); flush(output); // Codingame compliance
