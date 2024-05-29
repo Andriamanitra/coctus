@@ -44,14 +44,10 @@ pub fn transform(stub: &mut Stub) {
                 max_nested_depth = nested_depth;
             }
 
-            if let Cmd::Read(var_cmds)
-            | Cmd::LoopLine {
-                variables: var_cmds, ..
-            } = cmd
-            {
-                Some(var_cmds.into_iter())
-            } else {
-                None
+            match cmd {
+                Cmd::LoopLine{ variables: var_cmds, ..} => Some(var_cmds.into_iter()),
+                Cmd::Read(var_cmds) => Some(var_cmds.into_iter()),
+                _ => None,
             }
         })
         .flatten()
