@@ -65,7 +65,7 @@ impl VariableNameOptions {
             <str as PartialEq>::eq
         };
 
-        if self.keywords.iter().any(|kw| is_equal(&kw, &variable_name)) {
+        if self.keywords.iter().any(|kw| is_equal(kw, &variable_name)) {
             format!("_{variable_name}")
         } else {
             variable_name

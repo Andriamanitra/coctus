@@ -42,7 +42,9 @@ pub fn transform(stub: &mut Stub) {
             }
 
             match cmd {
-                Cmd::LoopLine{ variables: var_cmds, ..} => Some(var_cmds.into_iter()),
+                Cmd::LoopLine {
+                    variables: var_cmds, ..
+                } => Some(var_cmds.into_iter()),
                 Cmd::Read(var_cmds) => Some(var_cmds.into_iter()),
                 _ => None,
             }
