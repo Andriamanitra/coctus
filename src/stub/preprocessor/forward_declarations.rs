@@ -1,9 +1,6 @@
 use super::Renderable;
+use crate::stub::renderer::ALPHABET;
 use crate::stub::{Cmd, Stub, VarType, VariableCommand};
-
-const ALPHABET: [char; 18] = [
-    'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
-];
 
 /// Change the Stub structure into: [ReadDeclarations, MainContents(old_cmds)]
 /// This is relevant for Pascal.
