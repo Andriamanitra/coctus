@@ -28,17 +28,16 @@ Word = "UNSUPPORTED_IN_CODINGAME"
 [variable_name_options]
 casing = "pascal_case"
 allow_uppercase_vars = false
-# TODO
 keywords = [
-  "string", "boolean",
-
-  "auto", "break", "case", "char",
-  "const", "continue", "default", "do",
-  "double", "else", "enum", "extern",
-  "float", "for", "goto", "if",
-  "int", "long", "register", "return",
-  "short", "signed", "sizeof", "static",
-  "struct", "switch", "typedef", "union",
-  "unsigned", "void", "volatile", "while"
+  "inputs", "answer",
+  "string", "boolean", "object", "operator", 
+# https://www.tutorialspoint.com/pascal/pascal_basic_syntax.htm
+  "and", "array", "begin", "case", "const",
+  "div", "do", "downto", "else", "end",
+  "file", "for", "function", "goto", "if",
+  "in", "label", "mod", "nil", "not",
+  "of", "or", "packed", "procedure", "program",
+  "record", "repeat", "set", "then", "to",
+  "type", "until", "var", "while", "with"
 ]
 case_insensitive_keywords = true
