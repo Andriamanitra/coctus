@@ -59,13 +59,13 @@ impl VariableNameOptions {
         // This is language dependent:
         // "string STRING" is valid cpp but "STRING : String" is not valid Pascal
         // even though the keyword "string" is expected to be escaped in both languages.
-        let cmp_function = if self.case_insensitive_keywords {
+        let is_equal = if self.case_insensitive_keywords {
             str::eq_ignore_ascii_case
         } else {
             <str as PartialEq>::eq
         };
 
-        if self.keywords.iter().any(|kw| cmp_function(&kw, &variable_name)) {
+        if self.keywords.iter().any(|kw| is_equal(&kw, &variable_name)) {
             format!("_{variable_name}")
         } else {
             variable_name
