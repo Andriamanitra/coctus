@@ -50,10 +50,7 @@ impl StubConfig {
 
         let mut tera = Tera::default();
 
-        match tera.add_raw_templates(templates) {
-            Ok(_) => (),
-            Err(err) => return Err(err.into()),
-        }
+        tera.add_raw_templates(templates)?;
         Ok(Self { language, tera })
     }
 }
