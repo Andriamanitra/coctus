@@ -89,6 +89,7 @@ fn unpack_cmd(cmd: &Cmd, nested_depth: usize) -> (Cmd, usize) {
             count_var: _,
             command: subcmd,
         } => unpack_cmd(subcmd, nested_depth + 1),
+        Cmd::LoopLine { .. } => (cmd.clone(), nested_depth + 1),
         _ => (cmd.clone(), nested_depth),
     }
 }
