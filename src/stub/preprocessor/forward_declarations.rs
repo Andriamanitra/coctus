@@ -61,18 +61,11 @@ pub fn transform(stub: &mut Stub) {
         input_comment: String::new(),
     }));
 
-    let mut unique_forward_declarations: Vec<VariableCommand> = Vec::new();
-    let mut seen_idents: Vec<String> = Vec::new();
-
-    for var_cmd in &forward_declarations {
-        if !seen_idents.contains(&var_cmd.ident) {
-            seen_idents.push(var_cmd.ident.clone());
-            unique_forward_declarations.push(var_cmd.clone());
-        }
-    }
+    let mut seen = std::collections::BTreeSet::<String>::new();
+    forward_declarations.retain(|var_cmd| seen.insert(var_cmd.ident.clone()));
 
     let wrapper = MainWrapper {
-        forward_declarations: unique_forward_declarations,
+        forward_declarations,
         main_content: stub.commands.drain(..).collect(),
     };
 
