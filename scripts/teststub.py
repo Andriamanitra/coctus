@@ -1,14 +1,43 @@
 import glob
 import random
 import sys
+import tempfile
+import os
 from subprocess import run
 from os.path import expanduser, basename, splitext
+from collections.abc import Callable
 
 CLASH_DIR = expanduser("~/.local/share/coctus/clashes")
 COCTUS_EXE = "target/release/coctus"
 
+def check_c(src: str) -> bool:
+    cmd = ["gcc", "-fsyntax-only", "-x", "c", "-"]
+    run_check = run(cmd, input=src, capture_output=True)
+    return run_check.returncode == 0
 
-def check_stubgen(*, clash_ids: list[str], langs_to_check: dict[str, list[str]]) -> dict:
+def check_cpp(src: str) -> bool:
+    cmd = ["gcc", "-fsyntax-only", "-x", "c++", "-"]
+    run_check = run(cmd, input=src, capture_output=True)
+    return run_check.returncode == 0
+
+def check_python(src: str) -> bool:
+    with tempfile.NamedTemporaryFile() as tmp:
+        tmp.write(src)
+        tmp.flush()
+        cmd = ["mypy", tmp.name]
+        run_check = run(cmd, capture_output=True)
+        return run_check.returncode == 0
+
+def check_rust(src: str) -> bool:
+    cmd = ["rustc", "--emit=metadata", "-"]
+    run_check = run(cmd, input=src, capture_output=True)
+    garbage = "librust_out.rmeta"
+    if os.path.isfile(garbage):
+        os.remove(garbage)
+    return run_check.returncode == 0
+
+
+def check_stubgen(*, clash_ids: list[str], langs_to_check: dict[str, Callable]) -> dict:
     """
     Checks that stubgen generates valid code for all given clash_ids.
     Returns the number of errors encountered.
@@ -29,35 +58,25 @@ def check_stubgen(*, clash_ids: list[str], langs_to_check: dict[str, list[str]])
     for cid in clash_ids:
         run([COCTUS_EXE, "next", cid], capture_output=True)
 
-        for lang, check_cmd in langs_to_check.items():
+        for lang, check_lang_fn in langs_to_check.items():
             res = results[lang]
             run_stubgen = run([COCTUS_EXE, "generate-stub", lang], capture_output=True)
+            if run_stubgen.returncode != 0 and "provides no input stub generator" in run_stubgen.stderr.decode():
+                res["n_skipped"] += 1
+                continue
+            res["n_checked"] += 1
             if run_stubgen.returncode != 0:
                 stderr = run_stubgen.stderr.decode("utf-8")
-                if "provides no input stub generator" in stderr:
-                    res["n_skipped"] += 1
-                else:
-                    res["n_checked"] += 1
-                    res["n_errors"] += 1
-                    print(f"\nStub generator for {lang} returned non-zero for clash {cid}")
-                    print(SEPARATOR)
-                    print(run_stubgen.stderr.decode("utf-8"))
-                    print(SEPARATOR)
-                    print()
-            else:
-                run_check = run(check_cmd, input=run_stubgen.stdout, capture_output=True)
-                res["n_checked"] += 1
-                if run_check.returncode != 0:
-                    res["n_errors"] += 1
-                    print(f"\nError with {lang} stub for clash {cid}")
-                    print(f"https://www.codingame.com/contribute/view/{cid}")
-                    print(SEPARATOR)
-                    print(run_check.stderr.decode("utf-8"))
-                    print(SEPARATOR)
-                    print(run_stubgen.stdout.decode("utf-8"))
-                    print(SEPARATOR)
-                    print()
-
+                res["n_errors"] += 1
+                print(f"\nStub generator for {lang} returned non-zero for clash {cid}")
+                print(SEPARATOR)
+                print(run_stubgen.stderr.decode("utf-8"))
+                print(SEPARATOR)
+                print()
+            elif not check_lang_fn(run_stubgen.stdout):
+                res["n_errors"] += 1
+                print(f"\nGenerated bad {lang} stub for clash {cid}")
+                print(f"https://www.codingame.com/contribute/view/{cid}")
     return results
 
 
@@ -72,9 +91,10 @@ def main(n = None):
         clash_ids = random.sample(clash_ids, n)
 
     langs_to_check = {
-        "c": ["gcc", "-fsyntax-only", "-x", "c", "-"],
-        "cpp": ["gcc", "-fsyntax-only", "-x", "c++", "-"],
-        "rust": ["rustc", "--emit=metadata", "-"],
+        "c": check_c,
+        "cpp": check_cpp,
+        "python": check_python,
+        "rust": check_rust,
     }
 
     lang_results = check_stubgen(clash_ids=clash_ids, langs_to_check=langs_to_check)
