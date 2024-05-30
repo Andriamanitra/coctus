@@ -52,7 +52,7 @@ pub fn transform(stub: &mut Stub) {
         .flatten()
         .collect();
 
-    // Add also the forloop indices to the declarations.
+    // Add the loop indices to the declarations
     forward_declarations.extend(ALPHABET[0..max_nested_depth].iter().map(|loop_var| VariableCommand {
         ident: loop_var.to_string(),
         var_type: VarType::Int,
