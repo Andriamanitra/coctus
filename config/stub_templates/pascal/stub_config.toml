@@ -1,5 +1,5 @@
 name = "pascal"
-source_file_ext = "pp"
+source_file_ext = "pas"
 
 preprocessor = "forward-declarations"
 
