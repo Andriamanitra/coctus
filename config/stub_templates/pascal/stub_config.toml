@@ -29,8 +29,13 @@ Word = "UNSUPPORTED_IN_CODINGAME"
 casing = "pascal_case"
 allow_uppercase_vars = false
 keywords = [
+  # Special CG variables. Inputs is a buffer-like variable used for parsing, 
+  # and Answer is the name of the program.
   "inputs", "answer",
-  "string", "boolean", "object", "operator", 
+
+  # Others
+  "boolean",
+
   # https://wiki.freepascal.org/Reserved_words#Reserved_words_in_Turbo_Pascal
   "and", "array", "asm", "begin", "break", "case", "const", "constructor",
   "continue", "destructor", "div", "do", "downto", "else", "end",
