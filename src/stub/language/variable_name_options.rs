@@ -20,8 +20,8 @@ pub struct VariableNameOptions {
     #[serde(default)]
     allow_uppercase_vars: bool,
     keywords: Vec<String>,
-    /// Whether a keyword should escape case insensitive variations.
-    /// Defaults to case sensitive.
+    /// Set to true if the casing of keywords does not matter in the language (default=false)
+    /// Used when determining if an identifier needs to be renamed when generating a stub.
     #[serde(default)]
     case_insensitive_keywords: bool,
 }
