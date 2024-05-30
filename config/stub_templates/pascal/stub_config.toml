@@ -31,13 +31,25 @@ allow_uppercase_vars = false
 keywords = [
   "inputs", "answer",
   "string", "boolean", "object", "operator", 
-# https://www.tutorialspoint.com/pascal/pascal_basic_syntax.htm
-  "and", "array", "begin", "case", "const",
-  "div", "do", "downto", "else", "end",
-  "file", "for", "function", "goto", "if",
-  "in", "label", "mod", "nil", "not",
-  "of", "or", "packed", "procedure", "program",
-  "record", "repeat", "set", "then", "to",
-  "type", "until", "var", "while", "with"
+  # https://wiki.freepascal.org/Reserved_words#Reserved_words_in_Turbo_Pascal
+  "and", "array", "asm", "begin", "break", "case", "const", "constructor",
+  "continue", "destructor", "div", "do", "downto", "else", "end",
+  "false", "file", "for", "function", "goto", "if", "implementation",
+  "in", "inline", "interface", "label", "mod", "nil", "not", "object",
+  "of", "on", "operator", "or", "packed", "procedure", "program", "record",
+  "repeat", "set", "shl", "shr", "string", "then", "to", "true", "type",
+  "unit", "until", "uses", "var", "while", "with", "xor",
+
+  # https://wiki.freepascal.org/Reserved_words#Reserved_words_in_Object_Pascal
+  "as", "class", "constref", "dispose", "except", "exit", "exports",
+  "finalization", "finally", "inherited", "initialization", "is", "library",
+  "new", "on", "out", "property", "raise", "self", "threadvar", "try",
+
+  # https://wiki.freepascal.org/Reserved_words#Modifiers_(directives)
+  "absolute", "abstract", "alias", "assembler", "cdecl", "Cppdecl",
+  "default", "export", "external", "forward", "generic", "index", "local",
+  "name", "nostackframe", "oldfpccall", "override", "pascal", "private",
+  "protected", "public", "published", "read", "register", "reintroduce",
+  "safecall", "softfloat", "specialize", "stdcall", "virtual", "write"
 ]
 case_insensitive_keywords = true
