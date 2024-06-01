@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from __future__ import annotations
 
 import argparse
@@ -10,10 +11,9 @@ import tempfile
 from collections.abc import Callable
 from os.path import basename, expanduser, splitext
 from subprocess import run
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 CLASH_DIR = expanduser("~/.local/share/coctus/clashes")
-COCTUS_EXE = os.path.abspath("target/release/coctus")
 
 if TYPE_CHECKING:
     MaybeError = str | None
@@ -46,7 +46,12 @@ def check_python(src: bytes) -> MaybeError:
         return None
 
 
-def check_stubgen(*, clash_ids: list[str], langs_to_check: dict[str, CheckFn]) -> dict:
+def check_stubgen(
+        *,
+        coctus: str = "coctus",
+        clash_ids: list[str],
+        langs_to_check: dict[str, CheckFn]
+) -> dict[str, Any]:
     """
     Checks that stubgen generates valid code for all given clash_ids.
     langs_to_check should be a dict where keys are language names for the
@@ -62,11 +67,11 @@ def check_stubgen(*, clash_ids: list[str], langs_to_check: dict[str, CheckFn]) -
     results = {lang: {"n_skipped": 0, "n_checked": 0, "n_errors": 0} for lang in langs_to_check}
 
     for cid in clash_ids:
-        run([COCTUS_EXE, "next", cid], capture_output=True, check=False)
+        run([coctus, "next", cid], capture_output=True, check=False)
 
         for lang, check_for_errors in langs_to_check.items():
             res = results[lang]
-            run_stubgen = run([COCTUS_EXE, "generate-stub", lang], capture_output=True, check=False)
+            run_stubgen = run([coctus, "generate-stub", lang], capture_output=True, check=False)
             stderr = run_stubgen.stderr.decode("utf-8")
 
             if run_stubgen.returncode != 0 and "provides no input stub generator" in stderr:
@@ -114,6 +119,14 @@ def get_args(raw_args: list[str]) -> argparse.Namespace:
     )
     argparser.add_argument("-n", type=int, help="number of clashes to check")
     argparser.add_argument(
+        "-e",
+        "--executable",
+        metavar="COCTUS_EXE",
+        default="target/release/coctus",
+        type=os.path.abspath,
+        help="path to coctus executable to use for generating stubs",
+    )
+    argparser.add_argument(
         "langs",
         choices=lang_checks,
         nargs="*",
@@ -130,8 +143,6 @@ def get_args(raw_args: list[str]) -> argparse.Namespace:
 
 def main() -> None:
     args = get_args(sys.argv[1:])
-    langs_to_check = args.langs_to_check
-    maximum_number_of_clashes_to_check = args.n
 
     clash_ids = []
     for full_clash_path in glob.glob(f"{CLASH_DIR}/*.json"):
@@ -139,11 +150,15 @@ def main() -> None:
         clash_id, _ = splitext(filename)
         clash_ids.append(clash_id)
 
-    if maximum_number_of_clashes_to_check is not None:
-        clash_ids = random.sample(clash_ids, maximum_number_of_clashes_to_check)
+    if args.n is not None:
+        clash_ids = random.sample(clash_ids, args.n)
 
     with (tempfile.TemporaryDirectory() as tmpdir, contextlib.chdir(tmpdir)):
-        lang_results = check_stubgen(clash_ids=clash_ids, langs_to_check=langs_to_check)
+        lang_results = check_stubgen(
+            coctus=args.executable,
+            clash_ids=clash_ids,
+            langs_to_check=args.langs_to_check
+        )
 
     for lang, results in lang_results.items():
         print(f"{lang}: {results}")
