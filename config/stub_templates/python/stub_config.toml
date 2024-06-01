@@ -21,7 +21,6 @@ keywords = [
     "as", "def", "from", "nonlocal", "while",
     "assert", "del", "global", "not", "with",
     "async", "elif", "if", "or", "yield",
-
     # https://docs.python.org/3/library/functions.html
     "abs", "aiter", "all", "anext", "any", "ascii", "bin", "bool",
     "breakpoint", "bytearray", "bytes", "callable", "chr", "classmethod",
