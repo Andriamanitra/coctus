@@ -322,4 +322,9 @@ mod tests {
     fn test_reference_stub_cpp() {
         generate("cpp", COMPLEX_REFERENCE_STUB).unwrap();
     }
+
+    #[test]
+    fn test_reference_stub_pascal() {
+        generate("pascal", COMPLEX_REFERENCE_STUB).unwrap();
+    }
 }

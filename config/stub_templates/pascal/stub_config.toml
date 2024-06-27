@@ -1,0 +1,52 @@
+name = "pascal"
+source_file_ext = "pas"
+
+preprocessor = "forward-declarations"
+
+[type_tokens]
+Int = "Int32"
+Long = "Int64"
+Float = "Extended"
+Bool = "Int32"
+String = "String"
+Word = "String"
+
+[type_parsers]
+Int = "StrToInt"
+Long = "StrToInt64"
+Float = "StrToFloat"
+Bool = "StrToInt"
+
+[variable_name_options]
+casing = "pascal_case"
+allow_uppercase_vars = false
+keywords = [
+  # Special CG variables. Inputs is a buffer-like variable used for parsing, 
+  # and Answer is the name of the program.
+  "inputs", "answer",
+
+  # Others
+  "boolean",
+
+  # https://wiki.freepascal.org/Reserved_words#Reserved_words_in_Turbo_Pascal
+  "and", "array", "asm", "begin", "break", "case", "const", "constructor",
+  "continue", "destructor", "div", "do", "downto", "else", "end",
+  "false", "file", "for", "function", "goto", "if", "implementation",
+  "in", "inline", "interface", "label", "mod", "nil", "not", "object",
+  "of", "on", "operator", "or", "packed", "procedure", "program", "record",
+  "repeat", "set", "shl", "shr", "string", "then", "to", "true", "type",
+  "unit", "until", "uses", "var", "while", "with", "xor",
+
+  # https://wiki.freepascal.org/Reserved_words#Reserved_words_in_Object_Pascal
+  "as", "class", "constref", "dispose", "except", "exit", "exports",
+  "finalization", "finally", "inherited", "initialization", "is", "library",
+  "new", "on", "out", "property", "raise", "self", "threadvar", "try",
+
+  # https://wiki.freepascal.org/Reserved_words#Modifiers_(directives)
+  "absolute", "abstract", "alias", "assembler", "cdecl", "Cppdecl",
+  "default", "export", "external", "forward", "generic", "index", "local",
+  "name", "nostackframe", "oldfpccall", "override", "pascal", "private",
+  "protected", "public", "published", "read", "register", "reintroduce",
+  "safecall", "softfloat", "specialize", "stdcall", "virtual", "write"
+]
+case_insensitive_keywords = true

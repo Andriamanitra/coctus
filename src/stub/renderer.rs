@@ -5,13 +5,13 @@ use tera::{Context, Tera};
 
 use super::{Cmd, JoinTerm, Language, Stub, StubConfig, VariableCommand};
 
-const ALPHABET: [char; 18] = [
+pub const ALPHABET: [char; 18] = [
     'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
 ];
 
 pub struct Renderer {
+    pub(super) lang: Language,
     tera: Tera,
-    lang: Language,
     stub: Stub,
 }
 
@@ -38,6 +38,9 @@ impl Renderer {
             "Word": "%s",
         });
         context.insert("format_symbols", &format_symbols);
+
+        context.insert("type_tokens", &self.lang.type_tokens);
+        context.insert("type_parsers", &self.lang.type_parsers);
 
         self.tera
             .render(&format!("{template_name}.{}.jinja", self.lang.source_file_ext), context)
@@ -100,7 +103,6 @@ impl Renderer {
             .collect();
 
         context.insert("terms", &terms);
-        context.insert("type_tokens", &self.lang.type_tokens);
         context.insert("output_comments", output_comments);
 
         self.tera_render("write_join", &mut context)
@@ -118,7 +120,6 @@ impl Renderer {
         let var = self.lang.variable_name_options.transform_variable_command(var);
 
         context.insert("var", &var);
-        context.insert("type_tokens", &self.lang.type_tokens);
 
         self.tera_render("read_one", &mut context)
     }
@@ -139,7 +140,6 @@ impl Renderer {
         let index_ident = ALPHABET[nesting_depth];
 
         context.insert("vars", &vars);
-        context.insert("type_tokens", &self.lang.type_tokens);
         context.insert("index_ident", &index_ident);
 
         self.tera_render("read_many", &mut context)
@@ -170,7 +170,6 @@ impl Renderer {
 
         context.insert("count_var", &cased_count_var);
         context.insert("vars", &vars);
-        context.insert("type_tokens", &self.lang.type_tokens);
         context.insert("index_ident", &index_ident);
 
         self.tera_render("loopline", &mut context)

@@ -17,8 +17,14 @@ enum Casing {
 #[serde(rename_all = "snake_case")]
 pub struct VariableNameOptions {
     casing: Casing,
-    allow_uppercase_vars: Option<bool>,
+    #[serde(default)]
+    allow_uppercase_vars: bool,
     keywords: Vec<String>,
+    /// Set to true if the casing of keywords does not matter in the language
+    /// (default=false). Used when determining if an identifier needs to be
+    /// renamed when generating a stub.
+    #[serde(default)]
+    case_insensitive_keywords: bool,
 }
 
 fn is_uppercase_string(string: &str) -> bool {
@@ -30,10 +36,10 @@ impl VariableNameOptions {
         // CG has special treatment for variables with all uppercase identifiers.
         // In most languages they remain uppercase regardless of variable format.
         // In others (such as ruby where constants are uppercase) they get downcased.
-        let converted_variable_name = match (is_uppercase_string(variable_name), self.allow_uppercase_vars) {
-            (true, Some(false)) => variable_name.to_lowercase(),
-            (true, _) => variable_name.to_string(),
-            (false, _) => self.convert(variable_name),
+        let converted_variable_name = match is_uppercase_string(variable_name) {
+            true if self.allow_uppercase_vars => variable_name.to_string(),
+            true => variable_name.to_lowercase(),
+            false => self.convert(variable_name),
         };
 
         self.escape_keywords(converted_variable_name)
@@ -48,8 +54,19 @@ impl VariableNameOptions {
         }
     }
 
+    /// Escapes a variable name if it is contained in the vector of (disallowed)
+    /// keywords.
     fn escape_keywords(&self, variable_name: String) -> String {
-        if self.keywords.contains(&variable_name) {
+        // This is language dependent:
+        // "string STRING" is valid cpp but "STRING : String" is not valid Pascal
+        // even though the keyword "string" is expected to be escaped in both languages.
+        let is_equal = if self.case_insensitive_keywords {
+            str::eq_ignore_ascii_case
+        } else {
+            <str as PartialEq>::eq
+        };
+
+        if self.keywords.iter().any(|kw| is_equal(kw, &variable_name)) {
             format!("_{variable_name}")
         } else {
             variable_name
@@ -135,5 +152,31 @@ mod tests {
         assert_eq!("dateOfBirth", convert("dateOfBirth"));
         assert_eq!("phrase1BrailleTopRow", convert("Phrase1BrailleTopRow"));
         assert_eq!("craneASCIIRepresentation", convert("craneASCIIRepresentation"));
+    }
+
+    #[test]
+    fn test_keywords_case_sensitive() {
+        let variable_name_options = VariableNameOptions {
+            casing: Casing::SnakeCase,
+            allow_uppercase_vars: true,
+            keywords: vec!["boolean".to_string()],
+            case_insensitive_keywords: false,
+        };
+
+        // Does not change Boolean into _Boolean
+        assert_eq!(variable_name_options.escape_keywords("Boolean".to_string()), "Boolean".to_string());
+    }
+
+    #[test]
+    fn test_keywords_case_insensitive() {
+        let variable_name_options = VariableNameOptions {
+            casing: Casing::SnakeCase,
+            allow_uppercase_vars: true,
+            keywords: vec!["boolean".to_string()],
+            case_insensitive_keywords: true,
+        };
+
+        // Changes Boolean into _Boolean
+        assert_eq!(variable_name_options.escape_keywords("Boolean".to_string()), "_Boolean".to_string());
     }
 }

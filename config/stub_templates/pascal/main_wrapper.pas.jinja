@@ -1,0 +1,25 @@
+program Answer;
+{$H+}
+uses sysutils, classes, math;
+
+// Helper to read a line and split tokens
+procedure ParseIn(Inputs: TStrings) ;
+var Line : string;
+begin
+    readln(Line);
+    Inputs.Clear;
+    Inputs.Delimiter := ' ';
+    Inputs.DelimitedText := Line;
+end;
+
+var
+    {%- for line in forward_declarations %}
+    {{ line }}
+    {%- endfor %}
+    Inputs : TStringList;
+begin
+    Inputs := TStringList.Create;
+    {%- for line in main_contents %}
+    {{ line }}
+    {%- endfor %}
+end.

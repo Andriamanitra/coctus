@@ -50,8 +50,7 @@ impl StubConfig {
 
         let mut tera = Tera::default();
 
-        tera.add_raw_templates(templates)
-            .expect("Adding embedded templates to tera should not fail");
+        tera.add_raw_templates(templates)?;
         Ok(Self { language, tera })
     }
 }
