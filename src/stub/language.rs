@@ -33,10 +33,6 @@ pub(super) struct Language {
     // But sometimes you need two tokens per type for a language.
     // - Int32 and StrToInt for Pascal.
     pub type_parsers: Option<TypeTokens>,
-    // And parsing symbols %d %f %ld/%lld.
-    // Some languages share them for reading/writing while others
-    // like Pascal / OCaml / F# use them only for printing (in CG)
-    pub type_extra_tokens: Option<TypeTokens>,
     #[serde(deserialize_with = "deser_preprocessor", default)]
     pub preprocessor: Option<Preprocessor>,
 }

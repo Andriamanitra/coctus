@@ -17,14 +17,6 @@ Long = "StrToInt64"
 Float = "StrToFloat"
 Bool = "StrToInt"
 
-[type_extra_tokens]
-Int = "%d"
-Long = "%ld"
-Float = "%f"
-Bool = "UNSUPPORTED_IN_CODINGAME"
-String = "%s"
-Word = "UNSUPPORTED_IN_CODINGAME"
-
 [variable_name_options]
 casing = "pascal_case"
 allow_uppercase_vars = false
