@@ -1,91 +1,168 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import argparse
+import contextlib
 import glob
+import os
 import random
 import sys
+import tempfile
+from collections.abc import Callable
+from os.path import basename, expanduser, splitext
 from subprocess import run
-from os.path import expanduser, basename, splitext
+from typing import TYPE_CHECKING, Any
 
 CLASH_DIR = expanduser("~/.local/share/coctus/clashes")
-COCTUS_EXE = "target/release/coctus"
+
+if TYPE_CHECKING:
+    MaybeError = str | None
+    CheckFn = Callable[[bytes], MaybeError]
 
 
-def check_stubgen(*, clash_ids: list[str], langs_to_check: dict[str, list[str]]) -> dict:
+def check_with_subprocess(cmd: list[str]) -> CheckFn:
+    def inner(src: bytes) -> MaybeError:
+        proc = run(cmd, input=src, capture_output=True, check=False)
+        return None if proc.returncode == 0 else proc.stderr.decode("utf-8")
+
+    return inner
+
+
+def check_pascal(src: bytes) -> MaybeError:
+    with tempfile.NamedTemporaryFile() as tmp:
+        tmp.write(src)
+        tmp.flush()
+        cmd = ["fpc", "-s", tmp.name]
+        proc = run(cmd, input=src, capture_output=True, check=False)
+    return None if proc.returncode == 0 else proc.stdout.decode("utf-8")
+
+
+def check_python(src: bytes) -> MaybeError:
+    try:
+        compile(src, "<string>", "exec")
+    except (SyntaxError, ValueError) as exc:
+        return str(exc)
+    else:
+        return None
+
+
+def check_stubgen(
+        *,
+        coctus: str = "coctus",
+        clash_ids: list[str],
+        langs_to_check: dict[str, CheckFn]
+) -> dict[str, Any]:
     """
     Checks that stubgen generates valid code for all given clash_ids.
-    Returns the number of errors encountered.
     langs_to_check should be a dict where keys are language names for the
-    `coctus generate-stub` and values are commands that read the generated
-    code from STDIN and exit non-zero if the code is not valid.
+    `coctus generate-stub` and values are functions that validate the stub.
 
     Example:
     ========
     >>> check_stubgen(
             clash_ids=["682102420fbce0fce95e0ee56095ea2b9924"],
-            langs_to_check={"c": ["gcc", "-fsyntax-only", "-x", "c", "-"]}
+            langs_to_check={"c": lambda stub: None}
         )
     """
-    SEPARATOR = "=" * 30
     results = {lang: {"n_skipped": 0, "n_checked": 0, "n_errors": 0} for lang in langs_to_check}
 
     for cid in clash_ids:
-        run([COCTUS_EXE, "next", cid], capture_output=True)
+        run([coctus, "next", cid], capture_output=True, check=False)
 
-        for lang, check_cmd in langs_to_check.items():
+        for lang, check_for_errors in langs_to_check.items():
             res = results[lang]
-            run_stubgen = run([COCTUS_EXE, "generate-stub", lang], capture_output=True)
-            if run_stubgen.returncode != 0:
-                stderr = run_stubgen.stderr.decode("utf-8")
-                if "provides no input stub generator" in stderr:
-                    res["n_skipped"] += 1
-                else:
-                    res["n_checked"] += 1
-                    res["n_errors"] += 1
-                    print(f"\nStub generator for {lang} returned non-zero for clash {cid}")
-                    print(SEPARATOR)
-                    print(run_stubgen.stderr.decode("utf-8"))
-                    print(SEPARATOR)
-                    print()
-            else:
-                run_check = run(check_cmd, input=run_stubgen.stdout, capture_output=True)
-                res["n_checked"] += 1
-                if run_check.returncode != 0:
-                    res["n_errors"] += 1
-                    print(f"\nError with {lang} stub for clash {cid}")
-                    print(f"https://www.codingame.com/contribute/view/{cid}")
-                    print(SEPARATOR)
-                    print(run_check.stderr.decode("utf-8"))
-                    print(SEPARATOR)
-                    print(run_stubgen.stdout.decode("utf-8"))
-                    print(SEPARATOR)
-                    print()
+            run_stubgen = run([coctus, "generate-stub", lang], capture_output=True, check=False)
+            stderr = run_stubgen.stderr.decode("utf-8")
 
+            if run_stubgen.returncode != 0 and "provides no input stub generator" in stderr:
+                print(f"Skipping https://www.codingame.com/contribute/view/{cid}")
+                res["n_skipped"] += 1
+                continue
+
+            res["n_checked"] += 1
+
+            if run_stubgen.returncode != 0:
+                res["n_errors"] += 1
+                print(f"\nStub generator for {lang} returned non-zero for clash {cid}")
+                print(f"https://www.codingame.com/contribute/view/{cid}")
+                print("===== STDERR ======")
+                print(stderr)
+                print("===================\n")
+                continue
+
+            stub_bytes = run_stubgen.stdout
+            error = check_for_errors(stub_bytes)
+            if error is not None:
+                res["n_errors"] += 1
+                print(f"\nGenerated bad {lang} stub for clash {cid}")
+                print(f"https://www.codingame.com/contribute/view/{cid}")
+                if error:
+                    print("====== ERROR ======")
+                    print(error)
+                print("=== BROKEN STUB ===")
+                print(stub_bytes.decode("utf-8"))
+                print("===================\n")
     return results
 
 
-def main(n = None):
+def get_args(raw_args: list[str]) -> argparse.Namespace:
+    lang_checks = {
+        "c": check_with_subprocess(["gcc", "-fsyntax-only", "-x", "c", "-"]),
+        "cpp": check_with_subprocess(["gcc", "-fsyntax-only", "-x", "c++", "-"]),
+        "pascal": check_pascal,
+        "python": check_python,
+        "rust": check_with_subprocess(["rustc", "--emit=metadata", "-"]),
+    }
+    argparser = argparse.ArgumentParser(
+        prog="teststub.py",
+        description="Test validity of stubs generated by the stub generator",
+    )
+    argparser.add_argument("-n", type=int, help="number of clashes to check")
+    argparser.add_argument(
+        "-e",
+        "--executable",
+        metavar="COCTUS_EXE",
+        default="target/release/coctus",
+        type=os.path.abspath,
+        help="path to coctus executable to use for generating stubs",
+    )
+    argparser.add_argument(
+        "langs",
+        choices=lang_checks,
+        nargs="*",
+        metavar="PROGLANG",
+        help=f"language to check ({','.join(lang_checks)})",
+    )
+    args = argparser.parse_args(raw_args)
+    if args.langs:
+        args.langs_to_check = {lang: lang_checks[lang] for lang in args.langs}
+    else:
+        args.langs_to_check = lang_checks
+    return args
+
+
+def main() -> None:
+    args = get_args(sys.argv[1:])
+
     clash_ids = []
     for full_clash_path in glob.glob(f"{CLASH_DIR}/*.json"):
         filename = basename(full_clash_path)
         clash_id, _ = splitext(filename)
         clash_ids.append(clash_id)
 
-    if n is not None:
-        clash_ids = random.sample(clash_ids, n)
+    if args.n is not None:
+        clash_ids = random.sample(clash_ids, args.n)
 
-    langs_to_check = {
-        "c": ["gcc", "-fsyntax-only", "-x", "c", "-"],
-        "cpp": ["gcc", "-fsyntax-only", "-x", "c++", "-"],
-        "rust": ["rustc", "--emit=metadata", "-"],
-    }
-
-    lang_results = check_stubgen(clash_ids=clash_ids, langs_to_check=langs_to_check)
+    with (tempfile.TemporaryDirectory() as tmpdir, contextlib.chdir(tmpdir)):
+        lang_results = check_stubgen(
+            coctus=args.executable,
+            clash_ids=clash_ids,
+            langs_to_check=args.langs_to_check
+        )
 
     for lang, results in lang_results.items():
         print(f"{lang}: {results}")
 
 
 if __name__ == "__main__":
-    if len(sys.argv) > 1:
-        n = int(sys.argv[1])
-        main(n)
-    else:
-        main()
+    main()
