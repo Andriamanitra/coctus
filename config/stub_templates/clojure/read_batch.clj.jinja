@@ -1,0 +1,5 @@
+(let [{% for line in read_lines %}{{line}}
+     {% endfor %}]
+  {% for line in nested_lines %}{{line}}
+  {% endfor %}
+  )
