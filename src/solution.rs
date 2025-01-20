@@ -2,7 +2,7 @@ mod test_result;
 
 use std::io::Write;
 use std::process::Command;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use test_result::CommandExit;
 pub use test_result::TestResult;
@@ -48,6 +48,7 @@ pub fn lazy_run<'a>(
 
 /// Run a command against a single testcase.
 pub fn run_testcase(testcase: &Testcase, run_command: &mut Command, timeout: &Duration) -> TestResult {
+    let start_time = Instant::now();
     let mut run = match run_command
         .stdin(std::process::Stdio::piped())
         .stdout(std::process::Stdio::piped())
@@ -77,6 +78,7 @@ pub fn run_testcase(testcase: &Testcase, run_command: &mut Command, timeout: &Du
         run.kill().expect("Process should have been killed");
     }
 
+    let time_taken = start_time.elapsed();
     let output = run.wait_with_output().expect("Process should allow waiting for its execution");
 
     let exit_status = if timed_out {
@@ -86,7 +88,7 @@ pub fn run_testcase(testcase: &Testcase, run_command: &mut Command, timeout: &Du
     } else {
         CommandExit::Error
     };
-    TestResult::from_output(&testcase.test_out, output.stdout, output.stderr, exit_status)
+    TestResult::from_output(&testcase.test_out, output.stdout, output.stderr, exit_status, time_taken)
 }
 
 #[cfg(test)]

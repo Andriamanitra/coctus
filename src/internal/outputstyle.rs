@@ -221,8 +221,8 @@ impl OutputStyle {
     pub fn print_result(&self, testcase: &Testcase, test_result: &TestResult) {
         let title = self.styled_testcase_title(testcase);
         match test_result {
-            TestResult::Success => {
-                println!("{} {}", self.success.paint("PASS"), title);
+            TestResult::Success { time_taken } => {
+                println!("{} {} ({:.0?})", self.success.paint("PASS"), title, time_taken);
             }
 
             TestResult::UnableToRun { error_msg } => {
@@ -230,18 +230,30 @@ impl OutputStyle {
                 println!(" {}", self.stderr.paint(error_msg));
             }
 
-            TestResult::WrongOutput { stdout, stderr } => {
-                println!("{} {}", self.failure.paint("FAIL"), title);
+            TestResult::WrongOutput {
+                stdout,
+                stderr,
+                time_taken,
+            } => {
+                println!("{} {} ({:.0?})", self.failure.paint("FAIL"), title, time_taken);
                 self.print_failure(testcase, stdout, stderr);
             }
 
-            TestResult::RuntimeError { stdout, stderr } => {
-                println!("{} {}", self.error.paint("ERROR"), title);
+            TestResult::RuntimeError {
+                stdout,
+                stderr,
+                time_taken,
+            } => {
+                println!("{} {} ({:.0?})", self.error.paint("ERROR"), title, time_taken);
                 self.print_failure(testcase, stdout, stderr);
             }
 
-            TestResult::Timeout { stdout, stderr } => {
-                println!("{} {}", self.error.paint("TIMEOUT"), title);
+            TestResult::Timeout {
+                stdout,
+                stderr,
+                time_taken,
+            } => {
+                println!("{} {} ({:.0?})", self.error.paint("TIMEOUT"), title, time_taken);
                 self.print_failure(testcase, stdout, stderr);
             }
         }

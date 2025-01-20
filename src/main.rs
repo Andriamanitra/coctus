@@ -341,9 +341,9 @@ impl App {
             .expect("clap should ensure `run` can't be executed without a --command");
 
         let timeout = match *args.get_one::<f64>("timeout").unwrap_or(&5.0) {
+            0.0 => std::time::Duration::MAX,
             secs if secs.is_nan() => return Err(anyhow!("Timeout can't be NaN")),
             secs if secs < 0.0 => return Err(anyhow!("Timeout can't be negative (use 0 for no timeout)")),
-            secs if secs == 0.0 => std::time::Duration::MAX,
             secs => std::time::Duration::from_micros((secs * 1e6) as u64),
         };
 
@@ -363,7 +363,7 @@ impl App {
         let ostyle = OutputStyle::from_env(show_whitespace);
 
         let mut num_passed = 0;
-
+        let start_time = std::time::Instant::now();
         for (testcase, test_result) in suite_run {
             ostyle.print_result(testcase, &test_result);
 
@@ -373,7 +373,7 @@ impl App {
                 break
             }
         }
-        println!("{num_passed}/{num_tests} tests passed");
+        println!("{num_passed}/{num_tests} tests passed ({}ms)", start_time.elapsed().as_millis());
 
         // Move on to next clash if --auto-advance is set
         if num_passed == num_tests && args.get_flag("auto-advance") {
