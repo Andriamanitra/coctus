@@ -363,9 +363,10 @@ impl App {
         let ostyle = OutputStyle::from_env(show_whitespace);
 
         let mut num_passed = 0;
-        let start_time = std::time::Instant::now();
+        let mut total_time = std::time::Duration::ZERO;
         for (testcase, test_result) in suite_run {
             ostyle.print_result(testcase, &test_result);
+            total_time += test_result.time_taken();
 
             if test_result.is_success() {
                 num_passed += 1;
@@ -373,7 +374,7 @@ impl App {
                 break
             }
         }
-        println!("{num_passed}/{num_tests} tests passed ({}ms)", start_time.elapsed().as_millis());
+        println!("{num_passed}/{num_tests} tests passed ({:.2?})", total_time);
 
         // Move on to next clash if --auto-advance is set
         if num_passed == num_tests && args.get_flag("auto-advance") {

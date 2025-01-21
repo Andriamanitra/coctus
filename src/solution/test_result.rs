@@ -75,6 +75,16 @@ impl TestResult {
         }
     }
 
+    pub fn time_taken(&self) -> Duration {
+        match self {
+            TestResult::UnableToRun { .. } => Duration::ZERO,
+            TestResult::Success { time_taken }
+            | TestResult::WrongOutput { time_taken, .. }
+            | TestResult::RuntimeError { time_taken, .. }
+            | TestResult::Timeout { time_taken, .. } => *time_taken,
+        }
+    }
+
     /// Returns true if the testcase passed. A testcase passes if the output
     /// of the solution command matches the expected output.
     pub fn is_success(&self) -> bool {
